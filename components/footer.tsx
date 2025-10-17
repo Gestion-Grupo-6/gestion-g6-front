@@ -1,5 +1,6 @@
 import Link from "next/link"
-import { Music2, Facebook, Twitter, Instagram } from "lucide-react"
+import { Facebook, Twitter, Instagram } from "lucide-react"
+import Image from "next/image"
 
 export function Footer() {
   return (
@@ -7,11 +8,8 @@ export function Footer() {
       <div className="container mx-auto px-4 py-12">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           <div>
-            <Link href="/" className="flex items-center gap-2 mb-4">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary">
-                <Music2 className="h-6 w-6 text-primary-foreground" />
-              </div>
-              <span className="text-xl font-bold text-foreground">TanGo</span>
+            <Link href="/" className="flex items-center mb-4">
+              <Image src="/tango-logo.png" alt="TanGo" width={120} height={40} className="h-10 w-auto" />
             </Link>
             <p className="text-sm text-muted-foreground">
               Tu compañero de viaje para descubrir los mejores destinos del mundo.
