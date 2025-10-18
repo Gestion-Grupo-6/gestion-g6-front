@@ -19,6 +19,16 @@ export function HeroSection() {
     }
   }
 
+  const handleClick = async () => {
+    try {
+      const response = await fetch("http://localhost:8080/ping")
+      const data = await response.text()
+      console.log("Respuesta del servidor:", data)
+    } catch (error) {
+      console.error("Error al hacer GET:", error)
+    }
+  }
+
   return (
     <section className="relative bg-gradient-to-br from-primary/10 via-accent/5 to-background py-20 md:py-32">
       <div className="container mx-auto px-4">
@@ -41,7 +51,9 @@ export function HeroSection() {
                 className="pl-10 h-12"
               />
             </div>
-            <Button type="submit" size="lg" className="h-12 px-8">
+            <Button
+              onClick={handleClick} 
+              type="submit" size="lg" className="h-12 px-8">
               Buscar
             </Button>
           </form>
