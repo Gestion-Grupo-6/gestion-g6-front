@@ -2,7 +2,6 @@ import { Header } from "@/components/header"
 import { HeroSection } from "@/components/hero-section"
 import { CategoryTabs } from "@/components/category-tabs"
 import { FeaturedPlaces } from "@/components/featured-places"
-import { Footer } from "@/components/footer"
 
 export default function HomePage() {
   return (
@@ -13,7 +12,6 @@ export default function HomePage() {
         <CategoryTabs />
         <FeaturedPlaces />
       </main>
-      <Footer />
     </div>
   )
 }

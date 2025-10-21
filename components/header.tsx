@@ -1,14 +1,16 @@
 "use client"
 
 import Link from "next/link"
-import { Menu, X } from "lucide-react"
+import { Menu, X, User, LogOut, Building2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useState } from "react"
 import { ThemeToggle } from "@/components/theme-toggle"
 import Image from "next/image"
+import { useAuth } from "@/contexts/AuthContext"
 
 export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const { user, isAuthenticated, logout } = useAuth()
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -42,10 +44,35 @@ export function Header() {
 
           <div className="hidden md:flex items-center gap-3">
             <ThemeToggle />
-            <Button variant="ghost" size="sm">
-              Iniciar sesión
-            </Button>
-            <Button size="sm">Registrarse</Button>
+            {isAuthenticated ? (
+              <>
+                <Button variant="ghost" size="sm" asChild>
+                  <Link href="/mis-negocios">
+                    <Building2 className="h-4 w-4 mr-2" />
+                    Mis negocios
+                  </Link>
+                </Button>
+                <Button variant="ghost" size="sm" asChild>
+                  <Link href="/profile">
+                    <User className="h-4 w-4 mr-2" />
+                    Mi perfil
+                  </Link>
+                </Button>
+                <Button variant="ghost" size="sm" onClick={logout}>
+                  <LogOut className="h-4 w-4 mr-2" />
+                  Cerrar sesión
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button variant="ghost" size="sm" asChild>
+                  <Link href="/login">Iniciar sesión</Link>
+                </Button>
+                <Button size="sm" asChild>
+                  <Link href="/register">Registrarse</Link>
+                </Button>
+              </>
+            )}
           </div>
 
           {/* Mobile Menu Button */}
@@ -86,12 +113,35 @@ export function Header() {
                 <div className="flex justify-center pb-2">
                   <ThemeToggle />
                 </div>
-                <Button variant="ghost" size="sm" className="w-full">
-                  Iniciar sesión
-                </Button>
-                <Button size="sm" className="w-full">
-                  Registrarse
-                </Button>
+                {isAuthenticated ? (
+                  <>
+                    <Button variant="ghost" size="sm" className="w-full" asChild>
+                      <Link href="/mis-negocios">
+                        <Building2 className="h-4 w-4 mr-2" />
+                        Mis negocios
+                      </Link>
+                    </Button>
+                    <Button variant="ghost" size="sm" className="w-full" asChild>
+                      <Link href="/profile">
+                        <User className="h-4 w-4 mr-2" />
+                        Mi perfil
+                      </Link>
+                    </Button>
+                    <Button variant="ghost" size="sm" className="w-full" onClick={logout}>
+                      <LogOut className="h-4 w-4 mr-2" />
+                      Cerrar sesión
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <Button variant="ghost" size="sm" className="w-full" asChild>
+                      <Link href="/login">Iniciar sesión</Link>
+                    </Button>
+                    <Button size="sm" className="w-full" asChild>
+                      <Link href="/register">Registrarse</Link>
+                    </Button>
+                  </>
+                )}
               </div>
             </div>
           </nav>

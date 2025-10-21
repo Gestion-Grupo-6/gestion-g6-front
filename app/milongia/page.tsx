@@ -8,7 +8,6 @@ import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Send, Sparkles, MapPin, Utensils, Hotel } from "lucide-react"
 import { Header } from "@/components/header"
-import { Footer } from "@/components/footer"
 import { useState } from "react"
 
 export default function MilongIA() {
@@ -153,7 +152,6 @@ export default function MilongIA() {
         </div>
       </main>
 
-      <Footer />
     </div>
   )
 }

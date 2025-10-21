@@ -1,5 +1,4 @@
 import { Header } from "@/components/header"
-import { Footer } from "@/components/footer"
 import { PlaceDetail } from "@/components/place-detail"
 import { notFound } from "next/navigation"
 
@@ -53,7 +52,6 @@ export default function DestinoDetailPage({ params }: { params: { id: string } }
       <main className="flex-1">
         <PlaceDetail place={place} />
       </main>
-      <Footer />
     </div>
   )
 }

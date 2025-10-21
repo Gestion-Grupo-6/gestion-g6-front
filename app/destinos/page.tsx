@@ -1,5 +1,4 @@
 import { Header } from "@/components/header"
-import { Footer } from "@/components/footer"
 import { PlacesList } from "@/components/places-list"
 import { FilterSidebar } from "@/components/filter-sidebar"
 
@@ -107,7 +106,6 @@ export default function DestinosPage() {
           </div>
         </div>
       </main>
-      <Footer />
     </div>
   )
 }
