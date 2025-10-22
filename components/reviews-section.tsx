@@ -19,7 +19,7 @@ interface Review {
 }
 
 interface ReviewsSectionProps {
-  placeId: number
+  placeId: string
   averageRating: number
   totalReviews: number
 }
