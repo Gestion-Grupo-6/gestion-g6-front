@@ -1,18 +1,10 @@
 "use client"
 
 import { createContext, useContext, useState, useEffect, ReactNode } from "react"
-
-interface User {
-  id: string
-  email: string
-  firstName: string
-  lastName: string
-  phone?: string
-  address?: string
-}
+import { TanGOUser, fetchUserByEmail } from "@/lib/api"
 
 interface AuthContextType {
-  user: User | null
+  user: TanGOUser | null
   isAuthenticated: boolean
   login: (email: string, password: string) => Promise<boolean>
   logout: () => void
@@ -22,7 +14,7 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null)
+  const [user, setUser] = useState<TanGOUser | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
   // Verificar si hay una sesión guardada al cargar la página
@@ -42,17 +34,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     
     // Simular autenticación exitosa (en un caso real, esto sería una llamada a la API)
     if (email && password) {
-      const mockUser: User = {
-        id: '1',
-        email: email,
-        firstName: 'Juan',
-        lastName: 'Pérez',
-        phone: '+54 9 11 1234-5678',
-        address: 'Av. Corrientes 1234, Buenos Aires, Argentina'
+      var user = await fetchUserByEmail(email)
+      if (!user) {
+        setIsLoading(false)
+        return false
       }
-      
-      setUser(mockUser)
-      localStorage.setItem('user', JSON.stringify(mockUser))
+      if (user.password !== password) {
+        setIsLoading(false)
+        return false
+      }
+
+      setUser(user)
+      localStorage.setItem('user', JSON.stringify(user))
       setIsLoading(false)
       return true
     }

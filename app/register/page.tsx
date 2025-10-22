@@ -9,14 +9,15 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Header } from "@/components/header"
 import { Eye, EyeOff, Mail, Lock, User, Phone, MapPin } from "lucide-react"
+import { TanGOUser, createUser } from "@/lib/api"
 
 export default function RegisterPage() {
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
     email: "",
-    phone: "",
-    address: "",
+    // phone: "",
+    // address: "",
     password: "",
     confirmPassword: ""
   })
@@ -52,14 +53,29 @@ export default function RegisterPage() {
     }
 
     try {
-      // Aquí iría la lógica de registro con Supabase
       console.log("Register attempt:", formData)
       
-      // Simulación de registro exitoso
-      setTimeout(() => {
+      const newUser: Omit<TanGOUser, "id"> = {
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        email: formData.email,
+        password: formData.password,
+        // phone: formData.phone,
+        // address: formData.address
+      }
+
+      var response = await createUser(newUser)
+
+      if (!response) {
+        setError("No se pudo crear la cuenta. Inténtalo de nuevo.")
+        console.log("User creation failed")
         setIsLoading(false)
-        router.push("/login?message=Registro exitoso. Inicia sesión para continuar.")
-      }, 1000)
+        return
+      }
+
+      console.log("User created:", response)
+      router.push("/login")
+      
     } catch (err) {
       setError("Error al crear la cuenta. Inténtalo de nuevo.")
       setIsLoading(false)
@@ -129,7 +145,7 @@ export default function RegisterPage() {
                   />
                 </div>
               </div>
-              
+              {/* 
               <div className="space-y-2">
                 <Label htmlFor="phone">Teléfono (opcional)</Label>
                 <div className="relative">
@@ -161,7 +177,7 @@ export default function RegisterPage() {
                   />
                 </div>
               </div>
-              
+              */}
               <div className="space-y-2">
                 <Label htmlFor="password">Contraseña</Label>
                 <div className="relative">

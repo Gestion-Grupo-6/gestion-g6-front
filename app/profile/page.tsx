@@ -18,8 +18,8 @@ export default function ProfilePage() {
     firstName: user?.firstName || "",
     lastName: user?.lastName || "",
     email: user?.email || "",
-    phone: user?.phone || "",
-    address: user?.address || ""
+    // phone: user?.phone || "",
+    // address: user?.address || ""
   })
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -117,6 +117,7 @@ export default function ProfilePage() {
                 </div>
               </div>
               
+              {/*}
               <div className="space-y-2">
                 <Label htmlFor="phone">Teléfono</Label>
                 <div className="relative">
@@ -149,6 +150,7 @@ export default function ProfilePage() {
                   />
                 </div>
               </div>
+              */}
 
               <div className="flex gap-3 pt-4">
                 {isEditing ? (

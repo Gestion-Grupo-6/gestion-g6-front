@@ -5,6 +5,69 @@ const API_BASE_URL =
 
 const sanitizedBaseUrl = API_BASE_URL.replace(/\/$/, "")
 
+export interface TanGOUser {
+  id: string
+  firstName: string
+  lastName: string
+  email: string
+  password: string
+}
+
+// User - GET (id)
+export async function fetchUser(id: string): Promise<TanGOUser | null> {
+  const response = await fetch(`${sanitizedBaseUrl}/profile/${id}`, {
+    cache: "no-store",
+  })
+
+  if (response.status === 404) {
+    return null
+  }
+
+  if (!response.ok) {
+    throw new Error(`Error al consultar users/${id}: ${response.status} ${response.statusText}`)
+  }
+
+  return (await response.json()) as TanGOUser
+}
+
+// User - GET (email)
+export async function fetchUserByEmail(email: string): Promise<TanGOUser | null> {
+  const response = await fetch(`${sanitizedBaseUrl}/profile/email/${email}`, {
+    cache: "no-store",
+  })
+
+  if (response.status === 404) {
+    return null
+  }
+
+  if (!response.ok) {
+    throw new Error(`Error al consultar users?email=${email}: ${response.status} ${response.statusText}`)
+  }
+
+  const users = (await response.json()) as TanGOUser[]
+  return users.length > 0 ? users[0] : null
+}
+
+// POST - create user
+export async function createUser(payload: Omit<TanGOUser, "id">): Promise<TanGOUser> {
+  
+  console.log("Creating user with payload:", payload)
+
+  const response = await fetch(`${sanitizedBaseUrl}/users`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  })
+  
+  if (!response.ok) {
+    const fallback = await response.text()
+    throw new Error(`No se pudo crear el usuario: ${response.status} ${response.statusText}. ${fallback}`)
+  }
+  return (await response.json()) as TanGOUser
+}
+
 export interface PlaceCreatePayload {
   name: string
   location: string
@@ -28,6 +91,7 @@ export interface PlaceCreatePayload {
   howToGet?: string | null
 }
 
+// Place - GET (id)
 export async function fetchPlace(collection: string, id: string): Promise<Place | null> {
   const response = await fetch(`${sanitizedBaseUrl}/${collection}/${id}`, {
     cache: "no-store",
@@ -44,6 +108,7 @@ export async function fetchPlace(collection: string, id: string): Promise<Place 
   return (await response.json()) as Place
 }
 
+// Place - GET (list)
 export async function fetchPlaces(
   collection: string,
   options?: { limit?: number },
@@ -65,6 +130,7 @@ export async function fetchPlaces(
   return (await response.json()) as Place[]
 }
 
+// Place - POST (create)
 export async function createPlace(collection: string, payload: PlaceCreatePayload): Promise<Place> {
   const response = await fetch(`${sanitizedBaseUrl}/${collection}`, {
     method: "POST",
