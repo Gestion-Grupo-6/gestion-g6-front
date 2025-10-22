@@ -1,89 +1,10 @@
 import { Header } from "@/components/header"
 import { PlacesList } from "@/components/places-list"
 import { FilterSidebar } from "@/components/filter-sidebar"
+import { fetchPlaces } from "@/lib/api"
 
-const destinationsData = [
-  {
-    id: 1,
-    name: "Playa del Carmen",
-    category: "destino",
-    location: "Quintana Roo, México",
-    rating: 4.6,
-    reviews: 892,
-    price: 0,
-    priceLabel: "Gratis",
-    image: "/caribbean-beach-turquoise-water.jpg",
-    description: "Paraíso caribeño con playas de arena blanca",
-    amenities: ["Playas", "Vida nocturna", "Compras", "Deportes acuáticos"],
-  },
-  {
-    id: 2,
-    name: "San Miguel de Allende",
-    category: "destino",
-    location: "Guanajuato, México",
-    rating: 4.8,
-    reviews: 567,
-    price: 0,
-    priceLabel: "Gratis",
-    image: "/placeholder.svg?height=300&width=400",
-    description: "Ciudad colonial llena de arte y cultura",
-    amenities: ["Arquitectura", "Galerías", "Festivales", "Gastronomía"],
-  },
-  {
-    id: 3,
-    name: "Barrancas del Cobre",
-    category: "destino",
-    location: "Chihuahua, México",
-    rating: 4.7,
-    reviews: 234,
-    price: 0,
-    priceLabel: "Gratis",
-    image: "/placeholder.svg?height=300&width=400",
-    description: "Impresionante sistema de cañones",
-    amenities: ["Senderismo", "Tren", "Miradores", "Naturaleza"],
-  },
-  {
-    id: 4,
-    name: "Tulum",
-    category: "destino",
-    location: "Quintana Roo, México",
-    rating: 4.9,
-    reviews: 1023,
-    price: 0,
-    priceLabel: "Gratis",
-    image: "/placeholder.svg?height=300&width=400",
-    description: "Ruinas mayas frente al mar Caribe",
-    amenities: ["Ruinas", "Playas", "Cenotes", "Yoga"],
-  },
-  {
-    id: 5,
-    name: "Valle de Guadalupe",
-    category: "destino",
-    location: "Baja California, México",
-    rating: 4.8,
-    reviews: 445,
-    price: 0,
-    priceLabel: "Gratis",
-    image: "/placeholder.svg?height=300&width=400",
-    description: "Ruta del vino con viñedos y bodegas",
-    amenities: ["Viñedos", "Catas", "Restaurantes", "Paisajes"],
-  },
-  {
-    id: 6,
-    name: "Guanajuato Capital",
-    category: "destino",
-    location: "Guanajuato, México",
-    rating: 4.7,
-    reviews: 678,
-    price: 0,
-    priceLabel: "Gratis",
-    image: "/placeholder.svg?height=300&width=400",
-    description: "Ciudad patrimonio con callejones y túneles",
-    amenities: ["Museos", "Teatro", "Callejoneadas", "Arquitectura"],
-  },
-]
-
-export default function DestinosPage() {
+export default async function DestinosPage() {
+  const destinations = await fetchPlaces("destinos")
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
@@ -101,7 +22,7 @@ export default function DestinosPage() {
               <FilterSidebar category="destino" />
             </aside>
             <div className="flex-1">
-              <PlacesList places={destinationsData} />
+              <PlacesList places={destinations} />
             </div>
           </div>
         </div>

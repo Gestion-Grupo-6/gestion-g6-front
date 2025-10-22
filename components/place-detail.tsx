@@ -8,45 +8,39 @@ import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import Link from "next/link"
 import { ReviewsSection } from "@/components/reviews-section"
-
-interface Place {
-  id: number
-  name: string
-  category: string
-  location: string
-  rating: number
-  reviews: number
-  price: number
-  priceLabel: string
-  images: string[]
-  description: string
-  amenities: string[]
-  address: string
-  phone: string
-  email: string
-  website: string
-  checkIn?: string
-  checkOut?: string
-  hours?: string
-  duration?: string
-  includes?: string
-  bestTime?: string
-  howToGet?: string
-}
+import type { Place } from "@/types/place"
 
 interface PlaceDetailProps {
   place: Place
 }
 
 export function PlaceDetail({ place }: PlaceDetailProps) {
+  const images = place.images && place.images.length > 0 ? place.images : ["/placeholder.svg"]
+  const amenities = place.amenities && place.amenities.length > 0 ? place.amenities : []
+  const rating = place.rating ?? 0
+  const reviewCount = place.reviews ?? 0
+  const priceLabel = place.priceLabel ?? (place.price != null ? `$${place.price}` : "Consultar")
+  const categoryRoutes: Record<string, string> = {
+    hotel: "hoteles",
+    restaurante: "restaurantes",
+    actividad: "actividades",
+    destino: "destinos",
+  }
+  const categoryPath = categoryRoutes[place.category] ?? `${place.category}s`
+  const categoryLabel = place.category
+  const address = place.address ?? "Información no disponible"
+  const phone = place.phone ?? ""
+  const email = place.email ?? ""
+  const website = place.website ?? ""
+  const websiteUrl = website ? (website.startsWith("http") ? website : `https://${website}`) : ""
   const [currentImageIndex, setCurrentImageIndex] = useState(0)
 
   const nextImage = () => {
-    setCurrentImageIndex((prev) => (prev + 1) % place.images.length)
+    setCurrentImageIndex((prev) => (prev + 1) % images.length)
   }
 
   const prevImage = () => {
-    setCurrentImageIndex((prev) => (prev - 1 + place.images.length) % place.images.length)
+    setCurrentImageIndex((prev) => (prev - 1 + images.length) % images.length)
   }
 
   return (
@@ -58,8 +52,8 @@ export function PlaceDetail({ place }: PlaceDetailProps) {
             Inicio
           </Link>
           <span>/</span>
-          <Link href={`/${place.category}s`} className="hover:text-primary transition-colors capitalize">
-            {place.category}s
+          <Link href={`/${categoryPath}`} className="hover:text-primary transition-colors capitalize">
+            {categoryPath}
           </Link>
           <span>/</span>
           <span className="text-foreground">{place.name}</span>
@@ -70,12 +64,12 @@ export function PlaceDetail({ place }: PlaceDetailProps) {
       <div className="container mx-auto px-4 mb-8">
         <div className="relative aspect-[21/9] rounded-xl overflow-hidden bg-muted">
           <img
-            src={place.images[currentImageIndex] || "/placeholder.svg"}
+            src={images[currentImageIndex] || "/placeholder.svg"}
             alt={`${place.name} - Image ${currentImageIndex + 1}`}
             className="object-cover w-full h-full"
           />
 
-          {place.images.length > 1 && (
+          {images.length > 1 && (
             <>
               <button
                 onClick={prevImage}
@@ -93,7 +87,7 @@ export function PlaceDetail({ place }: PlaceDetailProps) {
               </button>
 
               <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
-                {place.images.map((_, index) => (
+                {images.map((_, index) => (
                   <button
                     key={index}
                     onClick={() => setCurrentImageIndex(index)}
@@ -122,17 +116,17 @@ export function PlaceDetail({ place }: PlaceDetailProps) {
                     <span>{place.location}</span>
                   </div>
                 </div>
-                <Badge className="text-base px-4 py-2">{place.category}</Badge>
+                <Badge className="text-base px-4 py-2 capitalize">{categoryLabel}</Badge>
               </div>
 
               <div className="flex items-center gap-4 mb-6">
                 <div className="flex items-center gap-1">
                   <Star className="h-5 w-5 fill-yellow-400 text-yellow-400" />
-                  <span className="text-xl font-bold text-foreground">{place.rating}</span>
-                  <span className="text-muted-foreground">({place.reviews} reseñas)</span>
+                  <span className="text-xl font-bold text-foreground">{rating.toFixed(1)}</span>
+                  <span className="text-muted-foreground">({reviewCount} reseñas)</span>
                 </div>
                 <Separator orientation="vertical" className="h-6" />
-                <span className="text-2xl font-bold text-primary">{place.priceLabel}</span>
+                <span className="text-2xl font-bold text-primary">{priceLabel}</span>
               </div>
             </div>
 
@@ -147,7 +141,7 @@ export function PlaceDetail({ place }: PlaceDetailProps) {
               <CardContent className="p-6">
                 <h2 className="text-xl font-bold text-foreground mb-4">Características</h2>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                  {place.amenities.map((amenity, index) => (
+                  {amenities.map((amenity, index) => (
                     <div key={index} className="flex items-center gap-2">
                       <div className="h-2 w-2 rounded-full bg-primary" />
                       <span className="text-sm text-foreground">{amenity}</span>
@@ -224,7 +218,7 @@ export function PlaceDetail({ place }: PlaceDetailProps) {
               </Card>
             )}
 
-            <ReviewsSection placeId={place.id} averageRating={place.rating} totalReviews={place.reviews} />
+            <ReviewsSection placeId={String(place.id)} averageRating={rating} totalReviews={reviewCount} />
           </div>
 
           {/* Sidebar */}
@@ -238,7 +232,7 @@ export function PlaceDetail({ place }: PlaceDetailProps) {
                     <MapPin className="h-5 w-5 text-muted-foreground mt-0.5 flex-shrink-0" />
                     <div>
                       <p className="text-sm font-medium text-foreground">Dirección</p>
-                      <p className="text-sm text-muted-foreground">{place.address}</p>
+                      <p className="text-sm text-muted-foreground">{address}</p>
                     </div>
                   </div>
 
@@ -248,9 +242,13 @@ export function PlaceDetail({ place }: PlaceDetailProps) {
                     <Phone className="h-5 w-5 text-muted-foreground flex-shrink-0" />
                     <div>
                       <p className="text-sm font-medium text-foreground">Teléfono</p>
-                      <a href={`tel:${place.phone}`} className="text-sm text-primary hover:underline">
-                        {place.phone}
-                      </a>
+                      {phone ? (
+                        <a href={`tel:${phone}`} className="text-sm text-primary hover:underline">
+                          {phone}
+                        </a>
+                      ) : (
+                        <span className="text-sm text-muted-foreground">No disponible</span>
+                      )}
                     </div>
                   </div>
 
@@ -260,9 +258,13 @@ export function PlaceDetail({ place }: PlaceDetailProps) {
                     <Mail className="h-5 w-5 text-muted-foreground flex-shrink-0" />
                     <div>
                       <p className="text-sm font-medium text-foreground">Email</p>
-                      <a href={`mailto:${place.email}`} className="text-sm text-primary hover:underline">
-                        {place.email}
-                      </a>
+                      {email ? (
+                        <a href={`mailto:${email}`} className="text-sm text-primary hover:underline">
+                          {email}
+                        </a>
+                      ) : (
+                        <span className="text-sm text-muted-foreground">No disponible</span>
+                      )}
                     </div>
                   </div>
 
@@ -272,14 +274,18 @@ export function PlaceDetail({ place }: PlaceDetailProps) {
                     <Globe className="h-5 w-5 text-muted-foreground flex-shrink-0" />
                     <div>
                       <p className="text-sm font-medium text-foreground">Sitio web</p>
-                      <a
-                        href={`https://${place.website}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-sm text-primary hover:underline"
-                      >
-                        {place.website}
-                      </a>
+                      {websiteUrl ? (
+                        <a
+                          href={websiteUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-sm text-primary hover:underline"
+                        >
+                          {website}
+                        </a>
+                      ) : (
+                        <span className="text-sm text-muted-foreground">No disponible</span>
+                      )}
                     </div>
                   </div>
                 </div>
