@@ -1,10 +1,10 @@
 "use client"
 
 import { createContext, useContext, useState, useEffect, ReactNode } from "react"
-import { TanGOUser, fetchUserByEmail } from "@/lib/api"
+import { Usuario, fetchUserByEmail } from "@/lib/api"
 
 interface AuthContextType {
-  user: TanGOUser | null
+  user: Usuario | null
   isAuthenticated: boolean
   login: (email: string, password: string) => Promise<boolean>
   logout: () => void
@@ -14,7 +14,7 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<TanGOUser | null>(null)
+  const [user, setUser] = useState<Usuario | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
   // Verificar si hay una sesión guardada al cargar la página

@@ -5,7 +5,7 @@ const API_BASE_URL =
 
 const sanitizedBaseUrl = API_BASE_URL.replace(/\/$/, "")
 
-export interface TanGOUser {
+export interface Usuario {
   id: string
   firstName: string
   lastName: string
@@ -14,8 +14,8 @@ export interface TanGOUser {
 }
 
 // User - GET (id)
-export async function fetchUser(id: string): Promise<TanGOUser | null> {
-  const response = await fetch(`${sanitizedBaseUrl}/profile/${id}`, {
+export async function fetchUser(id: string): Promise<Usuario | null> {
+  const response = await fetch(`${sanitizedBaseUrl}/users/${id}`, {
     cache: "no-store",
   })
 
@@ -27,12 +27,12 @@ export async function fetchUser(id: string): Promise<TanGOUser | null> {
     throw new Error(`Error al consultar users/${id}: ${response.status} ${response.statusText}`)
   }
 
-  return (await response.json()) as TanGOUser
+  return (await response.json()) as Usuario
 }
 
 // User - GET (email)
-export async function fetchUserByEmail(email: string): Promise<TanGOUser | null> {
-  const response = await fetch(`${sanitizedBaseUrl}/profile/email/${email}`, {
+export async function fetchUserByEmail(email: string): Promise<Usuario | null> {
+  const response = await fetch(`${sanitizedBaseUrl}/users/email/${email}`, {
     cache: "no-store",
   })
 
@@ -44,12 +44,12 @@ export async function fetchUserByEmail(email: string): Promise<TanGOUser | null>
     throw new Error(`Error al consultar users?email=${email}: ${response.status} ${response.statusText}`)
   }
 
-  const users = (await response.json()) as TanGOUser[]
+  const users = (await response.json()) as Usuario[]
   return users.length > 0 ? users[0] : null
 }
 
 // POST - create user
-export async function createUser(payload: Omit<TanGOUser, "id">): Promise<TanGOUser> {
+export async function createUser(payload: Omit<Usuario, "id">): Promise<Usuario> {
   
   console.log("Creating user with payload:", payload)
 
@@ -65,7 +65,7 @@ export async function createUser(payload: Omit<TanGOUser, "id">): Promise<TanGOU
     const fallback = await response.text()
     throw new Error(`No se pudo crear el usuario: ${response.status} ${response.statusText}. ${fallback}`)
   }
-  return (await response.json()) as TanGOUser
+  return (await response.json()) as Usuario
 }
 
 export interface PlaceCreatePayload {
