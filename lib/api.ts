@@ -48,8 +48,7 @@ export async function fetchUserByEmail(email: string): Promise<Usuario | null> {
     throw new Error(`Error al consultar users?email=${email}: ${response.status} ${response.statusText}`)
   }
 
-  const users = (await response.json()) as Usuario[]
-  return users.length > 0 ? users[0] : null
+  return (await response.json()) as Usuario
 }
 
 // POST - create user
