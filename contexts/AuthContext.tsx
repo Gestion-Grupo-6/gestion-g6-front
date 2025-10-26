@@ -29,29 +29,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = async (email: string, password: string): Promise<boolean> => {
     setIsLoading(true)
     
-    // Simular delay de autenticación
-    await new Promise(resolve => setTimeout(resolve, 1000))
-    
-    // Simular autenticación exitosa (en un caso real, esto sería una llamada a la API)
-    if (email && password) {
-      var user = await fetchUserByEmail(email)
-      if (!user) {
-        setIsLoading(false)
-        return false
-      }
-      if (user.password !== password) {
-        setIsLoading(false)
-        return false
-      }
+    try {
+      if (email && password) {
+        var user = await fetchUserByEmail(email)
+        
+        if (!user) {
+          setIsLoading(false)
+          return false
+        }
+        
+        if (user.password !== password) {
+          setIsLoading(false)
+          return false
+        }
 
-      setUser(user)
-      localStorage.setItem('user', JSON.stringify(user))
+        setUser(user)
+        localStorage.setItem('user', JSON.stringify(user))
+        setIsLoading(false)
+        return true
+      }
+      
       setIsLoading(false)
-      return true
+      return false
+    } catch (error) {
+      console.error("Error en login:", error)
+      setIsLoading(false)
+      return false
     }
-    
-    setIsLoading(false)
-    return false
   }
 
   const logout = () => {
