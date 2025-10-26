@@ -19,7 +19,7 @@ export interface Usuario {
 
 // User - GET (id)
 export async function fetchUser(id: string): Promise<Usuario | null> {
-  const response = await fetch(`${sanitizedBaseUrl}/users/${id}`, {
+  const response = await fetch(`${sanitizedBaseUrl}/user/${id}`, {
     cache: "no-store",
   })
 
@@ -36,7 +36,7 @@ export async function fetchUser(id: string): Promise<Usuario | null> {
 
 // User - GET (email)
 export async function fetchUserByEmail(email: string): Promise<Usuario | null> {
-  const response = await fetch(`${sanitizedBaseUrl}/users/email/${email}`, {
+  const response = await fetch(`${sanitizedBaseUrl}/user/email/${email}`, {
     cache: "no-store",
   })
 
@@ -57,7 +57,7 @@ export async function createUser(payload: Omit<Usuario, "id">): Promise<Usuario>
   
   console.log("Creating user with payload:", payload)
 
-  const response = await fetch(`${sanitizedBaseUrl}/users`, {
+  const response = await fetch(`${sanitizedBaseUrl}/user`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
