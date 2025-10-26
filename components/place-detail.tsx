@@ -24,7 +24,6 @@ export function PlaceDetail({ place }: PlaceDetailProps) {
     hotel: "hoteles",
     restaurante: "restaurantes",
     actividad: "actividades",
-    destino: "destinos",
   }
   const categoryPath = categoryRoutes[place.category] ?? `${place.category}s`
   const categoryLabel = place.category

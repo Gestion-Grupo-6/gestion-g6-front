@@ -40,11 +40,6 @@ export function Footer() {
                   Actividades
                 </Link>
               </li>
-              <li>
-                <Link href="/destinos" className="text-sm text-muted-foreground hover:text-primary transition-colors">
-                  Destinos
-                </Link>
-              </li>
             </ul>
           </div>
 

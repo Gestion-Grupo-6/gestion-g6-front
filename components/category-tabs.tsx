@@ -24,12 +24,6 @@ const categories = [
     icon: Compass,
     description: "Experiencias únicas",
   },
-  {
-    name: "Destinos",
-    href: "/destinos",
-    icon: MapPinned,
-    description: "Explora nuevos lugares",
-  },
 ]
 
 export function CategoryTabs() {

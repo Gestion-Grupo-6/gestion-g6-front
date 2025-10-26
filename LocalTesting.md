@@ -1,6 +1,6 @@
 # Local testing guide
 
-Aplicación Next.js que consume el backend de `gestion-g6-back` para listar y administrar hoteles, restaurantes, actividades y destinos.
+Aplicación Next.js que consume el backend de `gestion-g6-back` para listar y administrar hoteles, restaurantes y actividades.
 
 ## Requisitos
 
@@ -27,7 +27,7 @@ Aplicación Next.js que consume el backend de `gestion-g6-back` para listar y ad
 
 ## Flujo principal
 
-- Los listados (`/hoteles`, `/restaurantes`, `/actividades`, `/destinos`) y las páginas dinámicas (`/hotel/[id]`, etc.) consumen los endpoints REST del backend.
+- Los listados (`/hoteles`, `/restaurantes`, `/actividades`) y las páginas dinámicas (`/hotel/[id]`, etc.) consumen los endpoints REST del backend.
 - La home (`/`) muestra cuatro destacados tomados del backend.
 - La sección `/mis-negocios` permite **crear publicaciones**. Completa el formulario, elige la categoría y se enviará un `POST` al backend. Las tarjetas se refrescan tras guardar.
 

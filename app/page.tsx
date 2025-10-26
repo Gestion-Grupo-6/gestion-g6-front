@@ -10,7 +10,6 @@ export default async function HomePage() {
     fetchPlaces("hoteles", { limit: 1 }),
     fetchPlaces("restaurantes", { limit: 1 }),
     fetchPlaces("actividades", { limit: 1 }),
-    fetchPlaces("destinos", { limit: 1 }),
   ])
 
   const featuredPlaces = [

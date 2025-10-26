@@ -18,7 +18,6 @@ const CATEGORY_OPTIONS = [
   { value: "hoteles", label: "Hoteles" },
   { value: "restaurantes", label: "Restaurantes" },
   { value: "actividades", label: "Actividades" },
-  { value: "destinos", label: "Destinos" },
 ] as const
 
 type CategoryValue = (typeof CATEGORY_OPTIONS)[number]["value"]

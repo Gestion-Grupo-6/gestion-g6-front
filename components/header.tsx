@@ -37,9 +37,6 @@ export function Header() {
             >
               Actividades
             </Link>
-            <Link href="/destinos" className="text-sm font-medium text-foreground hover:text-primary transition-colors">
-              Destinos
-            </Link>
           </nav>
 
           <div className="hidden md:flex items-center gap-3">
@@ -102,12 +99,6 @@ export function Header() {
                 className="text-sm font-medium text-foreground hover:text-primary transition-colors"
               >
                 Actividades
-              </Link>
-              <Link
-                href="/destinos"
-                className="text-sm font-medium text-foreground hover:text-primary transition-colors"
-              >
-                Destinos
               </Link>
               <div className="flex flex-col gap-2 pt-2 border-t border-border">
                 <div className="flex justify-center pb-2">
