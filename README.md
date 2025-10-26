@@ -4,7 +4,7 @@
 
     npm install
 
-    npm build
+    npm run build
 
     npm start
 
