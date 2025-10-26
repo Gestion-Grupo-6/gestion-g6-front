@@ -1,19 +1,22 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useRef } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Header } from "@/components/header"
-import { User, Mail, Phone, MapPin, Save, LogOut } from "lucide-react"
+import { User, Mail, Phone, MapPin, Save, LogOut, Pencil } from "lucide-react"
 import { useAuth } from "@/contexts/AuthContext"
+import { uploadProfilePhoto } from "@/lib/api"
 
 export default function ProfilePage() {
   const { user, logout } = useAuth()
   const router = useRouter()
+  const fileInputRef = useRef<HTMLInputElement>(null)
   const [isEditing, setIsEditing] = useState(false)
+  const [profilePhoto, setProfilePhoto] = useState(user?.profilePhoto || "/placeholder-user.jpg")
   const [formData, setFormData] = useState({
     firstName: user?.firstName || "",
     lastName: user?.lastName || "",
@@ -34,6 +37,23 @@ export default function ProfilePage() {
     console.log("Saving profile:", formData)
     setIsEditing(false)
     // En un caso real, aquí actualizarías el usuario en el contexto
+  }
+
+  const handlePhotoEdit = () => {
+    fileInputRef.current?.click()
+  }
+
+  const handlePhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    
+    if (file && user) {
+      try {
+        const result = await uploadProfilePhoto(user.id, file)
+        setProfilePhoto(result)
+      } catch (error) {
+        console.error("Error al subir foto de perfil:", error)
+      }
+    }
   }
 
   const handleLogout = () => {
@@ -77,6 +97,31 @@ export default function ProfilePage() {
             </CardHeader>
             
             <CardContent className="space-y-6">
+              {/* Profile Photo Section */}
+              <div className="flex items-center justify-center pb-6">
+                <div className="relative">
+                  <img
+                    src={profilePhoto}
+                    alt="Profile Photo"
+                    className="w-32 h-32 rounded-full object-cover border-4 border-border"
+                  />
+                  <button
+                    onClick={handlePhotoEdit}
+                    className="absolute bottom-0 right-0 bg-primary text-primary-foreground rounded-full p-2 shadow-lg hover:bg-primary/90 transition-colors"
+                    title="Editar foto de perfil"
+                  >
+                    <Pencil className="h-4 w-4" />
+                  </button>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handlePhotoChange}
+                    className="hidden"
+                  />
+                </div>
+              </div>
+
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="firstName">Nombre</Label>

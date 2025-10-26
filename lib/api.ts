@@ -15,6 +15,7 @@ export interface Usuario {
   lastName: string
   email: string
   password: string
+  profilePhoto?: string
 }
 
 // User - GET (id)
@@ -149,4 +150,23 @@ export async function createPlace(collection: string, payload: PlaceCreatePayloa
   }
 
   return (await response.json()) as Place
+}
+
+// User - POST (upload profile photo) - Mocked
+export async function uploadProfilePhoto(userId: string, file: File): Promise<string> {
+  // Mock: Simular delay de subida
+  await new Promise(resolve => setTimeout(resolve, 500))
+  
+  // Mock: Convertir archivo a base64
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      const result = e.target?.result as string
+      console.log("Profile photo would be uploaded to backend for user:", userId)
+      // no se como se mandaria al backend
+      resolve(result)
+    }
+    reader.onerror = () => reject(new Error("Error al leer el archivo"))
+    reader.readAsDataURL(file)
+  })
 }
