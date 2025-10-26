@@ -5,6 +5,10 @@ const API_BASE_URL =
 
 const sanitizedBaseUrl = API_BASE_URL.replace(/\/$/, "")
 
+export const ACTIVIDADES = "activities"
+export const HOTELES = "hotels"
+export const RESTAURANTES = "restaurants"
+
 export interface Usuario {
   id: string
   firstName: string

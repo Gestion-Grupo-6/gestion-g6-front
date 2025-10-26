@@ -1,10 +1,10 @@
 import { Header } from "@/components/header"
 import { PlacesList } from "@/components/places-list"
 import { FilterSidebar } from "@/components/filter-sidebar"
-import { fetchPlaces } from "@/lib/api"
+import { fetchPlaces, RESTAURANTES } from "@/lib/api"
 
 export default async function RestaurantesPage() {
-  const restaurants = await fetchPlaces("restaurantes")
+  const restaurants = await fetchPlaces(RESTAURANTES)
 
   return (
     <div className="min-h-screen flex flex-col">

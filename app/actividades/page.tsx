@@ -1,10 +1,10 @@
 import { Header } from "@/components/header"
 import { PlacesList } from "@/components/places-list"
 import { FilterSidebar } from "@/components/filter-sidebar"
-import { fetchPlaces } from "@/lib/api"
+import { ACTIVIDADES, fetchPlaces } from "@/lib/api"
 
 export default async function ActividadesPage() {
-  const activities = await fetchPlaces("actividades")
+  const activities = await fetchPlaces(ACTIVIDADES)
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
