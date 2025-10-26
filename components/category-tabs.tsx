@@ -33,7 +33,7 @@ export function CategoryTabs() {
     <section className="py-12 border-b border-border">
       <div className="container mx-auto px-4">
         <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-8 text-center">¿Qué estás buscando?</h2>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
           {categories.map((category) => {
             const Icon = category.icon
             const isActive = pathname === category.href

@@ -20,7 +20,7 @@ export function FeaturedPlaces({ places }: FeaturedPlacesProps) {
         {places.length === 0 ? (
           <p className="text-muted-foreground">Aún no hay lugares destacados disponibles.</p>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {places.map((place) => {
               const mainImage = place.images?.[0] ?? "/placeholder.svg"
               const rating = (place.rating ?? 0).toFixed(1)
