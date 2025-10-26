@@ -154,8 +154,6 @@ export async function createPlace(collection: string, payload: PlaceCreatePayloa
 
 // User - POST (upload profile photo) - Mocked
 export async function uploadProfilePhoto(userId: string, file: File): Promise<string> {
-  // Mock: Simular delay de subida
-  await new Promise(resolve => setTimeout(resolve, 500))
   
   // Mock: Convertir archivo a base64
   return new Promise((resolve, reject) => {
