@@ -12,24 +12,24 @@ Aplicación Next.js que consume el backend de `gestion-g6-back` para listar y ad
 
 1. Clona el repositorio y entra a `gestion-g6-front`.
 2. Instala dependencias:
-   ```bash
+
    pnpm install
-   ```
+
 3. Si el backend no corre en `http://localhost:8080`, crea `.env.local`:
-   ```bash
+
    NEXT_PUBLIC_API_BASE_URL=http://tu-backend:8080
-   ```
+
 4. Arranca el servidor de desarrollo:
-   ```bash
+
    pnpm dev
-   ```
+
 5. Abre `http://localhost:3000`.
 
 ## Flujo principal
 
 - Los listados (`/hoteles`, `/restaurantes`, `/actividades`) y las páginas dinámicas (`/hotel/[id]`, etc.) consumen los endpoints REST del backend.
 - La home (`/`) muestra cuatro destacados tomados del backend.
-- La sección `/mis-negocios` permite **crear publicaciones**. Completa el formulario, elige la categoría y se enviará un `POST` al backend. Las tarjetas se refrescan tras guardar.
+- La sección `/mis-publicaciones` permite **crear publicaciones**. Completa el formulario, elige la categoría y se enviará un `POST` al backend. Las tarjetas se refrescan tras guardar.
 
 > Para tener datos base, ejecuta el seed del backend:  
 > `mongosh "mongodb://localhost:27017/gestion" scripts/seed-places.js`
@@ -43,5 +43,5 @@ Aplicación Next.js que consume el backend de `gestion-g6-back` para listar y ad
 
 ## Notas
 
-- Asegúrate de tener el backend levantado antes de usar `/mis-negocios` o los listados.
+- Asegúrate de tener el backend levantado antes de usar `/mis-publicaciones` o los listados.
 - Las imágenes se sirven desde `/public`; si agregas nuevas rutas de imagen, súbelas allí.
