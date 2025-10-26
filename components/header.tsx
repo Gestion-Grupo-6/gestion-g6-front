@@ -44,9 +44,9 @@ export function Header() {
             {isAuthenticated ? (
               <>
                 <Button variant="ghost" size="sm" asChild>
-                  <Link href="/mis-negocios">
+                  <Link href="/mis-publicaciones">
                     <Building2 className="h-4 w-4 mr-2" />
-                    Mis negocios
+                    Mis publicaciones
                   </Link>
                 </Button>
                 <Button variant="ghost" size="sm" asChild>
@@ -107,9 +107,9 @@ export function Header() {
                 {isAuthenticated ? (
                   <>
                     <Button variant="ghost" size="sm" className="w-full" asChild>
-                      <Link href="/mis-negocios">
+                      <Link href="/mis-publicaciones">
                         <Building2 className="h-4 w-4 mr-2" />
-                        Mis negocios
+                        Mis publicaciones
                       </Link>
                     </Button>
                     <Button variant="ghost" size="sm" className="w-full" asChild>

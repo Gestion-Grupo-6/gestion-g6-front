@@ -11,13 +11,13 @@ import { Separator } from "@/components/ui/separator"
 import { Badge } from "@/components/ui/badge"
 import { MapPin, Phone, Mail, Globe, Loader2, Plus, Building2 } from "lucide-react"
 import { useAuth } from "@/contexts/AuthContext"
-import { createPlace, fetchPlaces } from "@/lib/api"
+import { ACTIVIDADES, createPlace, fetchPlaces, HOTELES, RESTAURANTES } from "@/lib/api"
 import type { Place } from "@/types/place"
 
 const CATEGORY_OPTIONS = [
-  { value: "hoteles", label: "Hoteles" },
-  { value: "restaurantes", label: "Restaurantes" },
-  { value: "actividades", label: "Actividades" },
+  { value: HOTELES, label: "Hoteles" },
+  { value: RESTAURANTES, label: "Restaurantes" },
+  { value: ACTIVIDADES, label: "Actividades" },
 ] as const
 
 type CategoryValue = (typeof CATEGORY_OPTIONS)[number]["value"]
@@ -45,9 +45,9 @@ const INITIAL_FORM = {
   howToGet: "",
 }
 
-export default function MisNegociosPage() {
+export default function MisPublicacionesPage() {
   const { isAuthenticated } = useAuth()
-  const [selectedCategory, setSelectedCategory] = useState<CategoryValue>("hoteles")
+  const [selectedCategory, setSelectedCategory] = useState<CategoryValue>(HOTELES)
   const [places, setPlaces] = useState<Place[]>([])
   const [loading, setLoading] = useState(false)
   const [submitting, setSubmitting] = useState(false)
