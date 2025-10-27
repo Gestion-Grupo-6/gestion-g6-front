@@ -15,6 +15,21 @@ export interface Usuario {
   lastName: string
   email: string
   password: string
+  profilePhoto?: string
+}
+
+// Helper para mapear la respuesta del backend a la interfaz Usuario
+// El backend usa: name, lastname
+// El frontend usa: firstName, lastName
+function mapBackendUserToUsuario(data: any): Usuario {
+  return {
+    id: data.id,
+    firstName: data.name,
+    lastName: data.lastname,
+    email: data.email,
+    password: data.password,
+    profilePhoto: data.profilePhoto
+  }
 }
 
 // User - GET (id)
@@ -31,7 +46,8 @@ export async function fetchUser(id: string): Promise<Usuario | null> {
     throw new Error(`Error al consultar users/${id}: ${response.status} ${response.statusText}`)
   }
 
-  return (await response.json()) as Usuario
+  const data = await response.json()
+  return mapBackendUserToUsuario(data)
 }
 
 // User - GET (email)
@@ -48,14 +64,13 @@ export async function fetchUserByEmail(email: string): Promise<Usuario | null> {
     throw new Error(`Error al consultar users?email=${email}: ${response.status} ${response.statusText}`)
   }
 
-  return (await response.json()) as Usuario
+  const data = await response.json()
+  return mapBackendUserToUsuario(data)
 }
 
 // POST - create user
-export async function createUser(payload: Omit<Usuario, "id">): Promise<Usuario> {
-  
-  console.log("Creating user with payload:", payload)
-
+// El backend espera: name, lastname, email, password
+export async function createUser(payload: { name: string; lastname: string; email: string; password: string }): Promise<Usuario> {
   const response = await fetch(`${sanitizedBaseUrl}/user`, {
     method: "POST",
     headers: {
@@ -68,7 +83,9 @@ export async function createUser(payload: Omit<Usuario, "id">): Promise<Usuario>
     const fallback = await response.text()
     throw new Error(`No se pudo crear el usuario: ${response.status} ${response.statusText}. ${fallback}`)
   }
-  return (await response.json()) as Usuario
+  
+  const data = await response.json()
+  return mapBackendUserToUsuario(data)
 }
 
 export interface PlaceCreatePayload {
@@ -149,4 +166,21 @@ export async function createPlace(collection: string, payload: PlaceCreatePayloa
   }
 
   return (await response.json()) as Place
+}
+
+// User - POST (upload profile photo) - Mocked
+export async function uploadProfilePhoto(userId: string, file: File): Promise<string> {
+  
+  // Mock: Convertir archivo a base64
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      const result = e.target?.result as string
+      console.log("Profile photo would be uploaded to backend for user:", userId)
+      // no se como se mandaria al backend
+      resolve(result)
+    }
+    reader.onerror = () => reject(new Error("Error al leer el archivo"))
+    reader.readAsDataURL(file)
+  })
 }

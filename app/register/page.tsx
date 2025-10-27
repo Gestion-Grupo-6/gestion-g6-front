@@ -55,16 +55,15 @@ export default function RegisterPage() {
     try {
       console.log("Register attempt:", formData)
       
-      const newUser: Omit<Usuario, "id"> = {
-        firstName: formData.firstName,
-        lastName: formData.lastName,
+      // Mapear a los campos que espera el backend
+      const payload = {
+        name: formData.firstName,
+        lastname: formData.lastName,
         email: formData.email,
         password: formData.password,
-        // phone: formData.phone,
-        // address: formData.address
       }
 
-      var response = await createUser(newUser)
+      var response = await createUser(payload)
 
       if (!response) {
         setError("No se pudo crear la cuenta. Inténtalo de nuevo.")
