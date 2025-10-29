@@ -4,6 +4,7 @@ import { sanitizedBaseUrl } from "./config"
 export const ACTIVIDADES = "activities"
 export const HOTELES = "hotels"
 export const RESTAURANTES = "restaurants"
+export const RESTAURANT = "restaurant"
 
 
 // Place - GET (id)

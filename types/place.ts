@@ -4,6 +4,7 @@ export interface Place {
   category: string
   location: string
   rating: number | null
+  ratings?: Record<string, number> | null
   reviews: number | null
   price: number | null
   priceLabel: string | null

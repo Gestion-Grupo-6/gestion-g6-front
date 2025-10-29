@@ -1,10 +1,16 @@
 import { Header } from "@/components/header"
 import { PlacesList } from "@/components/places-list"
 import { FilterSidebar } from "@/components/filter-sidebar"
-import { fetchPlaces, RESTAURANTES } from "@/api/place"
+import { fetchPlaces, fetchPlace, RESTAURANTES, RESTAURANT } from "@/api/place"
 
 export default async function RestaurantesPage() {
-  const restaurants = await fetchPlaces(RESTAURANTES)
+  const rest_summaries = await fetchPlaces(RESTAURANTES)
+
+  // Fetch full detail for each restaurant (parallel)
+  const detailed = await Promise.all(rest_summaries.map((s) => fetchPlace(RESTAURANT, s.id)))
+  // filter out any nulls (404s)
+ 
+  const restaurants = detailed.filter((r): r is NonNullable<typeof r> => r !== null)
 
   return (
     <div className="min-h-screen flex flex-col">

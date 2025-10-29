@@ -30,4 +30,5 @@ export default async function HotelesPage() {
       </main>
     </div>
   )
+
 }
