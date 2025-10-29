@@ -17,7 +17,7 @@ export function Header() {
       <div className="container mx-auto px-4">
         <div className="flex h-16 items-center justify-between">
           <Link href="/" className="flex items-center">
-            <Image src="/tango-logo.png" alt="TanGo" width={120} height={40} className="h-10 w-auto" priority />
+            <Image src="/tango-logo.png" alt="TanGo" width={120} height={40} className="h-10 w-auto"priority />
           </Link>
 
           {/* Desktop Navigation */}

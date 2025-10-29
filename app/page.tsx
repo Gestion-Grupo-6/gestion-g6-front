@@ -2,9 +2,9 @@ import { Header } from "@/components/header"
 import { HeroSection } from "@/components/hero-section"
 import { CategoryTabs } from "@/components/category-tabs"
 import { FeaturedPlaces } from "@/components/featured-places"
-import { ACTIVIDADES, fetchPlaces, HOTELES, RESTAURANTES, } from "@/lib/api"
 import type { Place } from "@/types/place"
 import { Footer } from "@/components/footer"
+import { ACTIVIDADES, fetchPlaces, HOTELES, RESTAURANTES } from "@/api/place"
 
 export default async function HomePage() {
   const [hotels, restaurants, activities] = await Promise.all([

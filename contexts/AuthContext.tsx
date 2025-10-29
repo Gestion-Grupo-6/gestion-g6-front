@@ -1,7 +1,8 @@
 "use client"
 
+import { fetchUserByEmail } from "@/api/user"
+import { Usuario } from "@/types/user"
 import { createContext, useContext, useState, useEffect, ReactNode } from "react"
-import { Usuario, fetchUserByEmail } from "@/lib/api"
 
 interface AuthContextType {
   user: Usuario | null

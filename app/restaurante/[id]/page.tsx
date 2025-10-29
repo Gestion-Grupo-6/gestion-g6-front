@@ -1,6 +1,6 @@
+import { fetchPlace, RESTAURANTES } from "@/api/place"
 import { Header } from "@/components/header"
 import { PlaceDetail } from "@/components/place-detail"
-import { fetchPlace, RESTAURANTES } from "@/lib/api"
 import { notFound } from "next/navigation"
 
 type PageProps = {

@@ -1,7 +1,7 @@
 import { Header } from "@/components/header"
 import { PlacesList } from "@/components/places-list"
 import { FilterSidebar } from "@/components/filter-sidebar"
-import { fetchPlaces, HOTELES } from "@/lib/api"
+import { fetchPlaces, HOTELES } from "@/api/place"
 
 export default async function HotelesPage() {
   const hotels = await fetchPlaces(HOTELES)

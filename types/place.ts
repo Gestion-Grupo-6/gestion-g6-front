@@ -22,3 +22,27 @@ export interface Place {
   bestTime?: string | null
   howToGet?: string | null
 }
+
+
+export interface PlaceCreatePayload {
+  name: string
+  location: string
+  rating: number
+  reviews: number
+  price: number
+  priceLabel: string
+  images: string[]
+  description: string
+  amenities: string[]
+  address: string
+  phone: string
+  email: string
+  website: string
+  checkIn?: string | null
+  checkOut?: string | null
+  hours?: string | null
+  duration?: string | null
+  includes?: string | null
+  bestTime?: string | null
+  howToGet?: string | null
+}

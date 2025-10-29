@@ -9,7 +9,7 @@ export function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           <div>
             <Link href="/" className="flex items-center mb-4">
-              <Image src="/tango-logo.png" alt="TanGo" width={120} height={40} className="h-10 w-auto" />
+              <Image src="/tango-logo.png" alt="TanGo" width={120} height={40} className="h-10 w-auto" priority />
             </Link>
             <p className="text-sm text-muted-foreground">
               Tu compañero de viaje para descubrir los mejores destinos del mundo.

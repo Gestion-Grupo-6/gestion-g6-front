@@ -1,7 +1,7 @@
 import { Header } from "@/components/header"
 import { PlacesList } from "@/components/places-list"
 import { FilterSidebar } from "@/components/filter-sidebar"
-import { fetchPlaces, RESTAURANTES } from "@/lib/api"
+import { fetchPlaces, RESTAURANTES } from "@/api/place"
 
 export default async function RestaurantesPage() {
   const restaurants = await fetchPlaces(RESTAURANTES)

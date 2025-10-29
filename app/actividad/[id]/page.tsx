@@ -1,6 +1,6 @@
+import { ACTIVIDADES, fetchPlace } from "@/api/place"
 import { Header } from "@/components/header"
 import { PlaceDetail } from "@/components/place-detail"
-import { fetchPlace, ACTIVIDADES } from "@/lib/api"
 import { notFound } from "next/navigation"
 
 type PageProps = {

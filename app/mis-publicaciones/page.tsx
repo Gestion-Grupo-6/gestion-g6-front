@@ -11,8 +11,8 @@ import { Separator } from "@/components/ui/separator"
 import { Badge } from "@/components/ui/badge"
 import { MapPin, Phone, Mail, Globe, Loader2, Plus, Building2 } from "lucide-react"
 import { useAuth } from "@/contexts/AuthContext"
-import { ACTIVIDADES, createPlace, fetchPlaces, HOTELES, RESTAURANTES } from "@/lib/api"
 import type { Place } from "@/types/place"
+import { ACTIVIDADES, createPlace, fetchPlaces, HOTELES, RESTAURANTES } from "@/api/place"
 
 const CATEGORY_OPTIONS = [
   { value: HOTELES, label: "Hoteles" },

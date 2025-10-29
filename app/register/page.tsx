@@ -9,7 +9,8 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Header } from "@/components/header"
 import { Eye, EyeOff, Mail, Lock, User, Phone, MapPin } from "lucide-react"
-import { createUser, Usuario } from "@/lib/api"
+import { createUser } from "@/api/user"
+
 
 export default function RegisterPage() {
   const [formData, setFormData] = useState({
