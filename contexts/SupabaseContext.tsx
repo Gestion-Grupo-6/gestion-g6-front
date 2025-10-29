@@ -17,19 +17,20 @@ Object.entries(env).forEach(([key, value]) => {
 export const supabase = createClient(env.url!, env.anon!)
 
 
-export function getImage(path: string) {
-    try {
-        var { data } = supabase.storage
-            .from(env.bucket!)
-            .getPublicUrl(path)
+export function getImage(path: string | undefined | null) {
+  if (!path) return "/placeholder.svg"
 
-        return data.publicUrl
-    } catch (error) {
-        console.error('Error getting public URL:', error)
-        return null
-    }
+  try {
+    const { data } = supabase.storage
+      .from(env.bucket!)
+      .getPublicUrl(path)
+
+    return data?.publicUrl || "/placeholder.svg"
+  } catch (error) {
+    console.error("Unexpected error getting public URL:", error)
+    return "/placeholder.svg"
+  }
 }
-
 export async function uploadImage(path: string, file: File) {
     if (!file) {
         return

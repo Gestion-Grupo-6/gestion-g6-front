@@ -20,7 +20,7 @@ export function PlacesList({ places }: PlacesListProps) {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {places.map((place) => {
-          const mainImage = getImage(place.images?.[0]) ?? "/placeholder.svg"
+          const mainImage = getImage(place.images?.[0])
           const displayedAmenities = (place.amenities ?? []).slice(0, 3)
           const extraAmenities =
             place.amenities && place.amenities.length > 3 ? place.amenities.length - 3 : 0
