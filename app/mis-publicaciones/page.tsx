@@ -12,7 +12,7 @@ import { Badge } from "@/components/ui/badge"
 import { MapPin, Phone, Mail, Globe, Loader2, Plus, Building2, MoreVertical, Star, Edit, Trash2 } from "lucide-react"
 import { useAuth } from "@/contexts/AuthContext"
 import type { Place } from "@/types/place"
-import { ACTIVIDADES, createPlace, fetchPlacesByOwner, HOTELES, RESTAURANTES } from "@/api/place"
+import { ACTIVIDADES, createPlace, fetchPlace, fetchPlacesByOwner, HOTELES, RESTAURANTES, updatePlace } from "@/api/place"
 
 const CATEGORY_OPTIONS = [
   { value: HOTELES, label: "Hoteles" },
@@ -59,6 +59,7 @@ export default function MisPublicacionesPage() {
   const [loading, setLoading] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [showForm, setShowForm] = useState(false)
+  const [editingId, setEditingId] = useState<string | null>(null)
   const [formData, setFormData] = useState(INITIAL_FORM)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
@@ -130,6 +131,7 @@ export default function MisPublicacionesPage() {
   const resetForm = () => {
     setFormData(INITIAL_FORM)
     setShowForm(false)
+    setEditingId(null)
   }
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -189,15 +191,19 @@ export default function MisPublicacionesPage() {
         website: formData.website.trim(),
       }
 
-      await createPlace(collectionForPost, payload)
+      if (editingId) {
+        await updatePlace(collectionForPost, editingId, payload)
+      } else {
+        await createPlace(collectionForPost, payload)
+      }
       const updatedPlaces = await fetchPlacesByOwner(user.id)
       setAllPlaces(updatedPlaces)
 
       resetForm()
-      setSuccessMessage("Publicación creada correctamente.")
+      setSuccessMessage(editingId ? "Publicación actualizada correctamente." : "Publicación creada correctamente.")
     } catch (error) {
       console.error(error)
-      setErrorMessage("No se pudo crear la publicación. Revisa los datos e intenta nuevamente.")
+      setErrorMessage(editingId ? "No se pudo actualizar la publicación. Intenta nuevamente." : "No se pudo crear la publicación. Revisa los datos e intenta nuevamente.")
     } finally {
       setSubmitting(false)
     }
@@ -266,7 +272,7 @@ export default function MisPublicacionesPage() {
           {showForm && (
             <Card>
               <CardHeader>
-                <CardTitle>Agregar {createSingularLabel}</CardTitle>
+                <CardTitle>{editingId ? `Editar ${createSingularLabel}` : `Agregar ${createSingularLabel}`}</CardTitle>
                 <CardDescription>
                   Completa la información necesaria. Los campos marcados con * son obligatorios.
                 </CardDescription>
@@ -418,7 +424,7 @@ export default function MisPublicacionesPage() {
                   <div className="flex flex-wrap gap-3">
                     <Button type="submit" disabled={submitting}>
                       {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                      Crear publicación
+                      {editingId ? "Guardar" : "Crear publicación"}
                     </Button>
                     <Button type="button" variant="outline" onClick={resetForm} disabled={submitting}>
                       Cancelar
@@ -500,9 +506,37 @@ export default function MisPublicacionesPage() {
                                     <Button
                                       variant="ghost"
                                       className="w-full justify-start px-4 py-2 text-sm"
-                                      onClick={() => {
-                                        // TODO: Implementar edición
+                                      onClick={async () => {
                                         setOpenMenuId(null)
+                                        try {
+                                          const rawType = ((place as any).type as string | undefined) ?? ((place as any).category as string | undefined)
+                                          const t = String(rawType || '').toUpperCase()
+                                          const collection: CategoryValue = t === 'HOTEL' ? HOTELES : t === 'RESTAURANT' ? RESTAURANTES : ACTIVIDADES
+                                          const full = await fetchPlace(collection, place.id)
+                                          if (!full) return
+                                          const categoryForForm = collection === HOTELES ? 'hotel' : collection === RESTAURANTES ? 'restaurante' : 'actividad'
+                                          setFormData({
+                                            name: full.name || "",
+                                            description: full.description || "",
+                                            category: categoryForForm,
+                                            address: full.address || "",
+                                            city: (full as any).city || "",
+                                            country: (full as any).country || "",
+                                            phone: full.phone || "",
+                                            email: full.email || "",
+                                            website: full.website || "",
+                                            price: String(full.price ?? ""),
+                                            priceCategory: (full.priceCategory as any) || "$$",
+                                            images: Array.isArray(full.images) ? full.images.join("\n") : "",
+                                            attributes: Array.isArray((full as any).amenities) ? (full as any).amenities.join("\n") : "",
+                                          })
+                                          setEditingId(place.id)
+                                          setShowForm(true)
+                                          window.scrollTo({ top: 0, behavior: 'smooth' })
+                                        } catch (e) {
+                                          // eslint-disable-next-line no-console
+                                          console.error(e)
+                                        }
                                       }}
                                     >
                                       <Edit className="h-4 w-4 mr-2" />
