@@ -2,11 +2,13 @@ export interface Place {
   id: string
   name: string
   category: string
+  type?: string | null
   location: string
   rating: number | null
   reviews: number | null
   price: number | null
   priceLabel: string | null
+  priceCategory?: string | null
   images: string[]
   description: string
   amenities: string[]
@@ -14,8 +16,6 @@ export interface Place {
   phone: string | null
   email: string | null
   website: string | null
-  checkIn?: string | null
-  checkOut?: string | null
   hours?: string | null
   duration?: string | null
   includes?: string | null
@@ -26,23 +26,17 @@ export interface Place {
 
 export interface PlaceCreatePayload {
   name: string
-  location: string
-  rating: number
-  reviews: number
+  ownerId?: string
+  category: string
   price: number
-  priceLabel: string
+  priceCategory?: string
   images: string[]
   description: string
-  amenities: string[]
+  attributes: string[]
   address: string
+  city: string
+  country: string
   phone: string
   email: string
   website: string
-  checkIn?: string | null
-  checkOut?: string | null
-  hours?: string | null
-  duration?: string | null
-  includes?: string | null
-  bestTime?: string | null
-  howToGet?: string | null
 }
