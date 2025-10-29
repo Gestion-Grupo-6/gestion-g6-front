@@ -8,10 +8,12 @@ export default async function RestaurantesPage() {
 
   // Fetch full detail for each restaurant (parallel)
   const detailed = await Promise.all(rest_summaries.map((s) => fetchPlace(RESTAURANT, s.id)))
-  
+
+
   // filtro los nulls
   const restaurants = detailed.filter((r): r is NonNullable<typeof r> => r !== null)
 
+  
   return (
     <div className="min-h-screen flex flex-col">
       <Header />

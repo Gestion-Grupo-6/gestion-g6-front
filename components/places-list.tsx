@@ -52,7 +52,8 @@ export function PlacesList({ places }: PlacesListProps) {
 
                     <div className="flex items-center gap-1 text-sm text-muted-foreground mb-3">
                       <MapPin className="h-4 w-4 flex-shrink-0" />
-                      <span className="truncate">{place.location}</span>
+                      <span className="truncate">{place.address}</span>
+                      
                     </div>
 
                     <div className="flex flex-wrap gap-2 mb-3">

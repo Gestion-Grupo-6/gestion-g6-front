@@ -8,7 +8,7 @@ interface PlaceCardProps {
   id: string
   name: string
   category: string
-  location: string
+  address: string
   rating: number
   reviewCount: number
   image: string
@@ -20,7 +20,7 @@ export function PlaceCard({
   id,
   name,
   category,
-  location,
+  address,
   rating,
   reviewCount,
   image,
@@ -59,7 +59,7 @@ export function PlaceCard({
 
           <div className="flex items-center gap-1 text-sm text-muted-foreground mb-3">
             <MapPin className="h-4 w-4" />
-            <span className="line-clamp-1">{location}</span>
+            <span className="line-clamp-1">{address}</span>
           </div>
 
           <p className="text-sm text-muted-foreground line-clamp-2">{description}</p>
