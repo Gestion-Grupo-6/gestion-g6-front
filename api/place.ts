@@ -2,7 +2,9 @@ import type { Place, PlaceCreatePayload } from "@/types/place"
 import { sanitizedBaseUrl } from "./config"
 
 export const ACTIVIDADES = "activities"
+export const ACTIVIDAD = "activity"
 export const HOTELES = "hotels"
+export const HOTEL = "hotel"
 export const RESTAURANTES = "restaurants"
 export const RESTAURANT = "restaurant"
 

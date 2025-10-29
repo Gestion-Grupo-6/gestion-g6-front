@@ -1,10 +1,14 @@
 import { Header } from "@/components/header"
 import { PlacesList } from "@/components/places-list"
 import { FilterSidebar } from "@/components/filter-sidebar"
-import { fetchPlaces, HOTELES } from "@/api/place"
+import { fetchPlaces, fetchPlace, HOTELES, HOTEL } from "@/api/place"
 
 export default async function HotelesPage() {
-  const hotels = await fetchPlaces(HOTELES)
+  const hotels_summaries = await fetchPlaces(HOTELES)
+
+  const detailed = await Promise.all(hotels_summaries.map((s) => fetchPlace(HOTEL, s.id)))
+
+  const hotels = detailed.filter((r): r is NonNullable<typeof r> => r !== null)
 
   return (
     <div className="min-h-screen flex flex-col">
