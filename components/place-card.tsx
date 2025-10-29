@@ -4,6 +4,11 @@ import { Star, MapPin } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 
+function truncate(text: string, maxLength: number) {
+  if (!text) return "";
+  return text.length > maxLength ? text.slice(0, maxLength) + "..." : text;
+}
+
 interface PlaceCardProps {
   id: string
   name: string
@@ -59,12 +64,16 @@ export function PlaceCard({
 
           <div className="flex items-center gap-1 text-sm text-muted-foreground mb-3">
             <MapPin className="h-4 w-4" />
-            <span className="line-clamp-1">{address}</span>
+            <span>{truncate(address, 10)}</span>
           </div>
 
-          <p className="text-sm text-muted-foreground line-clamp-2">{description}</p>
+          <p className="text-sm text-muted-foreground line-clamp-2">
+            {truncate(description, 10)}
+          </p>
         </CardContent>
       </Card>
     </Link>
   )
 }
+
+

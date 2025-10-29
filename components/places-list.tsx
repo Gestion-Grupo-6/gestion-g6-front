@@ -47,12 +47,12 @@ export function PlacesList({ places }: PlacesListProps) {
                         {place.category}
                       </Badge>
                     </div>
-
-                    <p className="text-sm text-muted-foreground mb-3 line-clamp-2">{place.description}</p>
+                    
+                    <p className="text-sm text-muted-foreground mb-3 line-clamp-2">{truncate(place.description, 80)}</p>
 
                     <div className="flex items-center gap-1 text-sm text-muted-foreground mb-3">
                       <MapPin className="h-4 w-4 flex-shrink-0" />
-                      <span className="truncate">{place.address}</span>
+                      <span className="truncate">{truncate(place.address, 25)}</span>
                       
                     </div>
 
@@ -86,4 +86,9 @@ export function PlacesList({ places }: PlacesListProps) {
       </div>
     </div>
   )
+}
+
+function truncate(text: string, maxLength: number) {
+  if (!text) return "";
+  return text.length > maxLength ? text.slice(0, maxLength) + "..." : text;
 }

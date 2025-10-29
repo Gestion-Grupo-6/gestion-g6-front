@@ -11,7 +11,7 @@ export interface Place {
   images: string[]
   description: string
   amenities: string[]
-  address: string | null
+  address: string 
   phone: string | null
   email: string | null
   website: string | null
