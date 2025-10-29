@@ -1,10 +1,17 @@
 import { Header } from "@/components/header"
 import { PlacesList } from "@/components/places-list"
 import { FilterSidebar } from "@/components/filter-sidebar"
-import { ACTIVIDADES, fetchPlaces } from "@/api/place"
+import { ACTIVIDAD, ACTIVIDADES, fetchPlaces, fetchPlace } from "@/api/place"
 
 export default async function ActividadesPage() {
-  const activities = await fetchPlaces(ACTIVIDADES)
+  
+  const activities_summaries = await fetchPlaces(ACTIVIDADES)
+
+  const detailed = await Promise.all(activities_summaries.map((s) => fetchPlace(ACTIVIDAD, s.id)))
+
+  const activities = detailed.filter((r): r is NonNullable<typeof r> => r !== null)
+
+
   return (
     <div className="min-h-screen flex flex-col">
       <Header />

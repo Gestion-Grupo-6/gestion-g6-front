@@ -8,8 +8,8 @@ export default async function RestaurantesPage() {
 
   // Fetch full detail for each restaurant (parallel)
   const detailed = await Promise.all(rest_summaries.map((s) => fetchPlace(RESTAURANT, s.id)))
-  // filter out any nulls (404s)
- 
+  
+  // filtro los nulls
   const restaurants = detailed.filter((r): r is NonNullable<typeof r> => r !== null)
 
   return (
