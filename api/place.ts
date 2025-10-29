@@ -5,10 +5,26 @@ export const ACTIVIDADES = "actividad"
 export const HOTELES = "hotel"
 export const RESTAURANTES = "restaurante"
 
+// Backend path helpers
+function listPathFor(category: string): string {
+  if (category === HOTELES) return "hotels"
+  if (category === RESTAURANTES) return "restaurants"
+  if (category === ACTIVIDADES) return "activities"
+  return category
+}
+
+function detailPathFor(category: string): string {
+  if (category === HOTELES) return "hotel"
+  if (category === RESTAURANTES) return "restaurant"
+  if (category === ACTIVIDADES) return "activity"
+  return category
+}
+
 
 // Place - GET (id)
 export async function fetchPlace(collection: string, id: string): Promise<Place | null> {
-  const response = await fetch(`${sanitizedBaseUrl}/${collection}/${id}`, {
+  const path = detailPathFor(collection)
+  const response = await fetch(`${sanitizedBaseUrl}/${path}/${id}`, {
     cache: "no-store",
   })
 
@@ -28,7 +44,7 @@ export async function fetchPlaces(
   collection: string,
   options?: { limit?: number; ownerId?: string },
 ): Promise<Place[]> {
-  const url = new URL(`${sanitizedBaseUrl}/${collection}`)
+  const url = new URL(`${sanitizedBaseUrl}/${listPathFor(collection)}`)
 
   if (options?.limit && options.limit > 0) {
     url.searchParams.set("limit", String(options.limit))
@@ -51,14 +67,7 @@ export async function fetchPlaces(
 
 // Place - POST (create)
 export async function createPlace(collection: string, payload: PlaceCreatePayload): Promise<Place> {
-  const postPath =
-    collection === HOTELES
-      ? "hotel"
-      : collection === RESTAURANTES
-      ? "restaurant"
-      : collection === ACTIVIDADES
-      ? "activity"
-      : collection.replace(/s$/, "")
+  const postPath = detailPathFor(collection)
 
   const response = await fetch(`${sanitizedBaseUrl}/${postPath}`, {
     method: "POST",
