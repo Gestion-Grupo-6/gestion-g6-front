@@ -9,7 +9,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Header } from "@/components/header"
 import { User, Mail, Phone, MapPin, Save, LogOut, Pencil } from "lucide-react"
 import { useAuth } from "@/contexts/AuthContext"
-import { uploadProfilePhoto } from "@/lib/api"
+import { updateUser, uploadProfilePhoto } from "@/api/user"
+import { Usuario } from "@/types/user"
+
 
 export default function ProfilePage() {
   const { user, logout } = useAuth()
@@ -18,8 +20,8 @@ export default function ProfilePage() {
   const [isEditing, setIsEditing] = useState(false)
   const [profilePhoto, setProfilePhoto] = useState(user?.profilePhoto || "/placeholder-user.jpg")
   const [formData, setFormData] = useState({
-    firstName: user?.firstName || "",
-    lastName: user?.lastName || "",
+    firstName: user?.name || "",
+    lastName: user?.lastname || "",
     email: user?.email || "",
     // phone: user?.phone || "",
     // address: user?.address || ""
@@ -33,10 +35,19 @@ export default function ProfilePage() {
   }
 
   const handleSave = () => {
-    // Aquí iría la lógica para guardar los cambios
-    console.log("Saving profile:", formData)
+    console.log("Saving profile:", user?.id, formData)
+    var userToUpdate = user as Usuario
+    userToUpdate.id = user?.id as string
+    userToUpdate.name = formData.firstName
+    userToUpdate.lastname = formData.lastName
+    userToUpdate.email = formData.email
+    userToUpdate.password = user?.password as string
+    // userToUpdate.profilePhoto = profilePhoto
+    // userToUpdate.phone = formData.phone
+    // userToUpdate.address = formData.address
+    updateUser(userToUpdate)
     setIsEditing(false)
-    // En un caso real, aquí actualizarías el usuario en el contexto
+    
   }
 
   const handlePhotoEdit = () => {
