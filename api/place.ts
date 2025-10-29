@@ -1,9 +1,9 @@
 import type { Place, PlaceCreatePayload } from "@/types/place"
 import { sanitizedBaseUrl } from "./config"
 
-export const ACTIVIDADES = "activities"
-export const HOTELES = "hotels"
-export const RESTAURANTES = "restaurants"
+export const ACTIVIDADES = "actividad"
+export const HOTELES = "hotel"
+export const RESTAURANTES = "restaurante"
 
 
 // Place - GET (id)
@@ -26,12 +26,16 @@ export async function fetchPlace(collection: string, id: string): Promise<Place 
 // Place - GET (list)
 export async function fetchPlaces(
   collection: string,
-  options?: { limit?: number },
+  options?: { limit?: number; ownerId?: string },
 ): Promise<Place[]> {
   const url = new URL(`${sanitizedBaseUrl}/${collection}`)
 
   if (options?.limit && options.limit > 0) {
     url.searchParams.set("limit", String(options.limit))
+  }
+
+  if (options?.ownerId) {
+    url.searchParams.set("ownerId", options.ownerId)
   }
 
   const response = await fetch(url, {
@@ -47,7 +51,16 @@ export async function fetchPlaces(
 
 // Place - POST (create)
 export async function createPlace(collection: string, payload: PlaceCreatePayload): Promise<Place> {
-  const response = await fetch(`${sanitizedBaseUrl}/${collection}`, {
+  const postPath =
+    collection === HOTELES
+      ? "hotel"
+      : collection === RESTAURANTES
+      ? "restaurant"
+      : collection === ACTIVIDADES
+      ? "activity"
+      : collection.replace(/s$/, "")
+
+  const response = await fetch(`${sanitizedBaseUrl}/${postPath}`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -61,4 +74,21 @@ export async function createPlace(collection: string, payload: PlaceCreatePayloa
   }
 
   return (await response.json()) as Place
+}
+
+// Place - GET by owner (all categories)
+export async function fetchPlacesByOwner(ownerId: string): Promise<Place[]> {
+  const response = await fetch(`${sanitizedBaseUrl}/posts/owner/${ownerId}`, {
+    cache: "no-store",
+  })
+
+  if (!response.ok) {
+    throw new Error(`Error al consultar posts del owner ${ownerId}: ${response.status} ${response.statusText}`)
+  }
+  const data = (await response.json()) as Place[]
+  try {
+    // eslint-disable-next-line no-console
+    console.log("fetchPlacesByOwner response:", data)
+  } catch {}
+  return data
 }
