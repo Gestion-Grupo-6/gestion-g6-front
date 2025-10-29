@@ -9,13 +9,14 @@ import { Separator } from "@/components/ui/separator"
 import Link from "next/link"
 import { ReviewsSection } from "@/components/reviews-section"
 import type { Place } from "@/types/place"
+import { getImage } from "@/contexts/SupabaseContext"
 
 interface PlaceDetailProps {
   place: Place
 }
 
 export function PlaceDetail({ place }: PlaceDetailProps) {
-  const images = place.images && place.images.length > 0 ? place.images : ["/placeholder.svg"]
+  const images = place.images && place.images.length > 0 ? place.images.map(getImage) : ["/placeholder.svg"]
   const amenities = place.amenities && place.amenities.length > 0 ? place.amenities : []
   const rating = place.rating ?? 0
   const reviewCount = place.reviews ?? 0
