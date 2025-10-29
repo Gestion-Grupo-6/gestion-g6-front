@@ -19,7 +19,7 @@ export default function MilongIA() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    if (inputValue.trim() && status !== "in_progress") {
+    if (inputValue.trim() && (status as any) !== "in_progress") {
       sendMessage({ text: inputValue })
       setInputValue("")
     }
@@ -111,7 +111,7 @@ export default function MilongIA() {
                     </div>
                   </div>
                 ))}
-                {status === "in_progress" && (
+                {(status as any) === "in_progress" && (
                   <div className="flex justify-start">
                     <div className="bg-muted rounded-lg px-4 py-3">
                       <div className="flex gap-1">
@@ -143,9 +143,9 @@ export default function MilongIA() {
               onChange={(e) => setInputValue(e.target.value)}
               placeholder="Escribe tu pregunta o preferencias..."
               className="flex-1 px-4 py-3 rounded-lg border border-input bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-              disabled={status === "in_progress"}
+              disabled={(status as any) === "in_progress"}
             />
-            <Button type="submit" size="lg" disabled={status === "in_progress" || !inputValue.trim()} className="px-6">
+            <Button type="submit" size="lg" disabled={(status as any) === "in_progress" || !inputValue.trim()} className="px-6">
               <Send className="w-5 h-5" />
             </Button>
           </form>
