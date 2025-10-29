@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useRef } from "react"
+import { toast } from "sonner"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -19,6 +20,7 @@ export default function ProfilePage() {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [isEditing, setIsEditing] = useState(false)
   const [profilePhoto, setProfilePhoto] = useState(user?.profilePhoto || "/placeholder-user.jpg")
+  const [pendingPhotoFile, setPendingPhotoFile] = useState<File | null>(null)
   const [formData, setFormData] = useState({
     firstName: user?.name || "",
     lastName: user?.lastname || "",
@@ -34,36 +36,43 @@ export default function ProfilePage() {
     })
   }
 
-  const handleSave = () => {
-    console.log("Saving profile:", user?.id, formData)
-    var userToUpdate = user as Usuario
-    userToUpdate.id = user?.id as string
-    userToUpdate.name = formData.firstName
-    userToUpdate.lastname = formData.lastName
-    userToUpdate.email = formData.email
-    userToUpdate.password = user?.password as string
-    // userToUpdate.profilePhoto = profilePhoto
-    // userToUpdate.phone = formData.phone
-    // userToUpdate.address = formData.address
-    updateUser(userToUpdate)
-    setIsEditing(false)
-    
+  const handleSave = async () => {
+    try {
+      const userToUpdate = { ...(user as Usuario) }
+      userToUpdate.id = user?.id as string
+      userToUpdate.name = formData.firstName
+      userToUpdate.lastname = formData.lastName
+      userToUpdate.email = formData.email
+      userToUpdate.password = user?.password as string
+
+      if (pendingPhotoFile && user) {
+        const uploaded = await uploadProfilePhoto(user.id, pendingPhotoFile)
+        userToUpdate.profilePhoto = uploaded
+      }
+
+      const updated = await updateUser(userToUpdate)
+      setProfilePhoto(updated.profilePhoto || profilePhoto)
+      setPendingPhotoFile(null)
+      setIsEditing(false)
+      toast.success("El perfil se actualizó correctamente")
+    } catch (error) {
+      console.error("Error al guardar el perfil:", error)
+      toast.error("No se pudo actualizar el perfil")
+    }
   }
 
   const handlePhotoEdit = () => {
+    if (!isEditing) return
     fileInputRef.current?.click()
   }
 
   const handlePhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
-    
-    if (file && user) {
-      try {
-        const result = await uploadProfilePhoto(user.id, file)
-        setProfilePhoto(result)
-      } catch (error) {
-        console.error("Error al subir foto de perfil:", error)
-      }
+    if (!isEditing) return
+    if (file) {
+      setPendingPhotoFile(file)
+      const previewUrl = URL.createObjectURL(file)
+      setProfilePhoto(previewUrl)
     }
   }
 
@@ -116,13 +125,15 @@ export default function ProfilePage() {
                     alt="Profile Photo"
                     className="w-32 h-32 rounded-full object-cover border-4 border-border"
                   />
-                  <button
-                    onClick={handlePhotoEdit}
-                    className="absolute bottom-0 right-0 bg-primary text-primary-foreground rounded-full p-2 shadow-lg hover:bg-primary/90 transition-colors"
-                    title="Editar foto de perfil"
-                  >
-                    <Pencil className="h-4 w-4" />
-                  </button>
+                  {isEditing && (
+                    <button
+                      onClick={handlePhotoEdit}
+                      className="absolute bottom-0 right-0 bg-primary text-primary-foreground rounded-full p-2 shadow-lg hover:bg-primary/90 transition-colors"
+                      title="Editar foto de perfil"
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </button>
+                  )}
                   <input
                     ref={fileInputRef}
                     type="file"
@@ -173,40 +184,7 @@ export default function ProfilePage() {
                 </div>
               </div>
               
-              {/*}
-              <div className="space-y-2">
-                <Label htmlFor="phone">Teléfono</Label>
-                <div className="relative">
-                  <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    id="phone"
-                    name="phone"
-                    type="tel"
-                    value={formData.phone}
-                    onChange={handleChange}
-                    disabled={!isEditing}
-                    className="pl-10"
-                  />
-                </div>
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="address">Dirección</Label>
-                <div className="relative">
-                  <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    id="address"
-                    name="address"
-                    type="text"
-                    placeholder="Tu dirección (opcional)"
-                    value={formData.address}
-                    onChange={handleChange}
-                    disabled={!isEditing}
-                    className="pl-10"
-                  />
-                </div>
-              </div>
-              */}
+              {}
 
               <div className="flex gap-3 pt-4">
                 {isEditing ? (
