@@ -122,9 +122,5 @@ export async function fetchPlacesByOwner(ownerId: string): Promise<Place[]> {
     throw new Error(`Error al consultar posts del owner ${ownerId}: ${response.status} ${response.statusText}`)
   }
   const data = (await response.json()) as Place[]
-  try {
-    // eslint-disable-next-line no-console
-    console.log("fetchPlacesByOwner response:", data)
-  } catch {}
   return data
 }
