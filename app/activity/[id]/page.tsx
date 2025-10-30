@@ -11,7 +11,6 @@ export default async function ActividadDetailPage({ params }: PageProps) {
   const { id } = await params
   const place = await fetchPlace(ACTIVIDAD, id)
 
-  console.log(place)
 
   if (!place) {
     notFound()

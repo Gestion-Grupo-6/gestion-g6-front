@@ -10,7 +10,7 @@ type PageProps = {
 export default async function RestauranteDetailPage({ params }: PageProps) {
   const { id } = await params
   const place = await fetchPlace(RESTAURANT, id)
-  console.log(place)
+  
 
   if (!place) {
     notFound()
