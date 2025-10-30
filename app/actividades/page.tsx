@@ -11,8 +11,6 @@ export default async function ActividadesPage() {
 
   const activities = detailed.filter((r): r is NonNullable<typeof r> => r !== null)
 
-  console.log(activities)
-
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
