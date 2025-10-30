@@ -3,6 +3,7 @@ import { Badge } from "@/components/ui/badge"
 import { Star, MapPin } from "lucide-react"
 import Link from "next/link"
 import type { Place } from "@/types/place"
+import { getImage } from "@/contexts/SupabaseContext"
 
 interface PlacesListProps {
   places: Place[]
@@ -19,7 +20,7 @@ export function PlacesList({ places }: PlacesListProps) {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {places.map((place) => {
-          const mainImage = place.images?.[0] ?? "/placeholder.svg"
+          const mainImage = getImage(place.images?.[0]) ?? "/placeholder.svg"
           const displayedAmenities = (place.amenities ?? []).slice(0, 3)
           const extraAmenities =
             place.amenities && place.amenities.length > 3 ? place.amenities.length - 3 : 0
@@ -47,12 +48,13 @@ export function PlacesList({ places }: PlacesListProps) {
                         {place.category}
                       </Badge>
                     </div>
-
-                    <p className="text-sm text-muted-foreground mb-3 line-clamp-2">{place.description}</p>
+                    
+                    <p className="text-sm text-muted-foreground mb-3 line-clamp-2">{truncate(place.description, 80)}</p>
 
                     <div className="flex items-center gap-1 text-sm text-muted-foreground mb-3">
                       <MapPin className="h-4 w-4 flex-shrink-0" />
-                      <span className="truncate">{place.location}</span>
+                      <span className="truncate">{truncate(place.address, 25)}</span>
+                      
                     </div>
 
                     <div className="flex flex-wrap gap-2 mb-3">
@@ -85,4 +87,9 @@ export function PlacesList({ places }: PlacesListProps) {
       </div>
     </div>
   )
+}
+
+function truncate(text: string, maxLength: number) {
+  if (!text) return "";
+  return text.length > maxLength ? text.slice(0, maxLength) + "..." : text;
 }

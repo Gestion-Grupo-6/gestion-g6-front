@@ -5,6 +5,7 @@ export interface Place {
   type?: string | null
   location: string
   rating: number | null
+  ratings?: Record<string, number> | null
   reviews: number | null
   price: number | null
   priceLabel: string | null
@@ -12,7 +13,7 @@ export interface Place {
   images: string[]
   description: string
   amenities: string[]
-  address: string | null
+  address: string 
   phone: string | null
   email: string | null
   website: string | null

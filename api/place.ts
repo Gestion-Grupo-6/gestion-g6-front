@@ -1,9 +1,13 @@
 import type { Place, PlaceCreatePayload } from "@/types/place"
 import { sanitizedBaseUrl } from "./config"
 
-export const ACTIVIDADES = "actividad"
-export const HOTELES = "hotel"
-export const RESTAURANTES = "restaurante"
+export const ACTIVIDADES = "activities"
+export const ACTIVIDAD = "activity"
+export const HOTELES = "hotels"
+export const HOTEL = "hotel"
+export const RESTAURANTES = "restaurants"
+export const RESTAURANT = "restaurant"
+
 
 // Backend path helpers
 function listPathFor(category: string): string {

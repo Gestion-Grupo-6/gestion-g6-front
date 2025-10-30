@@ -8,6 +8,10 @@ Aplicación Next.js que consume el backend de `gestion-g6-back` para listar y ad
 - PNPM (`npm i -g pnpm`)
 - Backend corriendo (por defecto en `http://localhost:8080`)
 
+## Variables de entorno
+
+   mv env.local .env.local
+
 ## Puesta en marcha local
 
 1. Clona el repositorio y entra a `gestion-g6-front`.

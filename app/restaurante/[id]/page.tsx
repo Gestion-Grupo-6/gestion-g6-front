@@ -1,4 +1,4 @@
-import { fetchPlace, RESTAURANTES } from "@/api/place"
+import { fetchPlace, RESTAURANT } from "@/api/place"
 import { Header } from "@/components/header"
 import { PlaceDetail } from "@/components/place-detail"
 import { notFound } from "next/navigation"
@@ -9,7 +9,8 @@ type PageProps = {
 
 export default async function RestauranteDetailPage({ params }: PageProps) {
   const { id } = await params
-  const place = await fetchPlace(RESTAURANTES, id)
+  const place = await fetchPlace(RESTAURANT, id)
+  console.log(place)
 
   if (!place) {
     notFound()
