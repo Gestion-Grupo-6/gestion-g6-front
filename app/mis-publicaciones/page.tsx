@@ -9,10 +9,10 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Separator } from "@/components/ui/separator"
 import { Badge } from "@/components/ui/badge"
-import { MapPin, Phone, Mail, Globe, Loader2, Plus, Building2 } from "lucide-react"
+import { MapPin, Phone, Mail, Globe, Loader2, Plus, Building2, MoreVertical, Star, Edit, Trash2 } from "lucide-react"
 import { useAuth } from "@/contexts/AuthContext"
 import type { Place } from "@/types/place"
-import { ACTIVIDADES, createPlace, fetchPlaces, HOTELES, RESTAURANTES } from "@/api/place"
+import { ACTIVIDADES, createPlace, fetchPlace, fetchPlacesByOwner, HOTELES, RESTAURANTES, updatePlace } from "@/api/place"
 
 const CATEGORY_OPTIONS = [
   { value: HOTELES, label: "Hoteles" },
@@ -25,51 +25,90 @@ type CategoryValue = (typeof CATEGORY_OPTIONS)[number]["value"]
 const INITIAL_FORM = {
   name: "",
   description: "",
-  location: "",
+  category: "hotel",
   address: "",
+  city: "",
+  country: "",
   phone: "",
   email: "",
   website: "",
-  rating: "",
-  reviews: "",
   price: "",
-  priceLabel: "",
+  priceCategory: "$$",
   images: "",
-  amenities: "",
-  checkIn: "",
-  checkOut: "",
-  hours: "",
-  duration: "",
-  includes: "",
-  bestTime: "",
-  howToGet: "",
+  attributes: "",
 }
 
 export default function MisPublicacionesPage() {
-  const { isAuthenticated } = useAuth()
-  const [selectedCategory, setSelectedCategory] = useState<CategoryValue>(HOTELES)
-  const [places, setPlaces] = useState<Place[]>([])
+  const { isAuthenticated, user } = useAuth()
+  // Filtro: 'all' muestra todas; o por categoría específica
+  const [selectedFilter, setSelectedFilter] = useState<'all' | CategoryValue>('all')
+  const [allPlaces, setAllPlaces] = useState<Place[]>([])
+  // Normaliza el tipo (backend) a colección del UI para filtros y rutas
+  const toCollection = (value: string | undefined): CategoryValue | string | undefined => {
+    if (!value) return value
+    const v = String(value).toLowerCase()
+    if (v === "hotel" || v === "hoteles" || v === "hotel") return HOTELES
+    if (v === "restaurante" || v === "restaurantes" || v === "restaurant") return RESTAURANTES
+    if (v === "actividad" || v === "actividades" || v === "activity") return ACTIVIDADES
+    return value
+  }
+  const places = useMemo(() => {
+    if (selectedFilter === 'all') return allPlaces
+    return allPlaces.filter((p) => toCollection(((p as any).type as string | undefined) ?? (p as any).category) === selectedFilter)
+  }, [allPlaces, selectedFilter])
   const [loading, setLoading] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [showForm, setShowForm] = useState(false)
+  const [editingId, setEditingId] = useState<string | null>(null)
   const [formData, setFormData] = useState(INITIAL_FORM)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null)
 
-  const categoryLabel = useMemo(
-    () => CATEGORY_OPTIONS.find((option) => option.value === selectedCategory)?.label ?? "Publicaciones",
-    [selectedCategory],
-  )
+  const categoryLabel = useMemo(() => {
+    if (selectedFilter === 'all') return 'Todas las publicaciones'
+    return CATEGORY_OPTIONS.find((option) => option.value === selectedFilter)?.label ?? 'Publicaciones'
+  }, [selectedFilter])
+
+  const getCategoryRoute = (category: CategoryValue) => {
+    const routeMap: Record<CategoryValue, string> = {
+      [HOTELES]: "hoteles",
+      [RESTAURANTES]: "restaurantes",
+      [ACTIVIDADES]: "actividades",
+    }
+    return routeMap[category] || category
+  }
+
+  const createSingularLabel = useMemo(() => {
+    const mapByForm: Record<string, string> = {
+      hotel: "Hotel",
+      restaurante: "Restaurante",
+      actividad: "Actividad",
+    }
+    return mapByForm[formData.category] || "Publicación"
+  }, [formData.category])
+
+  const isActivity = formData.category === "actividad"
+
+  const backendCategory = useMemo(() => formData.category, [formData.category])
 
   useEffect(() => {
-    if (!isAuthenticated) return
+    if (!isAuthenticated || !user?.id) return
 
     const loadPlaces = async () => {
       setLoading(true)
       setErrorMessage(null)
       try {
-        const data = await fetchPlaces(selectedCategory)
-        setPlaces(data)
+        const data = await fetchPlacesByOwner(user.id)
+        // Debug: inspeccionar categorías devueltas por el backend
+        try {
+          // eslint-disable-next-line no-console
+          console.log(
+            "MisPublicaciones - fetched posts:",
+            data.map((p: any) => ({ id: p.id, category: p.category, type: p.type }))
+          )
+        } catch {}
+        setAllPlaces(data)
       } catch (error) {
         console.error(error)
         setErrorMessage("No fue posible obtener las publicaciones. Inténtalo nuevamente.")
@@ -79,7 +118,7 @@ export default function MisPublicacionesPage() {
     }
 
     void loadPlaces()
-  }, [selectedCategory, isAuthenticated])
+  }, [isAuthenticated, user?.id])
 
   const handleFormChange = (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = event.target
@@ -92,6 +131,7 @@ export default function MisPublicacionesPage() {
   const resetForm = () => {
     setFormData(INITIAL_FORM)
     setShowForm(false)
+    setEditingId(null)
   }
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -102,17 +142,6 @@ export default function MisPublicacionesPage() {
 
     const requiredFields: Array<{ key: keyof typeof INITIAL_FORM; label: string }> = [
       { key: "name", label: "Nombre" },
-      { key: "description", label: "Descripción" },
-      { key: "location", label: "Ubicación" },
-      { key: "address", label: "Dirección" },
-      { key: "phone", label: "Teléfono" },
-      { key: "email", label: "Email" },
-      { key: "website", label: "Sitio web" },
-      { key: "rating", label: "Calificación" },
-      { key: "reviews", label: "Cantidad de reseñas" },
-      { key: "price", label: "Precio" },
-      { key: "images", label: "Imágenes" },
-      { key: "amenities", label: "Características" },
     ]
 
     const missing = requiredFields.filter(({ key }) => !formData[key].trim())
@@ -121,64 +150,60 @@ export default function MisPublicacionesPage() {
       return
     }
 
-    const images = formData.images
+    const images = (formData.images ?? "")
       .split(/[\n,]/)
       .map((item) => item.trim())
       .filter(Boolean)
 
-    const amenities = formData.amenities
+    const attributes = (formData.attributes ?? "")
       .split(/[\n,]/)
       .map((item) => item.trim())
       .filter(Boolean)
 
-    if (images.length === 0 || amenities.length === 0) {
-      setErrorMessage("Debes proporcionar al menos una imagen y una característica.")
-      return
-    }
-
-    const rating = Number(formData.rating)
-    const reviews = Number(formData.reviews)
     const price = Number(formData.price)
 
-    if (Number.isNaN(rating) || Number.isNaN(reviews) || Number.isNaN(price)) {
-      setErrorMessage("Calificación, reseñas y precio deben ser valores numéricos.")
+    // Permitir vacíos: si están vacíos, Number("") dará 0, lo aceptamos
+
+    if (!user?.id) {
+      setErrorMessage("Error: No se pudo identificar al usuario. Por favor, inicia sesión nuevamente.")
       return
     }
 
     try {
       setSubmitting(true)
+      // Determinar la colección (ruta) correcta según la categoría elegida en el formulario
+      const collectionForPost = formData.category === "hotel" ? HOTELES : formData.category === "restaurante" ? RESTAURANTES : ACTIVIDADES
       const payload = {
         name: formData.name.trim(),
-        location: formData.location.trim(),
-        rating,
-        reviews,
+        ownerId: user.id,
+        category: backendCategory,
+        // Campos soportados por backend DTO
         price,
-        priceLabel: formData.priceLabel.trim() || `$${price}`,
+        priceCategory: formData.priceCategory?.trim() || undefined,
         images,
         description: formData.description.trim(),
-        amenities,
+        attributes,
         address: formData.address.trim(),
+        city: formData.city.trim(),
+        country: formData.country.trim(),
         phone: formData.phone.trim(),
         email: formData.email.trim(),
         website: formData.website.trim(),
-        checkIn: formData.checkIn.trim() || null,
-        checkOut: formData.checkOut.trim() || null,
-        hours: formData.hours.trim() || null,
-        duration: formData.duration.trim() || null,
-        includes: formData.includes.trim() || null,
-        bestTime: formData.bestTime.trim() || null,
-        howToGet: formData.howToGet.trim() || null,
       }
 
-      await createPlace(selectedCategory, payload)
-      const updatedPlaces = await fetchPlaces(selectedCategory)
-      setPlaces(updatedPlaces)
+      if (editingId) {
+        await updatePlace(collectionForPost, editingId, payload)
+      } else {
+        await createPlace(collectionForPost, payload)
+      }
+      const updatedPlaces = await fetchPlacesByOwner(user.id)
+      setAllPlaces(updatedPlaces)
 
       resetForm()
-      setSuccessMessage("Publicación creada correctamente.")
+      setSuccessMessage(editingId ? "Publicación actualizada correctamente." : "Publicación creada correctamente.")
     } catch (error) {
       console.error(error)
-      setErrorMessage("No se pudo crear la publicación. Revisa los datos e intenta nuevamente.")
+      setErrorMessage(editingId ? "No se pudo actualizar la publicación. Intenta nuevamente." : "No se pudo crear la publicación. Revisa los datos e intenta nuevamente.")
     } finally {
       setSubmitting(false)
     }
@@ -216,7 +241,7 @@ export default function MisPublicacionesPage() {
       <Header />
 
       <main className="flex-1 py-12 px-4">
-        <div className="container mx-auto max-w-6xl space-y-8">
+        <div className="container mx-auto max-w-7xl space-y-8">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h1 className="text-3xl font-bold mb-1">Mis publicaciones</h1>
@@ -225,16 +250,19 @@ export default function MisPublicacionesPage() {
             <div className="flex flex-col items-stretch gap-3 sm:flex-row sm:items-center">
               <select
                 className="border border-input bg-background px-3 py-2 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-                value={selectedCategory}
-                onChange={(event) => setSelectedCategory(event.target.value as CategoryValue)}
+                value={selectedFilter}
+                onChange={(event) => setSelectedFilter(event.target.value as any)}
               >
-                {CATEGORY_OPTIONS.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
+                <option value="all">Todas</option>
+                <option value={HOTELES}>Hoteles</option>
+                <option value={RESTAURANTES}>Restaurantes</option>
+                <option value={ACTIVIDADES}>Actividades</option>
               </select>
-              <Button type="button" onClick={() => setShowForm((prev) => !prev)} className="w-full sm:w-auto">
+              <Button
+                type="button"
+                onClick={() => setShowForm((prev) => !prev)}
+                className="w-full sm:w-auto"
+              >
                 <Plus className="h-4 w-4 mr-2" />
                 {showForm ? "Cancelar" : "Nueva publicación"}
               </Button>
@@ -244,7 +272,7 @@ export default function MisPublicacionesPage() {
           {showForm && (
             <Card>
               <CardHeader>
-                <CardTitle>Agregar {categoryLabel.slice(0, -1).toLowerCase()}</CardTitle>
+                <CardTitle>{editingId ? `Editar ${createSingularLabel}` : `Agregar ${createSingularLabel}`}</CardTitle>
                 <CardDescription>
                   Completa la información necesaria. Los campos marcados con * son obligatorios.
                 </CardDescription>
@@ -253,91 +281,75 @@ export default function MisPublicacionesPage() {
                 <form className="space-y-6" onSubmit={handleSubmit}>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
+                      <Label htmlFor="category">Categoría</Label>
+                      <select
+                        id="category"
+                        name="category"
+                        className="border border-input bg-background px-3 py-2 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary w-full"
+                        value={formData.category}
+                        onChange={handleFormChange}
+                      >
+                        <option value="hotel">Hotel</option>
+                        <option value="restaurante">Restaurante</option>
+                        <option value="actividad">Actividad</option>
+                      </select>
+                    </div>
+                    <div className="space-y-2">
                       <Label htmlFor="name">Nombre *</Label>
                       <Input id="name" name="name" value={formData.name} onChange={handleFormChange} required />
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="location">Ubicación *</Label>
-                      <Input
-                        id="location"
-                        name="location"
-                        value={formData.location}
-                        onChange={handleFormChange}
-                        required
-                      />
+                      <Label htmlFor="city">Ciudad</Label>
+                      <Input id="city" name="city" value={formData.city} onChange={handleFormChange} />
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="address">Dirección *</Label>
+                      <Label htmlFor="country">País</Label>
+                      <Input id="country" name="country" value={formData.country} onChange={handleFormChange} />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="address">Dirección</Label>
                       <Input
                         id="address"
                         name="address"
                         value={formData.address}
                         onChange={handleFormChange}
-                        required
                       />
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="phone">Teléfono *</Label>
-                      <Input id="phone" name="phone" value={formData.phone} onChange={handleFormChange} required />
+                      <Label htmlFor="phone">Teléfono</Label>
+                      <Input id="phone" name="phone" value={formData.phone} onChange={handleFormChange} />
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="email">Email *</Label>
+                      <Label htmlFor="email">Email</Label>
                       <Input
                         id="email"
                         type="email"
                         name="email"
                         value={formData.email}
                         onChange={handleFormChange}
-                        required
                       />
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="website">Sitio web *</Label>
+                      <Label htmlFor="website">Sitio web</Label>
                       <Input
                         id="website"
                         name="website"
                         placeholder="www.ejemplo.com"
                         value={formData.website}
                         onChange={handleFormChange}
-                        required
                       />
                     </div>
 
-                    <div className="space-y-2">
-                      <Label htmlFor="rating">Calificación (0-5) *</Label>
-                      <Input
-                        id="rating"
-                        name="rating"
-                        type="number"
-                        min="0"
-                        max="5"
-                        step="0.1"
-                        value={formData.rating}
-                        onChange={handleFormChange}
-                        required
-                      />
-                    </div>
+                    {/* rating y reviews se calculan con el uso, no en creación */}
 
                     <div className="space-y-2">
-                      <Label htmlFor="reviews">Cantidad de reseñas *</Label>
-                      <Input
-                        id="reviews"
-                        name="reviews"
-                        type="number"
-                        min="0"
-                        value={formData.reviews}
-                        onChange={handleFormChange}
-                        required
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="price">Precio base *</Label>
+                      <Label htmlFor="price">Precio base</Label>
                       <Input
                         id="price"
                         name="price"
@@ -345,37 +357,42 @@ export default function MisPublicacionesPage() {
                         min="0"
                         value={formData.price}
                         onChange={handleFormChange}
-                        required
                       />
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="priceLabel">Etiqueta de precio</Label>
-                      <Input
-                        id="priceLabel"
-                        name="priceLabel"
-                        placeholder="$150/noche"
-                        value={formData.priceLabel}
+                      <Label htmlFor="priceCategory">Precio</Label>
+                      <select
+                        id="priceCategory"
+                        name="priceCategory"
+                        className="border border-input bg-background px-3 py-2 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary w-full"
+                        value={formData.priceCategory}
                         onChange={handleFormChange}
-                      />
+                      >
+                        <option value="$">$</option>
+                        <option value="$$">$$</option>
+                        <option value="$$$">$$$</option>
+                        <option value="$$$$">$$$$</option>
+                      </select>
                     </div>
+
+                    {/* Eliminado: etiqueta de precio, usamos solo categoría ($, $$, $$$, $$$$) */}
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="description">Descripción *</Label>
+                    <Label htmlFor="description">Descripción</Label>
                     <Textarea
                       id="description"
                       name="description"
                       value={formData.description}
                       onChange={handleFormChange}
-                      required
                       rows={4}
                     />
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="images">Imágenes (una por línea) *</Label>
+                      <Label htmlFor="images">Imágenes (una por línea)</Label>
                       <Textarea
                         id="images"
                         name="images"
@@ -383,98 +400,23 @@ export default function MisPublicacionesPage() {
                         onChange={handleFormChange}
                         placeholder="/ruta-imagen.jpg"
                         rows={4}
-                        required
                       />
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="amenities">Características (una por línea) *</Label>
+                      <Label htmlFor="attributes">Características (una por línea)</Label>
                       <Textarea
-                        id="amenities"
-                        name="amenities"
-                        value={formData.amenities}
+                        id="attributes"
+                        name="attributes"
+                        value={formData.attributes}
                         onChange={handleFormChange}
                         placeholder="WiFi\nPiscina\nSpa"
                         rows={4}
-                        required
                       />
                     </div>
                   </div>
 
-                  <Separator />
-
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="checkIn">Check-in</Label>
-                      <Input
-                        id="checkIn"
-                        name="checkIn"
-                        placeholder="15:00"
-                        value={formData.checkIn}
-                        onChange={handleFormChange}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="checkOut">Check-out</Label>
-                      <Input
-                        id="checkOut"
-                        name="checkOut"
-                        placeholder="12:00"
-                        value={formData.checkOut}
-                        onChange={handleFormChange}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="hours">Horario</Label>
-                      <Input
-                        id="hours"
-                        name="hours"
-                        placeholder="Lunes a Domingo: 9:00 - 23:00"
-                        value={formData.hours}
-                        onChange={handleFormChange}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="duration">Duración</Label>
-                      <Input
-                        id="duration"
-                        name="duration"
-                        placeholder="Ej. 4 horas"
-                        value={formData.duration}
-                        onChange={handleFormChange}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="includes">Incluye</Label>
-                      <Input
-                        id="includes"
-                        name="includes"
-                        placeholder="Transporte, guía, entradas..."
-                        value={formData.includes}
-                        onChange={handleFormChange}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="bestTime">Mejor época</Label>
-                      <Input
-                        id="bestTime"
-                        name="bestTime"
-                        placeholder="Noviembre a abril"
-                        value={formData.bestTime}
-                        onChange={handleFormChange}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="howToGet">Cómo llegar</Label>
-                      <Input
-                        id="howToGet"
-                        name="howToGet"
-                        placeholder="Aeropuerto X, autobuses Y..."
-                        value={formData.howToGet}
-                        onChange={handleFormChange}
-                      />
-                    </div>
-                  </div>
+                  {/* Campos extra eliminados para ajustarse al DTO del backend */}
 
                   {errorMessage && <p className="text-sm text-destructive">{errorMessage}</p>}
                   {successMessage && <p className="text-sm text-emerald-600">{successMessage}</p>}
@@ -482,7 +424,7 @@ export default function MisPublicacionesPage() {
                   <div className="flex flex-wrap gap-3">
                     <Button type="submit" disabled={submitting}>
                       {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                      Guardar publicación
+                      {editingId ? "Guardar" : "Crear publicación"}
                     </Button>
                     <Button type="button" variant="outline" onClick={resetForm} disabled={submitting}>
                       Cancelar
@@ -496,11 +438,11 @@ export default function MisPublicacionesPage() {
           <Card>
             <CardHeader>
               <CardTitle>{categoryLabel}</CardTitle>
-              <CardDescription>
-                {loading
-                  ? "Cargando publicaciones..."
-                  : `Se encontraron ${places.length} ${places.length === 1 ? "registro" : "registros"}.`}
-              </CardDescription>
+              {loading && (
+                <CardDescription>
+                  Cargando publicaciones...
+                </CardDescription>
+              )}
             </CardHeader>
             <CardContent className="space-y-4">
               {loading ? (
@@ -517,65 +459,123 @@ export default function MisPublicacionesPage() {
                   </div>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {places.map((place) => (
-                    <Card key={place.id} className="border border-muted">
-                      <CardContent className="p-4 space-y-4">
+                    <Card key={place.id} className="border border-muted max-w-md w-full mx-auto">
+                      <CardContent className="p-6 space-y-4">
+                        {/* Header con nombre y menú de opciones */}
                         <div className="flex items-start justify-between gap-4">
-                          <div>
-                            <h3 className="text-lg font-semibold text-foreground">{place.name}</h3>
-                            <p className="text-sm text-muted-foreground">{place.description}</p>
+                          <div className="flex-1">
+                            <h3 className="text-xl font-bold text-foreground mb-2">{place.name}</h3>
+                            <Badge variant="secondary" className="mb-3">
+                              {(() => {
+                                const rawType = ((place as any).type as string | undefined) ?? ((place as any).category as string | undefined)
+                                const t = String(rawType || '').toUpperCase()
+                                const singularMap: Record<string, string> = {
+                                  HOTEL: 'Hotel',
+                                  RESTAURANT: 'Restaurante',
+                                  ACTIVITY: 'Actividad',
+                                }
+                                return singularMap[t] || 'Sin categoría'
+                              })()}
+                            </Badge>
+                              {place.address && (
+                                <div className="flex items-start gap-2 text-sm text-muted-foreground">
+                                  <MapPin className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                                  <span className="line-clamp-2">{place.address}</span>
+                                </div>
+                              )}
+                            </div>
+                            {/* Menú de tres puntos */}
+                            <div className="relative">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8"
+                                onClick={() => setOpenMenuId(openMenuId === place.id ? null : place.id)}
+                              >
+                                <MoreVertical className="h-4 w-4" />
+                              </Button>
+                              {openMenuId === place.id && (
+                                <>
+                                  <div
+                                    className="fixed inset-0 z-10"
+                                    onClick={() => setOpenMenuId(null)}
+                                  />
+                                  <div className="absolute right-0 mt-2 w-48 bg-background border border-border rounded-md shadow-lg z-20">
+                                    <Button
+                                      variant="ghost"
+                                      className="w-full justify-start px-4 py-2 text-sm"
+                                      onClick={async () => {
+                                        setOpenMenuId(null)
+                                        try {
+                                          const rawType = ((place as any).type as string | undefined) ?? ((place as any).category as string | undefined)
+                                          const t = String(rawType || '').toUpperCase()
+                                          const collection: CategoryValue = t === 'HOTEL' ? HOTELES : t === 'RESTAURANT' ? RESTAURANTES : ACTIVIDADES
+                                          const full = await fetchPlace(collection, place.id)
+                                          if (!full) return
+                                          const categoryForForm = collection === HOTELES ? 'hotel' : collection === RESTAURANTES ? 'restaurante' : 'actividad'
+                                          setFormData({
+                                            name: full.name || "",
+                                            description: full.description || "",
+                                            category: categoryForForm,
+                                            address: full.address || "",
+                                            city: (full as any).city || "",
+                                            country: (full as any).country || "",
+                                            phone: full.phone || "",
+                                            email: full.email || "",
+                                            website: full.website || "",
+                                            price: String(full.price ?? ""),
+                                            priceCategory: (full.priceCategory as any) || "$$",
+                                            images: Array.isArray(full.images) ? full.images.join("\n") : "",
+                                            attributes: Array.isArray((full as any).amenities) ? (full as any).amenities.join("\n") : "",
+                                          })
+                                          setEditingId(place.id)
+                                          setShowForm(true)
+                                          window.scrollTo({ top: 0, behavior: 'smooth' })
+                                        } catch (e) {
+                                          // eslint-disable-next-line no-console
+                                          console.error(e)
+                                        }
+                                      }}
+                                    >
+                                      <Edit className="h-4 w-4 mr-2" />
+                                      Editar
+                                    </Button>
+                                    <Button
+                                      variant="ghost"
+                                      className="w-full justify-start px-4 py-2 text-sm text-destructive hover:text-destructive hover:bg-destructive/10"
+                                      onClick={() => {
+                                        // TODO: Implementar eliminación
+                                        setOpenMenuId(null)
+                                      }}
+                                    >
+                                      <Trash2 className="h-4 w-4 mr-2" />
+                                      Eliminar Publicación
+                                    </Button>
+                                  </div>
+                                </>
+                              )}
+                            </div>
                           </div>
-                          <Badge>{categoryLabel.slice(0, -1)}</Badge>
-                        </div>
 
-                        <div className="space-y-2 text-sm text-muted-foreground">
-                          <div className="flex items-center gap-2">
-                            <MapPin className="h-4 w-4" />
-                            <span>{place.location}</span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <Phone className="h-4 w-4" />
-                            <span>{place.phone}</span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <Mail className="h-4 w-4" />
-                            <span>{place.email}</span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <Globe className="h-4 w-4" />
-                            <a
-                              href={place.website?.startsWith("http") ? place.website : `https://${place.website}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-primary hover:underline"
-                            >
-                              {place.website}
-                            </a>
-                          </div>
-                        </div>
+                          <Separator />
 
-                        <Separator />
-
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <span className="font-medium text-foreground">{(place.rating ?? 0).toFixed(1)} ★</span>
-                          <span>({place.reviews ?? 0} reseñas)</span>
-                          <span>•</span>
-                          <span className="text-primary font-semibold">
-                            {place.priceLabel ?? (place.price != null ? `$${place.price}` : "Consultar")}
-                          </span>
-                        </div>
-
-                        <div className="flex justify-end">
-                          <Button asChild variant="outline">
-                            <a href={`/${place.category}/${place.id}`} target="_blank" rel="noopener noreferrer">
-                              Ver publicación
-                            </a>
+                          {/* Botón de consultar reseñas y rating */}
+                          <Button
+                            variant="outline"
+                            className="w-full"
+                            onClick={() => {
+                              const categoryRoute = getCategoryRoute(toCollection((((place as any).type as string | undefined) ?? (place as any).category)) as CategoryValue)
+                              window.location.href = `/${categoryRoute}/${place.id}#reviews`
+                            }}
+                          >
+                            <Star className="h-4 w-4 mr-2" />
+                            Consultar Reseñas y Rating
                           </Button>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
+                        </CardContent>
+                      </Card>
+                    ))}
                 </div>
               )}
             </CardContent>
