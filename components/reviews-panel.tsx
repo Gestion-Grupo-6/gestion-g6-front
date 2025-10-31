@@ -27,7 +27,6 @@ export function ReviewsPanel({ open, onOpenChange, placeId }: ReviewsPanelProps)
     const load = async () => {
       try {
         const data = await fetchReviewsByPost(placeId)
-        setReviews(data)
         const uniqueIds = Array.from(new Set(data.map((r) => r.ownerId).filter(Boolean)))
         const entries = await Promise.all(
           uniqueIds.map(async (id) => {
@@ -41,6 +40,7 @@ export function ReviewsPanel({ open, onOpenChange, placeId }: ReviewsPanelProps)
           })
         )
         setAuthorById(Object.fromEntries(entries))
+        setReviews(data)
       } catch (e) {
         // eslint-disable-next-line no-console
         console.error("No se pudieron cargar reseñas", e)
@@ -95,7 +95,7 @@ export function ReviewsPanel({ open, onOpenChange, placeId }: ReviewsPanelProps)
                 </Card>
               ) : (
                 reviews.map((review) => {
-                  const name = authorById[review.ownerId] || review.ownerId
+                  const name = authorById[review.ownerId] || "Usuario"
                   const stars = Math.round(((review.ratings?.cleanliness ?? 0) + (review.ratings?.service ?? 0) + (review.ratings?.location ?? 0)) / ([(review.ratings?.cleanliness),(review.ratings?.service),(review.ratings?.location)].filter((n)=>typeof n === 'number').length || 1))
                   return (
                     <Card key={review.id}>
@@ -123,7 +123,7 @@ export function ReviewsPanel({ open, onOpenChange, placeId }: ReviewsPanelProps)
                           <div className="mt-2 space-y-2 border-t pt-2">
                             {review.replies.map((rep) => (
                               <div key={rep.id} className="text-sm">
-                                <span className="font-medium">{authorById[rep.ownerId] || rep.ownerId}:</span> {rep.comment}
+                                 <span className="font-medium">{authorById[rep.ownerId] || "Usuario"}:</span> {rep.comment}
                               </div>
                             ))}
                           </div>

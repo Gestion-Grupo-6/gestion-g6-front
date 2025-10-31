@@ -32,7 +32,6 @@ export function ReviewsSection({ placeId, averageRating, totalReviews }: Reviews
     const load = async () => {
       try {
         const data = await fetchReviewsByPost(placeId)
-        setReviews(data)
         const uniqueIds = Array.from(new Set(data.map((r) => r.ownerId).filter(Boolean)))
         const entries = await Promise.all(
           uniqueIds.map(async (id) => {
@@ -46,6 +45,7 @@ export function ReviewsSection({ placeId, averageRating, totalReviews }: Reviews
           })
         )
         setAuthorById(Object.fromEntries(entries))
+        setReviews(data)
       } catch (e) {
         // eslint-disable-next-line no-console
         console.error("No se pudieron cargar las reseñas", e)
@@ -223,7 +223,7 @@ export function ReviewsSection({ placeId, averageRating, totalReviews }: Reviews
                 <div className="flex-1">
                   <div className="flex items-start justify-between mb-2">
                     <div>
-                      <h4 className="font-semibold text-foreground">{authorById[review.ownerId] || review.ownerId}</h4>
+                      <h4 className="font-semibold text-foreground">{authorById[review.ownerId] || "Usuario"}</h4>
                       <p className="text-sm text-muted-foreground">{new Date(review.timestamp).toLocaleDateString()}</p>
                     </div>
                     <div className="flex items-center gap-1">
