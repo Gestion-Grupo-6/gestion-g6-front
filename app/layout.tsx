@@ -6,6 +6,7 @@ import { Analytics } from "@vercel/analytics/next"
 import "./globals.css"
 import { MilongiaButton } from "@/components/milongia-button"
 import { AuthProvider } from "@/contexts/AuthContext"
+import { Toaster } from "sonner"
 
 const _geist = Geist({ subsets: ["latin"] })
 const _geistMono = Geist_Mono({ subsets: ["latin"] })
@@ -27,6 +28,7 @@ export default function RootLayout({
         <AuthProvider>
           {children}
           <MilongiaButton />
+          <Toaster richColors position="top-right" />
           <Analytics />
         </AuthProvider>
       </body>

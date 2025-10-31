@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Star, MapPin, Phone, Mail, Globe, Clock, ChevronLeft, ChevronRight } from "lucide-react"
+import { Star, MapPin, Phone, Mail, Globe, ChevronLeft, ChevronRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -9,17 +9,20 @@ import { Separator } from "@/components/ui/separator"
 import Link from "next/link"
 import { ReviewsSection } from "@/components/reviews-section"
 import type { Place } from "@/types/place"
+import { getImage } from "@/contexts/SupabaseContext"
 
 interface PlaceDetailProps {
   place: Place
 }
 
 export function PlaceDetail({ place }: PlaceDetailProps) {
-  const images = place.images && place.images.length > 0 ? place.images : ["/placeholder.svg"]
-  const amenities = place.amenities && place.amenities.length > 0 ? place.amenities : []
-  const rating = place.rating ?? 0
-  const reviewCount = place.reviews ?? 0
-  const priceLabel = place.priceLabel ?? (place.price != null ? `$${place.price}` : "Consultar")
+  const images = Array.isArray(place.images) && place.images.length > 0
+    ? place.images.map((p) => getImage(p) || "/placeholder.svg")
+    : ["/placeholder.svg"]
+  const amenities = (place as any).attributes && (place as any).attributes.length > 0 ? (place as any).attributes : []
+  const rating = (place as any).rating ?? (place as any).ratings?.average ?? 0
+  const reviewCount = (place as any).reviews ?? (place as any).numberOfReviews ?? 0
+  const priceLabel = (place as any).priceCategory ?? (place.price != null ? `$${place.price}` : "Consultar")
   const categoryRoutes: Record<string, string> = {
     hotel: "hoteles",
     restaurante: "restaurantes",
@@ -28,6 +31,7 @@ export function PlaceDetail({ place }: PlaceDetailProps) {
   const categoryPath = categoryRoutes[place.category] ?? `${place.category}s`
   const categoryLabel = place.category
   const address = place.address ?? "Información no disponible"
+  const location = [ (place as any).city, (place as any).country ].filter(Boolean).join(", ")
   const phone = place.phone ?? ""
   const email = place.email ?? ""
   const website = place.website ?? ""
@@ -112,7 +116,7 @@ export function PlaceDetail({ place }: PlaceDetailProps) {
                   <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-2">{place.name}</h1>
                   <div className="flex items-center gap-2 text-muted-foreground">
                     <MapPin className="h-5 w-5" />
-                    <span>{place.location}</span>
+                    <span>{location || address}</span>
                   </div>
                 </div>
                 <Badge className="text-base px-4 py-2 capitalize">{categoryLabel}</Badge>
@@ -136,86 +140,23 @@ export function PlaceDetail({ place }: PlaceDetailProps) {
               </CardContent>
             </Card>
 
-            <Card>
-              <CardContent className="p-6">
-                <h2 className="text-xl font-bold text-foreground mb-4">Características</h2>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                  {amenities.map((amenity, index) => (
-                    <div key={index} className="flex items-center gap-2">
-                      <div className="h-2 w-2 rounded-full bg-primary" />
-                      <span className="text-sm text-foreground">{amenity}</span>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Additional Info based on category */}
-            {(place.checkIn || place.hours || place.duration || place.bestTime) && (
+            {amenities.length > 0 && (
               <Card>
                 <CardContent className="p-6">
-                  <h2 className="text-xl font-bold text-foreground mb-4">Información adicional</h2>
-                  <div className="space-y-3">
-                    {place.checkIn && (
-                      <div className="flex items-center gap-3">
-                        <Clock className="h-5 w-5 text-muted-foreground" />
-                        <div>
-                          <p className="text-sm font-medium text-foreground">Check-in / Check-out</p>
-                          <p className="text-sm text-muted-foreground">
-                            {place.checkIn} / {place.checkOut}
-                          </p>
-                        </div>
+                  <h2 className="text-xl font-bold text-foreground mb-4">Características</h2>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                    {amenities.map((amenity: string, index: number) => (
+                      <div key={index} className="flex items-center gap-2">
+                        <div className="h-2 w-2 rounded-full bg-primary" />
+                        <span className="text-sm text-foreground">{amenity}</span>
                       </div>
-                    )}
-                    {place.hours && (
-                      <div className="flex items-center gap-3">
-                        <Clock className="h-5 w-5 text-muted-foreground" />
-                        <div>
-                          <p className="text-sm font-medium text-foreground">Horario</p>
-                          <p className="text-sm text-muted-foreground">{place.hours}</p>
-                        </div>
-                      </div>
-                    )}
-                    {place.duration && (
-                      <div className="flex items-center gap-3">
-                        <Clock className="h-5 w-5 text-muted-foreground" />
-                        <div>
-                          <p className="text-sm font-medium text-foreground">Duración</p>
-                          <p className="text-sm text-muted-foreground">{place.duration}</p>
-                        </div>
-                      </div>
-                    )}
-                    {place.includes && (
-                      <div className="flex items-start gap-3">
-                        <div className="h-5 w-5 text-muted-foreground">✓</div>
-                        <div>
-                          <p className="text-sm font-medium text-foreground">Incluye</p>
-                          <p className="text-sm text-muted-foreground">{place.includes}</p>
-                        </div>
-                      </div>
-                    )}
-                    {place.bestTime && (
-                      <div className="flex items-start gap-3">
-                        <div className="h-5 w-5 text-muted-foreground">☀</div>
-                        <div>
-                          <p className="text-sm font-medium text-foreground">Mejor época para visitar</p>
-                          <p className="text-sm text-muted-foreground">{place.bestTime}</p>
-                        </div>
-                      </div>
-                    )}
-                    {place.howToGet && (
-                      <div className="flex items-start gap-3">
-                        <MapPin className="h-5 w-5 text-muted-foreground" />
-                        <div>
-                          <p className="text-sm font-medium text-foreground">Cómo llegar</p>
-                          <p className="text-sm text-muted-foreground">{place.howToGet}</p>
-                        </div>
-                      </div>
-                    )}
+                    ))}
                   </div>
                 </CardContent>
               </Card>
             )}
+
+            {/* Se eliminan campos no soportados por el backend (checkIn, checkOut, hours, duration, includes, bestTime, howToGet) */}
 
             <ReviewsSection placeId={String(place.id)} averageRating={rating} totalReviews={reviewCount} />
           </div>

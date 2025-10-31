@@ -1,4 +1,4 @@
-import { ACTIVIDADES, fetchPlace } from "@/api/place"
+import { ACTIVIDAD, fetchPlace } from "@/api/place"
 import { Header } from "@/components/header"
 import { PlaceDetail } from "@/components/place-detail"
 import { notFound } from "next/navigation"
@@ -9,7 +9,8 @@ type PageProps = {
 
 export default async function ActividadDetailPage({ params }: PageProps) {
   const { id } = await params
-  const place = await fetchPlace(ACTIVIDADES, id)
+  const place = await fetchPlace(ACTIVIDAD, id)
+
 
   if (!place) {
     notFound()

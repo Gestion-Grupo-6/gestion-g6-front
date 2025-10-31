@@ -1,22 +1,17 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Star, ThumbsUp } from "lucide-react"
 import { Progress } from "@/components/ui/progress"
-
-interface Review {
-  id: number
-  author: string
-  avatar?: string
-  rating: number
-  date: string
-  comment: string
-  helpful: number
-}
+import { fetchReviewsByPost, createReview, likeComment } from "@/api/review"
+import { fetchUser } from "@/api/user"
+import type { CommentResponse } from "@/types/review"
+import { useAuth } from "@/contexts/AuthContext"
+import { toast } from "sonner"
 
 interface ReviewsSectionProps {
   placeId: string
@@ -24,64 +19,95 @@ interface ReviewsSectionProps {
   totalReviews: number
 }
 
-const mockReviews: Review[] = [
-  {
-    id: 1,
-    author: "María González",
-    rating: 5,
-    date: "Hace 2 semanas",
-    comment:
-      "Experiencia increíble! El servicio fue excepcional y las instalaciones están impecables. Definitivamente volveré y lo recomiendo ampliamente.",
-    helpful: 12,
-  },
-  {
-    id: 2,
-    author: "Carlos Ramírez",
-    rating: 4,
-    date: "Hace 1 mes",
-    comment:
-      "Muy buena opción, aunque un poco caro. La ubicación es excelente y el personal muy amable. Solo le faltaría mejorar algunos detalles menores.",
-    helpful: 8,
-  },
-  {
-    id: 3,
-    author: "Ana Martínez",
-    rating: 5,
-    date: "Hace 2 meses",
-    comment:
-      "Superó todas mis expectativas. Desde la reservación hasta el check-out todo fue perfecto. Las amenidades son de primera calidad.",
-    helpful: 15,
-  },
-  {
-    id: 4,
-    author: "Luis Hernández",
-    rating: 4,
-    date: "Hace 3 meses",
-    comment: "Buena relación calidad-precio. El lugar es hermoso y bien mantenido. La comida estuvo deliciosa.",
-    helpful: 6,
-  },
-]
-
 export function ReviewsSection({ placeId, averageRating, totalReviews }: ReviewsSectionProps) {
-  const [reviews] = useState<Review[]>(mockReviews)
+  const { user, isAuthenticated } = useAuth()
+  const [reviews, setReviews] = useState<CommentResponse[]>([])
   const [newReview, setNewReview] = useState("")
   const [newRating, setNewRating] = useState(0)
   const [hoveredRating, setHoveredRating] = useState(0)
+  const [submitting, setSubmitting] = useState(false)
+  const [authorById, setAuthorById] = useState<Record<string, string>>({})
 
-  const ratingDistribution = [
-    { stars: 5, percentage: 65, count: Math.floor(totalReviews * 0.65) },
-    { stars: 4, percentage: 20, count: Math.floor(totalReviews * 0.2) },
-    { stars: 3, percentage: 10, count: Math.floor(totalReviews * 0.1) },
-    { stars: 2, percentage: 3, count: Math.floor(totalReviews * 0.03) },
-    { stars: 1, percentage: 2, count: Math.floor(totalReviews * 0.02) },
-  ]
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const data = await fetchReviewsByPost(placeId)
+        setReviews(data)
+        const uniqueIds = Array.from(new Set(data.map((r) => r.ownerId).filter(Boolean)))
+        const entries = await Promise.all(
+          uniqueIds.map(async (id) => {
+            try {
+              const u = await fetchUser(id)
+              const full = u ? `${u.name ?? ""} ${u.lastname ?? ""}`.trim() : ""
+              return [id, full || id] as const
+            } catch {
+              return [id, id] as const
+            }
+          })
+        )
+        setAuthorById(Object.fromEntries(entries))
+      } catch (e) {
+        // eslint-disable-next-line no-console
+        console.error("No se pudieron cargar las reseñas", e)
+      }
+    }
+    void load()
+  }, [placeId])
 
-  const handleSubmitReview = () => {
-    if (newReview.trim() && newRating > 0) {
-      // In a real app, this would send to an API
-      console.log("New review:", { rating: newRating, comment: newReview })
+  const derivedAverage = useMemo(() => {
+    if (!reviews.length) return averageRating
+    const stars = reviews
+      .map((r) => r.ratings)
+      .filter(Boolean)
+      .map((rt) => {
+        const vals = [rt!.cleanliness, rt!.service, rt!.location].filter((n) => typeof n === "number") as number[]
+        if (!vals.length) return 0
+        return vals.reduce((a, b) => a + b, 0) / vals.length
+      })
+    if (!stars.length) return averageRating
+    return Number((stars.reduce((a, b) => a + b, 0) / stars.length).toFixed(1))
+  }, [reviews, averageRating])
+
+  const ratingDistribution = useMemo(() => {
+    // Simple distribución basada en promedio (placeholder). Se puede reemplazar cuando backend provea histograma.
+    return [
+      { stars: 5, percentage: 65, count: Math.floor(totalReviews * 0.65) },
+      { stars: 4, percentage: 20, count: Math.floor(totalReviews * 0.2) },
+      { stars: 3, percentage: 10, count: Math.floor(totalReviews * 0.1) },
+      { stars: 2, percentage: 3, count: Math.floor(totalReviews * 0.03) },
+      { stars: 1, percentage: 2, count: Math.floor(totalReviews * 0.02) },
+    ]
+  }, [totalReviews])
+
+  const handleSubmitReview = async () => {
+    if (!isAuthenticated || !user?.id) return
+    if (!(newReview.trim() && newRating > 0)) return
+    try {
+      setSubmitting(true)
+      const payload = {
+        ownerId: user.id,
+        postId: placeId,
+        comment: newReview.trim(),
+        ratings: { cleanliness: newRating, service: newRating, location: newRating },
+      }
+      await createReview(payload)
+      const data = await fetchReviewsByPost(placeId)
+      setReviews(data)
       setNewReview("")
       setNewRating(0)
+      toast.success("Reseña publicada correctamente")
+    } catch (e: any) {
+      // eslint-disable-next-line no-console
+      console.error("No se pudo publicar la reseña", e)
+      const raw = String(e?.message || e || "")
+      const match = raw.match(/\{[^}]*\}/)
+      let backendMsg: string | null = null
+      try {
+        backendMsg = match ? JSON.parse(match[0])?.mensaje || null : null
+      } catch {}
+      toast.error(backendMsg || "No se pudo crear la reseña. Intenta nuevamente.")
+    } finally {
+      setSubmitting(false)
     }
   }
 
@@ -94,13 +120,13 @@ export function ReviewsSection({ placeId, averageRating, totalReviews }: Reviews
           {/* Rating Overview */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
             <div className="flex flex-col items-center justify-center p-6 bg-muted/30 rounded-lg">
-              <div className="text-5xl font-bold text-foreground mb-2">{averageRating}</div>
+              <div className="text-5xl font-bold text-foreground mb-2">{derivedAverage}</div>
               <div className="flex items-center gap-1 mb-2">
                 {[1, 2, 3, 4, 5].map((star) => (
                   <Star
                     key={star}
                     className={`h-5 w-5 ${
-                      star <= Math.round(averageRating) ? "fill-yellow-400 text-yellow-400" : "text-muted-foreground"
+                      star <= Math.round(derivedAverage) ? "fill-yellow-400 text-yellow-400" : "text-muted-foreground"
                     }`}
                   />
                 ))}
@@ -182,27 +208,32 @@ export function ReviewsSection({ placeId, averageRating, totalReviews }: Reviews
             <CardContent className="p-6">
               <div className="flex items-start gap-4">
                 <Avatar className="h-12 w-12">
-                  <AvatarImage src={review.avatar || "/placeholder.svg"} alt={review.author} />
+                  <AvatarImage src={(review as any).avatar || "/placeholder.svg"} alt={authorById[review.ownerId] || review.ownerId} />
                   <AvatarFallback className="bg-primary text-primary-foreground">
-                    {review.author
+                    {(authorById[review.ownerId] || review.ownerId)
                       .split(" ")
+                      .filter(Boolean)
                       .map((n) => n[0])
-                      .join("")}
+                      .join("")
+                      .slice(0,2)
+                      .toUpperCase() || "US"}
                   </AvatarFallback>
                 </Avatar>
 
                 <div className="flex-1">
                   <div className="flex items-start justify-between mb-2">
                     <div>
-                      <h4 className="font-semibold text-foreground">{review.author}</h4>
-                      <p className="text-sm text-muted-foreground">{review.date}</p>
+                      <h4 className="font-semibold text-foreground">{authorById[review.ownerId] || review.ownerId}</h4>
+                      <p className="text-sm text-muted-foreground">{new Date(review.timestamp).toLocaleDateString()}</p>
                     </div>
                     <div className="flex items-center gap-1">
                       {[1, 2, 3, 4, 5].map((star) => (
                         <Star
                           key={star}
                           className={`h-4 w-4 ${
-                            star <= review.rating ? "fill-yellow-400 text-yellow-400" : "text-muted-foreground"
+                            star <= Math.round(((review.ratings?.cleanliness ?? 0) + (review.ratings?.service ?? 0) + (review.ratings?.location ?? 0)) / ([(review.ratings?.cleanliness),(review.ratings?.service),(review.ratings?.location)].filter((n)=>typeof n === 'number').length || 1))
+                              ? "fill-yellow-400 text-yellow-400"
+                              : "text-muted-foreground"
                           }`}
                         />
                       ))}
@@ -212,9 +243,20 @@ export function ReviewsSection({ placeId, averageRating, totalReviews }: Reviews
                   <p className="text-foreground leading-relaxed mb-4">{review.comment}</p>
 
                   <div className="flex items-center gap-4">
-                    <button className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors">
+                    <button
+                      className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors"
+                      onClick={async () => {
+                        try {
+                          const updated = await likeComment(review.id, user?.id || "")
+                          setReviews((prev) => prev.map((r) => (r.id === updated.id ? updated : r)))
+                        } catch (e) {
+                          // eslint-disable-next-line no-console
+                          console.error("No se pudo marcar útil", e)
+                        }
+                      }}
+                    >
                       <ThumbsUp className="h-4 w-4" />
-                      <span>Útil ({review.helpful})</span>
+                      <span>Útil ({review.likes})</span>
                     </button>
                   </div>
                 </div>

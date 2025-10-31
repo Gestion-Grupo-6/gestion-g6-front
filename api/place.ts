@@ -1,9 +1,13 @@
 import type { Place, PlaceCreatePayload } from "@/types/place"
 import { sanitizedBaseUrl } from "./config"
 
-export const ACTIVIDADES = "actividad"
-export const HOTELES = "hotel"
-export const RESTAURANTES = "restaurante"
+export const ACTIVIDADES = "activities"
+export const ACTIVIDAD = "activity"
+export const HOTELES = "hotels"
+export const HOTEL = "hotel"
+export const RESTAURANTES = "restaurants"
+export const RESTAURANT = "restaurant"
+
 
 // Backend path helpers
 function listPathFor(category: string): string {
@@ -118,9 +122,5 @@ export async function fetchPlacesByOwner(ownerId: string): Promise<Place[]> {
     throw new Error(`Error al consultar posts del owner ${ownerId}: ${response.status} ${response.statusText}`)
   }
   const data = (await response.json()) as Place[]
-  try {
-    // eslint-disable-next-line no-console
-    console.log("fetchPlacesByOwner response:", data)
-  } catch {}
   return data
 }
