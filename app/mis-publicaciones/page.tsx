@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useMemo, useState } from "react"
+import { toast } from "sonner"
 import { Header } from "@/components/header"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -62,7 +63,7 @@ export default function MisPublicacionesPage() {
   const [editingId, setEditingId] = useState<string | null>(null)
   const [formData, setFormData] = useState(INITIAL_FORM)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
-  const [successMessage, setSuccessMessage] = useState<string | null>(null)
+  
   const [openMenuId, setOpenMenuId] = useState<string | null>(null)
 
   const categoryLabel = useMemo(() => {
@@ -138,7 +139,7 @@ export default function MisPublicacionesPage() {
     event.preventDefault()
 
     setErrorMessage(null)
-    setSuccessMessage(null)
+    
 
     const requiredFields: Array<{ key: keyof typeof INITIAL_FORM; label: string }> = [
       { key: "name", label: "Nombre" },
@@ -200,7 +201,7 @@ export default function MisPublicacionesPage() {
       setAllPlaces(updatedPlaces)
 
       resetForm()
-      setSuccessMessage(editingId ? "Publicación actualizada correctamente." : "Publicación creada correctamente.")
+      toast.success(editingId ? "Publicación actualizada correctamente." : "Publicación creada correctamente.")
     } catch (error) {
       console.error(error)
       setErrorMessage(editingId ? "No se pudo actualizar la publicación. Intenta nuevamente." : "No se pudo crear la publicación. Revisa los datos e intenta nuevamente.")
@@ -262,8 +263,9 @@ export default function MisPublicacionesPage() {
                 type="button"
                 onClick={() => setShowForm((prev) => !prev)}
                 className="w-full sm:w-auto"
+                variant={showForm ? "destructive" : "default"}
               >
-                <Plus className="h-4 w-4 mr-2" />
+                {!showForm && <Plus className="h-4 w-4 mr-2" />}
                 {showForm ? "Cancelar" : "Nueva publicación"}
               </Button>
             </div>
@@ -419,7 +421,7 @@ export default function MisPublicacionesPage() {
                   {/* Campos extra eliminados para ajustarse al DTO del backend */}
 
                   {errorMessage && <p className="text-sm text-destructive">{errorMessage}</p>}
-                  {successMessage && <p className="text-sm text-emerald-600">{successMessage}</p>}
+                  
 
                   <div className="flex flex-wrap gap-3">
                     <Button type="submit" disabled={submitting}>
