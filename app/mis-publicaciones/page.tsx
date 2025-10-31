@@ -14,6 +14,7 @@ import { MapPin, Phone, Mail, Globe, Loader2, Plus, Building2, MoreVertical, Sta
 import { useAuth } from "@/contexts/AuthContext"
 import type { Place } from "@/types/place"
 import { ACTIVIDADES, createPlace, fetchPlace, fetchPlacesByOwner, HOTELES, RESTAURANTES, updatePlace } from "@/api/place"
+import { ReviewsPanel } from "@/components/reviews-panel"
 
 const CATEGORY_OPTIONS = [
   { value: HOTELES, label: "Hoteles" },
@@ -65,6 +66,7 @@ export default function MisPublicacionesPage() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   
   const [openMenuId, setOpenMenuId] = useState<string | null>(null)
+  const [showReviewsForId, setShowReviewsForId] = useState<string | null>(null)
 
   const categoryLabel = useMemo(() => {
     if (selectedFilter === 'all') return 'Todas las publicaciones'
@@ -91,7 +93,12 @@ export default function MisPublicacionesPage() {
 
   const isActivity = formData.category === "actividad"
 
-  const backendCategory = useMemo(() => formData.category, [formData.category])
+  const backendCategory = useMemo(() => {
+    // Normaliza a los slugs de ruta/BE en inglés
+    if (formData.category === 'restaurante') return 'restaurant'
+    if (formData.category === 'actividad') return 'activity'
+    return 'hotel'
+  }, [formData.category])
 
   useEffect(() => {
     if (!isAuthenticated || !user?.id) return
@@ -571,10 +578,7 @@ export default function MisPublicacionesPage() {
                           <Button
                             variant="outline"
                             className="w-full"
-                            onClick={() => {
-                              const categoryRoute = getCategoryRoute(toCollection((((place as any).type as string | undefined) ?? (place as any).category)) as CategoryValue)
-                              window.location.href = `/${categoryRoute}/${place.id}#reviews`
-                            }}
+                            onClick={() => setShowReviewsForId(place.id)}
                           >
                             <Star className="h-4 w-4 mr-2 fill-yellow-400 text-yellow-400" />
                             Consultar Reseñas y Rating
@@ -588,6 +592,13 @@ export default function MisPublicacionesPage() {
           </Card>
         </div>
       </main>
+      {showReviewsForId && (
+        <ReviewsPanel
+          open={Boolean(showReviewsForId)}
+          onOpenChange={(open) => !open ? setShowReviewsForId(null) : null}
+          placeId={showReviewsForId}
+        />
+      )}
     </div>
   )
 }
