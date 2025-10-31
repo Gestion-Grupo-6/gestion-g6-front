@@ -528,7 +528,11 @@ export default function MisPublicacionesPage() {
                                             price: String(full.price ?? ""),
                                             priceCategory: (full.priceCategory as any) || "$$",
                                             images: Array.isArray(full.images) ? full.images.join("\n") : "",
-                                            attributes: Array.isArray((full as any).amenities) ? (full as any).amenities.join("\n") : "",
+                                            attributes: Array.isArray((full as any).attributes)
+                                              ? (full as any).attributes.join("\n")
+                                              : Array.isArray((full as any).amenities)
+                                                ? (full as any).amenities.join("\n")
+                                                : "",
                                           })
                                           setEditingId(place.id)
                                           setShowForm(true)
