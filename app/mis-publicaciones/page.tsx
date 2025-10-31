@@ -576,7 +576,7 @@ export default function MisPublicacionesPage() {
                               window.location.href = `/${categoryRoute}/${place.id}#reviews`
                             }}
                           >
-                            <Star className="h-4 w-4 mr-2" />
+                            <Star className="h-4 w-4 mr-2 fill-yellow-400 text-yellow-400" />
                             Consultar Reseñas y Rating
                           </Button>
                         </CardContent>
