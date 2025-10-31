@@ -93,7 +93,12 @@ export default function MisPublicacionesPage() {
 
   const isActivity = formData.category === "actividad"
 
-  const backendCategory = useMemo(() => formData.category, [formData.category])
+  const backendCategory = useMemo(() => {
+    // Normaliza a los slugs de ruta/BE en inglés
+    if (formData.category === 'restaurante') return 'restaurant'
+    if (formData.category === 'actividad') return 'activity'
+    return 'hotel'
+  }, [formData.category])
 
   useEffect(() => {
     if (!isAuthenticated || !user?.id) return
