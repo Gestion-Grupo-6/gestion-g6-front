@@ -11,6 +11,7 @@ import { fetchReviewsByPost, createReview, likeComment } from "@/api/review"
 import { fetchUser } from "@/api/user"
 import type { CommentResponse } from "@/types/review"
 import { useAuth } from "@/contexts/AuthContext"
+import { toast } from "sonner"
 
 interface ReviewsSectionProps {
   placeId: string
@@ -94,9 +95,17 @@ export function ReviewsSection({ placeId, averageRating, totalReviews }: Reviews
       setReviews(data)
       setNewReview("")
       setNewRating(0)
-    } catch (e) {
+      toast.success("Reseña publicada correctamente")
+    } catch (e: any) {
       // eslint-disable-next-line no-console
       console.error("No se pudo publicar la reseña", e)
+      const raw = String(e?.message || e || "")
+      const match = raw.match(/\{[^}]*\}/)
+      let backendMsg: string | null = null
+      try {
+        backendMsg = match ? JSON.parse(match[0])?.mensaje || null : null
+      } catch {}
+      toast.error(backendMsg || "No se pudo crear la reseña. Intenta nuevamente.")
     } finally {
       setSubmitting(false)
     }
