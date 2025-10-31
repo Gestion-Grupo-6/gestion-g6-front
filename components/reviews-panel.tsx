@@ -50,19 +50,7 @@ export function ReviewsPanel({ open, onOpenChange, placeId }: ReviewsPanelProps)
   }, [open, placeId])
 
   const totalReviews = reviews.length
-  const averageRating = useMemo(() => {
-    if (!reviews.length) return 0
-    const stars = reviews
-      .map((r) => r.ratings)
-      .filter(Boolean)
-      .map((rt) => {
-        const vals = [rt!.cleanliness, rt!.service, rt!.location].filter((n) => typeof n === "number") as number[]
-        if (!vals.length) return 0
-        return vals.reduce((a, b) => a + b, 0) / vals.length
-      })
-    if (!stars.length) return 0
-    return Number((stars.reduce((a, b) => a + b, 0) / stars.length).toFixed(1))
-  }, [reviews])
+  const averageRating = 0
 
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
