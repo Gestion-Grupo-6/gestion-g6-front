@@ -42,58 +42,20 @@ export function Footer() {
               </li>
             </ul>
           </div>
-
           <div>
-            <h3 className="font-semibold text-foreground mb-4">Compañía</h3>
+            <h3 className="font-semibold text-foreground mb-4">Tu cuenta</h3>
             <ul className="space-y-2">
               <li>
-                <Link
-                  href="/sobre-nosotros"
-                  className="text-sm text-muted-foreground hover:text-primary transition-colors"
-                >
-                  Sobre nosotros
+                <Link href="/mis-publicaciones" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                  Mis negocios
                 </Link>
               </li>
               <li>
-                <Link href="/contacto" className="text-sm text-muted-foreground hover:text-primary transition-colors">
-                  Contacto
-                </Link>
-              </li>
-              <li>
-                <Link href="/terminos" className="text-sm text-muted-foreground hover:text-primary transition-colors">
-                  Términos y condiciones
-                </Link>
-              </li>
-              <li>
-                <Link href="/privacidad" className="text-sm text-muted-foreground hover:text-primary transition-colors">
-                  Política de privacidad
+                <Link href="/profile" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                  Mi perfil
                 </Link>
               </li>
             </ul>
-          </div>
-
-          <div>
-            <h3 className="font-semibold text-foreground mb-4">Síguenos</h3>
-            <div className="flex gap-3">
-              <a
-                href="#"
-                className="flex h-10 w-10 items-center justify-center rounded-full bg-muted hover:bg-primary hover:text-primary-foreground transition-colors"
-              >
-                <Facebook className="h-5 w-5" />
-              </a>
-              <a
-                href="#"
-                className="flex h-10 w-10 items-center justify-center rounded-full bg-muted hover:bg-primary hover:text-primary-foreground transition-colors"
-              >
-                <Twitter className="h-5 w-5" />
-              </a>
-              <a
-                href="#"
-                className="flex h-10 w-10 items-center justify-center rounded-full bg-muted hover:bg-primary hover:text-primary-foreground transition-colors"
-              >
-                <Instagram className="h-5 w-5" />
-              </a>
-            </div>
           </div>
         </div>
 
