@@ -10,10 +10,10 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Separator } from "@/components/ui/separator"
 import { Badge } from "@/components/ui/badge"
-import { MapPin, Phone, Mail, Globe, Loader2, Plus, Building2, MoreVertical, Star, Edit, Trash2 } from "lucide-react"
+import { MapPin, Phone, Mail, Globe, Loader2, Plus, Building2, MoreVertical, Star, Edit, Trash2, X, Upload } from "lucide-react"
 import { useAuth } from "@/contexts/AuthContext"
 import type { Place } from "@/types/place"
-import { ACTIVIDADES, createPlace, fetchPlace, fetchPlacesByOwner, HOTELES, RESTAURANTES, updatePlace } from "@/api/place"
+import { ACTIVIDADES, createPlace, fetchPlace, fetchPlacesByOwner, HOTELES, RESTAURANTES, updatePlace, uploadPlaceImage } from "@/api/place"
 import { ReviewsPanel } from "@/components/reviews-panel"
 
 const CATEGORY_OPTIONS = [
@@ -64,6 +64,9 @@ export default function MisPublicacionesPage() {
   const [editingId, setEditingId] = useState<string | null>(null)
   const [formData, setFormData] = useState(INITIAL_FORM)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([])
+  const [imagePreviews, setImagePreviews] = useState<string[]>([])
+  const [uploadingImages, setUploadingImages] = useState(false)
   
   const [openMenuId, setOpenMenuId] = useState<string | null>(null)
   const [showReviewsForId, setShowReviewsForId] = useState<string | null>(null)
@@ -75,9 +78,9 @@ export default function MisPublicacionesPage() {
 
   const getCategoryRoute = (category: CategoryValue) => {
     const routeMap: Record<CategoryValue, string> = {
-      [HOTELES]: "hoteles",
-      [RESTAURANTES]: "restaurantes",
-      [ACTIVIDADES]: "actividades",
+      [HOTELES]: "hotels",
+      [RESTAURANTES]: "restaurants",
+      [ACTIVIDADES]: "activities",
     }
     return routeMap[category] || category
   }
@@ -85,19 +88,17 @@ export default function MisPublicacionesPage() {
   const createSingularLabel = useMemo(() => {
     const mapByForm: Record<string, string> = {
       hotel: "Hotel",
-      restaurante: "Restaurante",
-      actividad: "Actividad",
+      restaurant: "Restaurante",
+      activity: "Actividad",
     }
     return mapByForm[formData.category] || "Publicación"
   }, [formData.category])
 
-  const isActivity = formData.category === "actividad"
+  const isActivity = formData.category === "activity"
 
   const backendCategory = useMemo(() => {
-    // Normaliza a los slugs de ruta/BE en inglés
-    if (formData.category === 'restaurante') return 'restaurant'
-    if (formData.category === 'actividad') return 'activity'
-    return 'hotel'
+    // Usar directamente la categoría del formulario (ya está en inglés)
+    return formData.category
   }, [formData.category])
 
   useEffect(() => {
@@ -137,9 +138,45 @@ export default function MisPublicacionesPage() {
   }
 
   const resetForm = () => {
+    // Limpiar URLs de preview para evitar memory leaks
+    imagePreviews.forEach(url => URL.revokeObjectURL(url))
     setFormData(INITIAL_FORM)
+    setSelectedFiles([])
+    setImagePreviews([])
     setShowForm(false)
     setEditingId(null)
+  }
+
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(event.target.files || [])
+    if (files.length === 0) return
+
+    // Filtrar solo imágenes
+    const imageFiles = files.filter(file => file.type.startsWith('image/'))
+    
+    if (imageFiles.length !== files.length) {
+      toast.error("Algunos archivos no son imágenes y fueron omitidos")
+    }
+
+    // Actualizar archivos seleccionados
+    const newFiles = [...selectedFiles, ...imageFiles]
+    setSelectedFiles(newFiles)
+
+    // Crear previews
+    const newPreviews = imageFiles.map(file => URL.createObjectURL(file))
+    setImagePreviews([...imagePreviews, ...newPreviews])
+  }
+
+  const removeImage = (index: number) => {
+    // Limpiar URL del preview
+    URL.revokeObjectURL(imagePreviews[index])
+    
+    // Remover de los arrays
+    const newFiles = selectedFiles.filter((_, i) => i !== index)
+    const newPreviews = imagePreviews.filter((_, i) => i !== index)
+    
+    setSelectedFiles(newFiles)
+    setImagePreviews(newPreviews)
   }
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -158,10 +195,33 @@ export default function MisPublicacionesPage() {
       return
     }
 
-    const images = (formData.images ?? "")
+    // Obtener URLs manuales del textarea
+    const manualImageUrls = (formData.images ?? "")
       .split(/[\n,]/)
       .map((item) => item.trim())
       .filter(Boolean)
+
+    // Subir archivos seleccionados
+    let uploadedImageUrls: string[] = []
+    if (selectedFiles.length > 0) {
+      try {
+        setUploadingImages(true)
+        uploadedImageUrls = await Promise.all(
+          selectedFiles.map((file, index) => uploadPlaceImage(editingId, file, index))
+        )
+        toast.success(`${uploadedImageUrls.length} imagen(es) subida(s) correctamente`)
+      } catch (error) {
+        console.error("Error al subir imágenes:", error)
+        setErrorMessage("Error al subir las imágenes. Intenta nuevamente.")
+        setUploadingImages(false)
+        return
+      } finally {
+        setUploadingImages(false)
+      }
+    }
+
+    // Combinar URLs manuales con URLs subidas
+    const images = [...manualImageUrls, ...uploadedImageUrls]
 
     const attributes = (formData.attributes ?? "")
       .split(/[\n,]/)
@@ -180,24 +240,27 @@ export default function MisPublicacionesPage() {
     try {
       setSubmitting(true)
       // Determinar la colección (ruta) correcta según la categoría elegida en el formulario
-      const collectionForPost = formData.category === "hotel" ? HOTELES : formData.category === "restaurante" ? RESTAURANTES : ACTIVIDADES
-      const payload = {
+      const collectionForPost = formData.category === "hotel" ? HOTELES : formData.category === "restaurant" ? RESTAURANTES : ACTIVIDADES
+      
+      // Limpiar campos vacíos antes de enviar (solo enviar campos con valor)
+      const payload: any = {
         name: formData.name.trim(),
         ownerId: user.id,
         category: backendCategory,
-        // Campos soportados por backend DTO
-        price,
-        priceCategory: formData.priceCategory?.trim() || undefined,
-        images,
-        description: formData.description.trim(),
-        attributes,
-        address: formData.address.trim(),
-        city: formData.city.trim(),
-        country: formData.country.trim(),
-        phone: formData.phone.trim(),
-        email: formData.email.trim(),
-        website: formData.website.trim(),
       }
+      
+      // Solo agregar campos que tengan valor
+      if (price > 0) payload.price = price
+      if (formData.priceCategory?.trim()) payload.priceCategory = formData.priceCategory.trim()
+      if (images.length > 0) payload.images = images
+      if (formData.description.trim()) payload.description = formData.description.trim()
+      if (attributes.length > 0) payload.attributes = attributes
+      if (formData.address.trim()) payload.address = formData.address.trim()
+      if (formData.city.trim()) payload.city = formData.city.trim()
+      if (formData.country.trim()) payload.country = formData.country.trim()
+      if (formData.phone.trim()) payload.phone = formData.phone.trim()
+      if (formData.email.trim()) payload.email = formData.email.trim()
+      if (formData.website.trim()) payload.website = formData.website.trim()
 
       if (editingId) {
         await updatePlace(collectionForPost, editingId, payload)
@@ -299,8 +362,8 @@ export default function MisPublicacionesPage() {
                         onChange={handleFormChange}
                       >
                         <option value="hotel">Hotel</option>
-                        <option value="restaurante">Restaurante</option>
-                        <option value="actividad">Actividad</option>
+                        <option value="restaurant">Restaurante</option>
+                        <option value="activity">Actividad</option>
                       </select>
                     </div>
                     <div className="space-y-2">
@@ -399,29 +462,88 @@ export default function MisPublicacionesPage() {
                     />
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-4">
                     <div className="space-y-2">
-                      <Label htmlFor="images">Imágenes (una por línea)</Label>
-                      <Textarea
-                        id="images"
-                        name="images"
-                        value={formData.images}
-                        onChange={handleFormChange}
-                        placeholder="/ruta-imagen.jpg"
-                        rows={4}
-                      />
+                      <Label htmlFor="file-upload">Subir imágenes desde el dispositivo</Label>
+                      <div className="flex items-center gap-2">
+                        <input
+                          id="file-upload"
+                          type="file"
+                          accept="image/*"
+                          multiple
+                          onChange={handleFileChange}
+                          className="hidden"
+                        />
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => document.getElementById('file-upload')?.click()}
+                          className="flex items-center gap-2"
+                        >
+                          <Upload className="h-4 w-4" />
+                          Seleccionar imágenes
+                        </Button>
+                      </div>
+                      {selectedFiles.length > 0 && (
+                        <div className="mt-2 text-sm text-muted-foreground">
+                          {selectedFiles.length} imagen(es) seleccionada(s)
+                        </div>
+                      )}
                     </div>
 
-                    <div className="space-y-2">
-                      <Label htmlFor="attributes">Características (una por línea)</Label>
-                      <Textarea
-                        id="attributes"
-                        name="attributes"
-                        value={formData.attributes}
-                        onChange={handleFormChange}
-                        placeholder="WiFi\nPiscina\nSpa"
-                        rows={4}
-                      />
+                    {/* Preview de imágenes seleccionadas */}
+                    {imagePreviews.length > 0 && (
+                      <div className="space-y-2">
+                        <Label>Vista previa de imágenes</Label>
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                          {imagePreviews.map((preview, index) => (
+                            <div key={index} className="relative group">
+                              <img
+                                src={preview}
+                                alt={`Preview ${index + 1}`}
+                                className="w-full h-32 object-cover rounded-md border border-border"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => removeImage(index)}
+                                className="absolute top-1 right-1 bg-destructive text-destructive-foreground rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                                title="Eliminar imagen"
+                              >
+                                <X className="h-4 w-4" />
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="images">O agregar URLs de imágenes (una por línea)</Label>
+                        <Textarea
+                          id="images"
+                          name="images"
+                          value={formData.images}
+                          onChange={handleFormChange}
+                          placeholder="https://ejemplo.com/imagen1.jpg\nhttps://ejemplo.com/imagen2.jpg"
+                          rows={4}
+                        />
+                        <p className="text-xs text-muted-foreground">
+                          También puedes agregar URLs manualmente si prefieres
+                        </p>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="attributes">Características (una por línea)</Label>
+                        <Textarea
+                          id="attributes"
+                          name="attributes"
+                          value={formData.attributes}
+                          onChange={handleFormChange}
+                          placeholder="WiFi\nPiscina\nSpa"
+                          rows={4}
+                        />
+                      </div>
                     </div>
                   </div>
 
@@ -431,11 +553,11 @@ export default function MisPublicacionesPage() {
                   
 
                   <div className="flex flex-wrap gap-3">
-                    <Button type="submit" disabled={submitting}>
-                      {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                      {editingId ? "Guardar" : "Crear publicación"}
+                    <Button type="submit" disabled={submitting || uploadingImages}>
+                      {(submitting || uploadingImages) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                      {uploadingImages ? "Subiendo imágenes..." : editingId ? "Guardar" : "Crear publicación"}
                     </Button>
-                    <Button type="button" variant="outline" onClick={resetForm} disabled={submitting}>
+                    <Button type="button" variant="outline" onClick={resetForm} disabled={submitting || uploadingImages}>
                       Cancelar
                     </Button>
                   </div>
@@ -523,7 +645,7 @@ export default function MisPublicacionesPage() {
                                           const collection: CategoryValue = t === 'HOTEL' ? HOTELES : t === 'RESTAURANT' ? RESTAURANTES : ACTIVIDADES
                                           const full = await fetchPlace(collection, place.id)
                                           if (!full) return
-                                          const categoryForForm = collection === HOTELES ? 'hotel' : collection === RESTAURANTES ? 'restaurante' : 'actividad'
+                                          const categoryForForm = collection === HOTELES ? 'hotel' : collection === RESTAURANTES ? 'restaurant' : 'activity'
                                           setFormData({
                                             name: full.name || "",
                                             description: full.description || "",

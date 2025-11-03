@@ -24,9 +24,9 @@ export function PlaceDetail({ place }: PlaceDetailProps) {
   const reviewCount = (place as any).reviews ?? (place as any).numberOfReviews ?? 0
   const priceLabel = (place as any).priceCategory ?? (place.price != null ? `$${place.price}` : "Consultar")
   const categoryRoutes: Record<string, string> = {
-    hotel: "hoteles",
-    restaurante: "restaurantes",
-    actividad: "actividades",
+    hotel: "hotels",
+    restaurant: "restaurants",
+    activity: "activities",
   }
   const categoryPath = categoryRoutes[place.category] ?? `${place.category}s`
   const categoryLabel = place.category
