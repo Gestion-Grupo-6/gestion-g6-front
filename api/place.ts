@@ -1,5 +1,6 @@
 import type { Place, PlaceCreatePayload } from "@/types/place"
 import { sanitizedBaseUrl } from "./config"
+import { uploadImage, getImage } from "@/contexts/SupabaseContext"
 
 export const ACTIVIDADES = "activities"
 export const ACTIVIDAD = "activity"
@@ -72,21 +73,35 @@ export async function fetchPlaces(
 // Place - POST (create)
 export async function createPlace(collection: string, payload: PlaceCreatePayload): Promise<Place> {
   const postPath = detailPathFor(collection)
+  const url = `${sanitizedBaseUrl}/${postPath}`
 
-  const response = await fetch(`${sanitizedBaseUrl}/${postPath}`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(payload),
-  })
+  try {
+    const response = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+    })
 
-  if (!response.ok) {
-    const fallback = await response.text()
-    throw new Error(`No se pudo crear el registro: ${response.status} ${response.statusText}. ${fallback}`)
+    if (!response.ok) {
+      const errorText = await response.text()
+      console.error(`Error creating place: ${response.status} ${response.statusText}`)
+      console.error(`URL: ${url}`)
+      console.error(`Payload:`, payload)
+      console.error(`Response:`, errorText)
+      throw new Error(`No se pudo crear el registro: ${response.status} ${response.statusText}. ${errorText}`)
+    }
+
+    return (await response.json()) as Place
+  } catch (error) {
+    if (error instanceof TypeError && error.message === "Failed to fetch") {
+      console.error(`Network error: No se pudo conectar al backend en ${url}`)
+      console.error(`Verifica que el backend esté corriendo en ${sanitizedBaseUrl}`)
+      throw new Error(`No se pudo conectar al servidor. Verifica que el backend esté corriendo en ${sanitizedBaseUrl}`)
+    }
+    throw error
   }
-
-  return (await response.json()) as Place
 }
 
 // Place - PUT (update)
@@ -123,4 +138,27 @@ export async function fetchPlacesByOwner(ownerId: string): Promise<Place[]> {
   }
   const data = (await response.json()) as Place[]
   return data
+}
+
+// Place - Upload image using Supabase
+export async function uploadPlaceImage(placeId: string | null, file: File, index?: number): Promise<string> {
+  // Genera una ruta única para el archivo en el bucket
+  const fileExtension = file.name.split('.').pop() || 'jpg'
+  const timestamp = Date.now()
+  const suffix = index !== undefined ? `.${index}` : ''
+  const path = placeId 
+    ? `place-images/${placeId}/${timestamp}${suffix}.${fileExtension}`
+    : `place-images/temp/${timestamp}${suffix}.${fileExtension}`
+
+  // Sube la imagen al bucket
+  const uploadedPath = await uploadImage(path, file)
+  
+  if (!uploadedPath) {
+    console.error("Error al subir la imagen del lugar")
+    throw new Error("Error al subir la imagen del lugar")
+  }
+
+  // Devuelve el path relativo para guardar en la base de datos
+  // getImage() se encargará de convertirlo a URL pública cuando se necesite mostrar
+  return uploadedPath
 }

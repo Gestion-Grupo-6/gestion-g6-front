@@ -20,13 +20,13 @@ export function Footer() {
             <h3 className="font-semibold text-foreground mb-4">Descubre</h3>
             <ul className="space-y-2">
               <li>
-                <Link href="/hoteles" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                <Link href="/hotels" className="text-sm text-muted-foreground hover:text-primary transition-colors">
                   Hoteles
                 </Link>
               </li>
               <li>
                 <Link
-                  href="/restaurantes"
+                  href="/restaurants"
                   className="text-sm text-muted-foreground hover:text-primary transition-colors"
                 >
                   Restaurantes
@@ -34,7 +34,7 @@ export function Footer() {
               </li>
               <li>
                 <Link
-                  href="/actividades"
+                  href="/activities"
                   className="text-sm text-muted-foreground hover:text-primary transition-colors"
                 >
                   Actividades

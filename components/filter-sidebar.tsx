@@ -18,9 +18,9 @@ export function FilterSidebar({ category }: FilterSidebarProps) {
   const amenitiesOptions =
     category === "hotel"
       ? ["WiFi", "Piscina", "Spa", "Restaurante", "Gimnasio", "Estacionamiento"]
-      : category === "restaurante"
+      : category === "restaurant"
         ? ["Reservaciones", "Terraza", "Bar", "Menú vegetariano", "Música en vivo", "Vista al mar"]
-        : category === "actividad"
+        : category === "activity"
           ? ["Guía incluido", "Transporte", "Comida", "Equipo incluido", "Certificación", "Para familias"]
           : ["Playas", "Montañas", "Cultura", "Aventura", "Gastronomía", "Vida nocturna"]
 

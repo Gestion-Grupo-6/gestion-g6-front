@@ -20,6 +20,11 @@ export const supabase = createClient(env.url!, env.anon!)
 export function getImage(path: string | undefined | null) {
   if (!path) return "/placeholder.svg"
 
+  // Si ya es una URL completa (empieza con http), devolverla directamente
+  if (path.startsWith("http://") || path.startsWith("https://")) {
+    return path
+  }
+
   try {
     const { data } = supabase.storage
       .from(env.bucket!)

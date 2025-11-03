@@ -8,19 +8,19 @@ import { cn } from "@/lib/utils"
 const categories = [
   {
     name: "Hoteles",
-    href: "/hoteles",
+    href: "/hotels",
     icon: Hotel,
     description: "Encuentra el alojamiento perfecto",
   },
   {
     name: "Restaurantes",
-    href: "/restaurantes",
+    href: "/restaurants",
     icon: UtensilsCrossed,
     description: "Descubre la mejor gastronomía",
   },
   {
     name: "Actividades",
-    href: "/actividades",
+    href: "/activities",
     icon: Compass,
     description: "Experiencias únicas",
   },
