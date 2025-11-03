@@ -69,6 +69,34 @@ export async function fetchPlaces(
   return (await response.json()) as Place[]
 }
 
+// Place - SEARCH (MVP: by name). Send null for unused fields
+export async function searchPlaces(
+  collection: string,
+  params: { name?: string; sort?: string | null; page?: number | null; pageSize?: number | null },
+): Promise<Place[]> {
+  const postPath = detailPathFor(collection)
+  const searchPath = `search/${postPath}`
+  const body = {
+    name: params.name ?? null,
+    sort: params.sort ?? null,
+    page: params.page ?? null,
+    pageSize: params.pageSize ?? null,
+  }
+
+  const response = await fetch(`${sanitizedBaseUrl}/${searchPath}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  })
+
+  if (!response.ok) {
+    const fallback = await response.text()
+    throw new Error(`Error en búsqueda: ${response.status} ${response.statusText}. ${fallback}`)
+  }
+
+  return (await response.json()) as Place[]
+}
+
 // Place - POST (create)
 export async function createPlace(collection: string, payload: PlaceCreatePayload): Promise<Place> {
   const postPath = detailPathFor(collection)

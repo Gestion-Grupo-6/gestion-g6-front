@@ -1,17 +1,16 @@
 import { Header } from "@/components/header"
 import { PlacesList } from "@/components/places-list"
 import { FilterSidebar } from "@/components/filter-sidebar"
-import { fetchPlaces, fetchPlace, RESTAURANTES, RESTAURANT } from "@/api/place"
+import { fetchPlaces, fetchPlace, RESTAURANTES, RESTAURANT, searchPlaces } from "@/api/place"
+import { SearchBar } from "@/components/search-bar"
 
-export default async function RestaurantesPage() {
-  const rest_summaries = await fetchPlaces(RESTAURANTES)
-
-  // Fetch full detail for each restaurant (parallel)
-  const detailed = await Promise.all(rest_summaries.map((s) => fetchPlace(RESTAURANT, s.id)))
-
-
-  // filtro los nulls
-  const restaurants = detailed.filter((r): r is NonNullable<typeof r> => r !== null)
+export default async function RestaurantesPage({ searchParams }: { searchParams: Promise<{ q?: string }> }) {
+  const { q } = await searchParams
+  const restaurants = q
+    ? await searchPlaces(RESTAURANTES, { name: q, sort: null, page: null, pageSize: null })
+    : (await Promise.all((await fetchPlaces(RESTAURANTES)).map((s) => fetchPlace(RESTAURANT, s.id)))).filter(
+        (r): r is NonNullable<typeof r> => r !== null,
+      )
 
   
   return (
@@ -26,6 +25,7 @@ export default async function RestaurantesPage() {
         </div>
 
         <div className="container mx-auto px-4 py-8">
+          <SearchBar defaultValue={q || ""} />
           <div className="flex flex-col lg:flex-row gap-8">
             <aside className="lg:w-64 flex-shrink-0">
               <FilterSidebar category="restaurante" />
