@@ -209,9 +209,7 @@ export default function MisPublicacionesPage() {
         uploadedImageUrls = await Promise.all(
           selectedFiles.map((file, index) => uploadPlaceImage(editingId, file, index))
         )
-        toast.success(`${uploadedImageUrls.length} imagen(es) subida(s) correctamente`)
       } catch (error) {
-        console.error("Error al subir imágenes:", error)
         setErrorMessage("Error al subir las imágenes. Intenta nuevamente.")
         setUploadingImages(false)
         return
