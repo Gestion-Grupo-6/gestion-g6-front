@@ -44,19 +44,6 @@ export function ReviewsSection({ placeId, averageRating, totalReviews }: Reviews
   const [editingReviewId, setEditingReviewId] = useState<string | null>(null)
   const [existingImagePaths, setExistingImagePaths] = useState<string[]>([])
 
-  // Debug: Monitorear estados del formulario
-  useEffect(() => {
-    if (showReviewModal) {
-      console.log("📊 Estados del formulario de reseña:", {
-        newReview: newReview.trim(),
-        ratings,
-        submitting,
-        uploadingImages,
-        selectedFilesCount: selectedFiles.length,
-        isDisabled: submitting || uploadingImages || !newReview.trim() || (ratings.cleanliness === 0 && ratings.service === 0 && ratings.location === 0)
-      })
-    }
-  }, [showReviewModal, newReview, ratings, submitting, uploadingImages, selectedFiles.length])
 
   useEffect(() => {
     const load = async () => {
@@ -228,22 +215,10 @@ export function ReviewsSection({ placeId, averageRating, totalReviews }: Reviews
   }
 
   const handleSubmitReview = async (e?: React.MouseEvent) => {
-    console.log("🔵 handleSubmitReview llamado")
-    console.log("🔵 Event:", e)
     e?.preventDefault()
     e?.stopPropagation()
     
-    console.log("🔵 Estado actual:", {
-      isAuthenticated,
-      userId: user?.id,
-      newReview: newReview.trim(),
-      ratings,
-      submitting,
-      uploadingImages
-    })
-    
     if (!isAuthenticated || !user?.id) {
-      console.log("❌ No autenticado o sin usuario")
       toast.error("Debes iniciar sesión para publicar una reseña")
       return
     }
@@ -362,7 +337,6 @@ export function ReviewsSection({ placeId, averageRating, totalReviews }: Reviews
               onClick={(e) => {
                 e.preventDefault()
                 e.stopPropagation()
-                console.log(`⭐ Click en estrella ${star} para ${label}`)
                 onStarClick(star)
               }}
               className="transition-transform hover:scale-110 cursor-pointer"
@@ -428,13 +402,6 @@ export function ReviewsSection({ placeId, averageRating, totalReviews }: Reviews
                 </p>
                 <Button 
                   onClick={() => {
-                    console.log("🟡 Abriendo modal de reseña")
-                    console.log("🟡 Estado inicial:", {
-                      newReview,
-                      ratings,
-                      submitting,
-                      uploadingImages
-                    })
                     setShowReviewModal(true)
                   }} 
                   className="w-full sm:w-auto"
@@ -453,9 +420,7 @@ export function ReviewsSection({ placeId, averageRating, totalReviews }: Reviews
       <Dialog.Root 
         open={showReviewModal} 
         onOpenChange={(open) => {
-          console.log("🟡 Modal cambio:", open)
           if (!open) {
-            console.log("🟡 Cerrando modal, reseteando formulario")
             resetReviewForm()
           }
           setShowReviewModal(open)
@@ -489,36 +454,21 @@ export function ReviewsSection({ placeId, averageRating, totalReviews }: Reviews
                 <StarRating
                   value={ratings.cleanliness}
                   onStarClick={(star) => {
-                    console.log(`🟢 onStarClick Limpieza: ${star}`)
-                    setRatings((prev) => {
-                      const updated = { ...prev, cleanliness: star }
-                      console.log(`🟢 Ratings actualizados:`, updated)
-                      return updated
-                    })
+                    setRatings((prev) => ({ ...prev, cleanliness: star }))
                   }}
                   label="Limpieza"
                 />
                 <StarRating
                   value={ratings.service}
                   onStarClick={(star) => {
-                    console.log(`🟢 onStarClick Servicio: ${star}`)
-                    setRatings((prev) => {
-                      const updated = { ...prev, service: star }
-                      console.log(`🟢 Ratings actualizados:`, updated)
-                      return updated
-                    })
+                    setRatings((prev) => ({ ...prev, service: star }))
                   }}
                   label="Servicio"
                 />
                 <StarRating
                   value={ratings.location}
                   onStarClick={(star) => {
-                    console.log(`🟢 onStarClick Ubicación: ${star}`)
-                    setRatings((prev) => {
-                      const updated = { ...prev, location: star }
-                      console.log(`🟢 Ratings actualizados:`, updated)
-                      return updated
-                    })
+                    setRatings((prev) => ({ ...prev, location: star }))
                   }}
                   label="Ubicación"
                 />
@@ -600,31 +550,11 @@ export function ReviewsSection({ placeId, averageRating, totalReviews }: Reviews
 
               {/* Submit Button */}
               <div className="flex gap-3 pt-4">
-                {(() => {
-                  const isDisabled = submitting || uploadingImages || !newReview.trim() || (ratings.cleanliness === 0 && ratings.service === 0 && ratings.location === 0)
-                  console.log("🔵 Estado del botón:", {
-                    submitting,
-                    uploadingImages,
-                    hasReview: !!newReview.trim(),
-                    ratings,
-                    isDisabled,
-                    disabledReasons: {
-                      submitting,
-                      uploadingImages,
-                      noReview: !newReview.trim(),
-                      noRatings: ratings.cleanliness === 0 && ratings.service === 0 && ratings.location === 0
-                    }
-                  })
-                  return null
-                })()}
                 <Button
                   type="button"
                   onClick={(e) => {
-                    console.log("🟢 Botón clickeado!")
-                    console.log("🟢 Event:", e)
                     e.preventDefault()
                     e.stopPropagation()
-                    console.log("🟢 Llamando handleSubmitReview...")
                     void handleSubmitReview(e)
                   }}
                   disabled={submitting || uploadingImages || !newReview.trim() || (ratings.cleanliness === 0 && ratings.service === 0 && ratings.location === 0)}
