@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Star, ThumbsUp, X, Upload, Loader2, Edit } from "lucide-react"
+import { Star, ThumbsUp, X, Upload, Loader2, Edit, ChevronLeft, ChevronRight } from "lucide-react"
 import { Progress } from "@/components/ui/progress"
 import { fetchReviewsByPost, createReview, updateReview, likeComment, uploadReviewImage } from "@/api/review"
 import { fetchUser } from "@/api/user"
@@ -39,6 +39,8 @@ export function ReviewsSection({ placeId, averageRating, totalReviews }: Reviews
   const [selectedFiles, setSelectedFiles] = useState<File[]>([])
   const [imagePreviews, setImagePreviews] = useState<string[]>([])
   const [selectedImage, setSelectedImage] = useState<string | null>(null)
+  const [selectedImageIndex, setSelectedImageIndex] = useState<number>(0)
+  const [selectedReviewImages, setSelectedReviewImages] = useState<string[]>([])
   const [editingReviewId, setEditingReviewId] = useState<string | null>(null)
   const [existingImagePaths, setExistingImagePaths] = useState<string[]>([])
 
@@ -705,7 +707,19 @@ export function ReviewsSection({ placeId, averageRating, totalReviews }: Reviews
                             src={getImage(imagePath)}
                             alt={`Imagen de reseña ${idx + 1}`}
                             className="w-full h-32 object-cover rounded-md border border-border cursor-pointer hover:opacity-90 transition-opacity"
-                            onClick={() => setSelectedImage(getImage(imagePath))}
+                            onClick={() => {
+                              if (Array.isArray(review.images)) {
+                                const imageUrls = review.images.map(path => getImage(path))
+                                const clickedIndex = imageUrls.findIndex(url => url === getImage(imagePath))
+                                setSelectedReviewImages(imageUrls)
+                                setSelectedImageIndex(clickedIndex >= 0 ? clickedIndex : 0)
+                                setSelectedImage(getImage(imagePath))
+                              } else {
+                                setSelectedImage(getImage(imagePath))
+                                setSelectedReviewImages([getImage(imagePath)])
+                                setSelectedImageIndex(0)
+                              }
+                            }}
                           />
                         ))}
                       </div>
@@ -746,24 +760,72 @@ export function ReviewsSection({ placeId, averageRating, totalReviews }: Reviews
       </div>
 
       {/* Image Modal */}
-      <Dialog.Root open={selectedImage !== null} onOpenChange={(open) => !open && setSelectedImage(null)}>
+      <Dialog.Root 
+        open={selectedImage !== null} 
+        onOpenChange={(open) => {
+          if (!open) {
+            setSelectedImage(null)
+            setSelectedImageIndex(0)
+            setSelectedReviewImages([])
+          }
+        }}
+      >
         <Dialog.Portal>
           <Dialog.Overlay className="fixed inset-0 bg-black/80 z-[70]" />
           <Dialog.Content className="fixed left-1/2 -translate-x-1/2 top-1/2 -translate-y-1/2 z-[70] w-full max-w-4xl max-h-[90vh] bg-transparent flex items-center justify-center">
             <Dialog.Title className="sr-only">Imagen ampliada de la reseña</Dialog.Title>
             <div className="relative w-full h-full flex items-center justify-center">
               {selectedImage && (
-                <img
-                  src={selectedImage}
-                  alt="Imagen ampliada de la reseña"
-                  className="max-w-full max-h-[90vh] object-contain rounded-lg"
-                />
+                <>
+                  <img
+                    src={selectedImage}
+                    alt={`Imagen ampliada ${selectedImageIndex + 1} de ${selectedReviewImages.length}`}
+                    className="max-w-full max-h-[90vh] object-contain rounded-lg"
+                  />
+                  
+                  {/* Navigation Arrows */}
+                  {selectedReviewImages.length > 1 && (
+                    <>
+                      <button
+                        aria-label="Imagen anterior"
+                        className="absolute left-4 top-1/2 -translate-y-1/2 p-2 bg-black/50 hover:bg-black/70 text-white rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        onClick={() => {
+                          const newIndex = selectedImageIndex > 0 ? selectedImageIndex - 1 : selectedReviewImages.length - 1
+                          setSelectedImageIndex(newIndex)
+                          setSelectedImage(selectedReviewImages[newIndex])
+                        }}
+                      >
+                        <ChevronLeft className="h-6 w-6" />
+                      </button>
+                      <button
+                        aria-label="Imagen siguiente"
+                        className="absolute right-4 top-1/2 -translate-y-1/2 p-2 bg-black/50 hover:bg-black/70 text-white rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        onClick={() => {
+                          const newIndex = selectedImageIndex < selectedReviewImages.length - 1 ? selectedImageIndex + 1 : 0
+                          setSelectedImageIndex(newIndex)
+                          setSelectedImage(selectedReviewImages[newIndex])
+                        }}
+                      >
+                        <ChevronRight className="h-6 w-6" />
+                      </button>
+                      
+                      {/* Image Counter */}
+                      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 px-3 py-1 bg-black/50 text-white text-sm rounded-full">
+                        {selectedImageIndex + 1} / {selectedReviewImages.length}
+                      </div>
+                    </>
+                  )}
+                </>
               )}
               <Dialog.Close asChild>
                 <button
                   aria-label="Cerrar"
                   className="absolute top-4 right-4 p-2 bg-black/50 hover:bg-black/70 text-white rounded-full transition-colors"
-                  onClick={() => setSelectedImage(null)}
+                  onClick={() => {
+                    setSelectedImage(null)
+                    setSelectedImageIndex(0)
+                    setSelectedReviewImages([])
+                  }}
                 >
                   <X className="h-6 w-6" />
                 </button>
