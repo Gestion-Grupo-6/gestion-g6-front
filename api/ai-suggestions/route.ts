@@ -1,7 +1,7 @@
-import { convertToModelMessages, streamText, type UIMessage } from "ai"
-import { xai } from "@ai-sdk/xai"
+import { convertToModelMessages, generateText, streamText, UIMessage } from "ai"
+import { openai } from "@ai-sdk/openai"
 
-export const maxDuration = 30
+const model = openai("gpt-5")
 
 export async function POST(req: Request) {
   const { messages }: { messages: UIMessage[] } = await req.json()
@@ -23,17 +23,22 @@ Enfócate especialmente en:
 
 Siempre responde en español y sé específico con tus recomendaciones. Usa un tono conversacional y cercano.`
 
-  const prompt = convertToModelMessages([{ role: "system", content: systemPrompt, id: "system" }, ...messages])
+  const systemMessage = { role: "system", content: systemPrompt, id: "system" } as unknown as UIMessage
+  const prompt = convertToModelMessages([systemMessage, ...messages])
 
-  const result = streamText({
-    model: xai("grok-beta", {
-      apiKey: process.env.XAI_API_KEY || process.env.GROK_XAI_API_KEY,
-    }),
-    prompt,
+  console.log("Prompt sent to model:", prompt)
+
+  const result = generateText({
+    model: model,
+    prompt: prompt,
+    providerOptions: {
+      openai: {
+        textVerbosity: 'low', // 'low' for concise, 'medium' (default), or 'high' for verbose
+      },
+    },
     abortSignal: req.signal,
-    maxTokens: 2000,
     temperature: 0.8,
   })
 
-  return result.toUIMessageStreamResponse()
+  return result
 }

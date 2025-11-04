@@ -9,6 +9,7 @@
     "start": "next start"
   },
   "dependencies": {
+    "@ai-sdk/openai": "^2.0.60",
     "@ai-sdk/react": "latest",
     "@ai-sdk/xai": "latest",
     "@hookform/resolvers": "^3.10.0",
@@ -42,7 +43,7 @@
     "@supabase/ssr": "latest",
     "@supabase/supabase-js": "^2.77.0",
     "@vercel/analytics": "latest",
-    "ai": "latest",
+    "ai": "^5.0.86",
     "autoprefixer": "^10.4.20",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
