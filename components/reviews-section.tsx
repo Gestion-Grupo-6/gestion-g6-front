@@ -302,6 +302,8 @@ export function ReviewsSection({ placeId, averageRating, totalReviews }: Reviews
         resetReviewForm()
         setShowReviewModal(false)
         toast.success("Reseña actualizada correctamente")
+        // Auto refresh de la página
+        window.location.reload()
       } else {
         // Modo creación
         const payload = {
@@ -322,6 +324,8 @@ export function ReviewsSection({ placeId, averageRating, totalReviews }: Reviews
         resetReviewForm()
         setShowReviewModal(false)
         toast.success("Reseña publicada correctamente")
+        // Auto refresh de la página
+        window.location.reload()
       }
     } catch (e: any) {
       // eslint-disable-next-line no-console
