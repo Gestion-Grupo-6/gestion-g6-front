@@ -126,3 +126,29 @@ export async function uploadProfilePhoto(userId: string, file: File): Promise<st
   // Devuelve la URL lista para guardar en la base de datos
   return publicUrl
 }
+
+// Favorites - GET /user/{userId}/likedPosts
+export interface LikedPost {
+  id: string
+  ownerId: string
+  name: string
+  type: "HOTEL" | "RESTAURANT" | "ACTIVITY"
+  images: string[]
+}
+
+export async function fetchLikedPosts(userId: string): Promise<LikedPost[]> {
+  const response = await fetch(`${sanitizedBaseUrl}/user/${userId}/likedPosts`, {
+    cache: "no-store",
+  })
+
+  if (response.status === 401) {
+    throw new Error("Debes iniciar sesión para ver tus favoritos")
+  }
+
+  if (!response.ok) {
+    const errorText = await response.text()
+    throw new Error(`Error al obtener favoritos: ${response.status} ${response.statusText}. ${errorText}`)
+  }
+
+  return (await response.json()) as LikedPost[]
+}
