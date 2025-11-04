@@ -35,12 +35,13 @@ export function PlaceCard({
   return (
     <Link href={`/lugar/${id}`}>
       <Card className="group overflow-hidden transition-all hover:shadow-lg">
-        <div className="relative aspect-[4/3] overflow-hidden">
+        <div className="relative aspect-[4/3] overflow-hidden max-h-64">
           <Image
             src={image || "/placeholder.svg"}
             alt={name}
             fill
             className="object-cover transition-transform group-hover:scale-105"
+            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
           />
           <Badge className="absolute top-3 left-3 bg-background/90 text-foreground hover:bg-background/90">
             {category}

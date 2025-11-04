@@ -125,11 +125,11 @@ export function PlacesList({ places }: PlacesListProps) {
             <Link key={place.id} href={`/${place.category}/${String(place.id)}`}>
               <Card className="group overflow-hidden hover:shadow-xl transition-all duration-300 h-full">
                 <div className="flex flex-col sm:flex-row">
-                  <div className="relative sm:w-48 aspect-[4/3] sm:aspect-auto overflow-hidden flex-shrink-0">
+                  <div className="relative sm:w-48 aspect-[4/3] sm:aspect-auto sm:h-36 overflow-hidden flex-shrink-0">
                     <img
                       src={mainImage}
                       alt={place.name}
-                      className="object-cover w-full h-full group-hover:scale-110 transition-transform duration-300"
+                      className="object-cover w-full h-full max-w-full max-h-full group-hover:scale-110 transition-transform duration-300"
                     />
                     {isAuthenticated && (
                       <button

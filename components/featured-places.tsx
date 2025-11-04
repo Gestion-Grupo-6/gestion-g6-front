@@ -123,11 +123,11 @@ export function FeaturedPlaces({ places }: FeaturedPlacesProps) {
               return (
                 <Link key={place.id} href={`/${place.category}/${place.id}`}>
                   <Card className="group overflow-hidden hover:shadow-xl transition-all duration-300 h-full">
-                    <div className="relative aspect-[4/3] overflow-hidden">
+                    <div className="relative aspect-[4/3] overflow-hidden max-h-64">
                       <img
                         src={mainImage}
                         alt={place.name}
-                        className="object-cover w-full h-full group-hover:scale-110 transition-transform duration-300"
+                        className="object-cover w-full h-full max-w-full max-h-full group-hover:scale-110 transition-transform duration-300"
                       />
                       <Badge className="absolute top-3 right-3 bg-background/90 text-foreground capitalize">
                         {place.category}
