@@ -154,7 +154,6 @@ export async function uploadPlaceImage(placeId: string | null, file: File, index
   const uploadedPath = await uploadImage(path, file)
   
   if (!uploadedPath) {
-    console.error("Error al subir la imagen del lugar")
     throw new Error("Error al subir la imagen del lugar")
   }
 
