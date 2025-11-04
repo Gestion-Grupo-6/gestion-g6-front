@@ -7,9 +7,9 @@ import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Star, ThumbsUp, X, Upload, Loader2 } from "lucide-react"
+import { Star, ThumbsUp, X, Upload, Loader2, Edit } from "lucide-react"
 import { Progress } from "@/components/ui/progress"
-import { fetchReviewsByPost, createReview, likeComment, uploadReviewImage } from "@/api/review"
+import { fetchReviewsByPost, createReview, updateReview, likeComment, uploadReviewImage } from "@/api/review"
 import { fetchUser } from "@/api/user"
 import type { CommentResponse } from "@/types/review"
 import { useAuth } from "@/contexts/AuthContext"
@@ -39,6 +39,8 @@ export function ReviewsSection({ placeId, averageRating, totalReviews }: Reviews
   const [selectedFiles, setSelectedFiles] = useState<File[]>([])
   const [imagePreviews, setImagePreviews] = useState<string[]>([])
   const [selectedImage, setSelectedImage] = useState<string | null>(null)
+  const [editingReviewId, setEditingReviewId] = useState<string | null>(null)
+  const [existingImagePaths, setExistingImagePaths] = useState<string[]>([])
 
   // Debug: Monitorear estados del formulario
   useEffect(() => {
@@ -163,24 +165,64 @@ export function ReviewsSection({ placeId, averageRating, totalReviews }: Reviews
   }
 
   const removeImage = (index: number) => {
-    // Limpiar URL del preview
-    URL.revokeObjectURL(imagePreviews[index])
-    
-    // Remover de los arrays
-    const newFiles = selectedFiles.filter((_, i) => i !== index)
-    const newPreviews = imagePreviews.filter((_, i) => i !== index)
-    
-    setSelectedFiles(newFiles)
-    setImagePreviews(newPreviews)
+    // Determinar si es una imagen nueva (file) o existente (path)
+    if (index < existingImagePaths.length) {
+      // Es una imagen existente - solo remover de los estados (no revocar URL porque es una URL pública)
+      const newExistingPaths = existingImagePaths.filter((_, i) => i !== index)
+      setExistingImagePaths(newExistingPaths)
+      const newPreviews = imagePreviews.filter((_, i) => i !== index)
+      setImagePreviews(newPreviews)
+    } else {
+      // Es una imagen nueva - revocar URL del objeto y remover
+      const fileIndex = index - existingImagePaths.length
+      URL.revokeObjectURL(imagePreviews[index])
+      const newFiles = selectedFiles.filter((_, i) => i !== fileIndex)
+      const newPreviews = imagePreviews.filter((_, i) => i !== index)
+      setSelectedFiles(newFiles)
+      setImagePreviews(newPreviews)
+    }
   }
 
   const resetReviewForm = () => {
-    // Limpiar URLs de preview para evitar memory leaks
-    imagePreviews.forEach(url => URL.revokeObjectURL(url))
+    // Limpiar URLs de preview para evitar memory leaks (solo las de objetos, no las URLs públicas)
+    // Las URLs de objetos empiezan con "blob:", las públicas con "http" o "https"
+    imagePreviews.forEach(url => {
+      if (url.startsWith("blob:")) {
+        URL.revokeObjectURL(url)
+      }
+    })
     setNewReview("")
     setRatings({ cleanliness: 0, service: 0, location: 0 })
     setSelectedFiles([])
     setImagePreviews([])
+    setEditingReviewId(null)
+    setExistingImagePaths([])
+  }
+
+  const handleEditReview = (review: CommentResponse) => {
+    if (!review) return
+    
+    setEditingReviewId(review.id)
+    setNewReview(review.comment || "")
+    setRatings({
+      cleanliness: review.ratings?.cleanliness || 0,
+      service: review.ratings?.service || 0,
+      location: review.ratings?.location || 0,
+    })
+    
+    // Si hay imágenes existentes, mostrarlas como previews
+    if (Array.isArray(review.images) && review.images.length > 0) {
+      setExistingImagePaths(review.images)
+      // Crear URLs de preview para las imágenes existentes
+      const previewUrls = review.images.map(path => getImage(path))
+      setImagePreviews(previewUrls)
+    } else {
+      setExistingImagePaths([])
+      setImagePreviews([])
+    }
+    
+    setSelectedFiles([])
+    setShowReviewModal(true)
   }
 
   const handleSubmitReview = async (e?: React.MouseEvent) => {
@@ -236,24 +278,49 @@ export function ReviewsSection({ placeId, averageRating, totalReviews }: Reviews
         }
       }
 
-      const payload = {
-        ownerId: user.id,
-        postId: placeId,
-        comment: newReview.trim(),
-        ratings: {
-          cleanliness: ratings.cleanliness > 0 ? ratings.cleanliness : undefined,
-          service: ratings.service > 0 ? ratings.service : undefined,
-          location: ratings.location > 0 ? ratings.location : undefined,
-        },
-        images: uploadedImagePaths.length > 0 ? uploadedImagePaths : undefined,
+      // Combinar imágenes existentes con las nuevas subidas
+      const allImagePaths = [...existingImagePaths, ...uploadedImagePaths]
+
+      if (editingReviewId) {
+        // Modo edición
+        const payload = {
+          ownerId: user.id,
+          comment: newReview.trim(),
+          ratings: {
+            cleanliness: ratings.cleanliness > 0 ? ratings.cleanliness : undefined,
+            service: ratings.service > 0 ? ratings.service : undefined,
+            location: ratings.location > 0 ? ratings.location : undefined,
+          },
+          images: allImagePaths.length > 0 ? allImagePaths : undefined,
+        }
+        
+        await updateReview(placeId, payload)
+        const data = await fetchReviewsByPost(placeId)
+        setReviews(data)
+        resetReviewForm()
+        setShowReviewModal(false)
+        toast.success("Reseña actualizada correctamente")
+      } else {
+        // Modo creación
+        const payload = {
+          ownerId: user.id,
+          postId: placeId,
+          comment: newReview.trim(),
+          ratings: {
+            cleanliness: ratings.cleanliness > 0 ? ratings.cleanliness : undefined,
+            service: ratings.service > 0 ? ratings.service : undefined,
+            location: ratings.location > 0 ? ratings.location : undefined,
+          },
+          images: uploadedImagePaths.length > 0 ? uploadedImagePaths : undefined,
+        }
+        
+        await createReview(payload)
+        const data = await fetchReviewsByPost(placeId)
+        setReviews(data)
+        resetReviewForm()
+        setShowReviewModal(false)
+        toast.success("Reseña publicada correctamente")
       }
-      
-      await createReview(payload)
-      const data = await fetchReviewsByPost(placeId)
-      setReviews(data)
-      resetReviewForm()
-      setShowReviewModal(false)
-      toast.success("Reseña publicada correctamente")
     } catch (e: any) {
       // eslint-disable-next-line no-console
       console.error("No se pudo publicar la reseña", e)
@@ -387,7 +454,9 @@ export function ReviewsSection({ placeId, averageRating, totalReviews }: Reviews
           <Dialog.Overlay className="fixed inset-0 bg-black/50 z-50" />
           <Dialog.Content className="fixed left-1/2 -translate-x-1/2 top-1/2 -translate-y-1/2 z-[60] w-full max-w-2xl max-h-[90vh] bg-background rounded-xl shadow-2xl flex flex-col">
             <div className="flex items-center justify-between p-6 border-b">
-              <Dialog.Title className="text-2xl font-bold text-foreground">Escribir reseña</Dialog.Title>
+              <Dialog.Title className="text-2xl font-bold text-foreground">
+                {editingReviewId ? "Editar reseña" : "Escribir reseña"}
+              </Dialog.Title>
               <Dialog.Close asChild>
                 <button
                   aria-label="Close"
@@ -551,7 +620,7 @@ export function ReviewsSection({ placeId, averageRating, totalReviews }: Reviews
                   className="flex-1 cursor-pointer"
                 >
                   {(submitting || uploadingImages) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  {uploadingImages ? "Subiendo imágenes..." : submitting ? "Publicando..." : "Publicar reseña"}
+                  {uploadingImages ? "Subiendo imágenes..." : submitting ? (editingReviewId ? "Actualizando..." : "Publicando...") : (editingReviewId ? "Actualizar reseña" : "Publicar reseña")}
                 </Button>
                 <Button
                   type="button"
@@ -643,6 +712,15 @@ export function ReviewsSection({ placeId, averageRating, totalReviews }: Reviews
                     )}
 
                     <div className="flex items-center gap-4">
+                      {user?.id === review.ownerId && (
+                        <button
+                          className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors"
+                          onClick={() => handleEditReview(review)}
+                        >
+                          <Edit className="h-4 w-4" />
+                          <span>Editar</span>
+                        </button>
+                      )}
                       <button
                         className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors"
                         onClick={async () => {
