@@ -22,17 +22,17 @@ export function Header() {
 
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center gap-6">
-            <Link href="/hoteles" className="text-sm font-medium text-foreground hover:text-primary transition-colors">
+            <Link href="/hotels" className="text-sm font-medium text-foreground hover:text-primary transition-colors">
               Hoteles
             </Link>
             <Link
-              href="/restaurantes"
+              href="/restaurants"
               className="text-sm font-medium text-foreground hover:text-primary transition-colors"
             >
               Restaurantes
             </Link>
             <Link
-              href="/actividades"
+              href="/activities"
               className="text-sm font-medium text-foreground hover:text-primary transition-colors"
             >
               Actividades
@@ -83,19 +83,19 @@ export function Header() {
           <nav className="md:hidden py-4 border-t border-border">
             <div className="flex flex-col gap-4">
               <Link
-                href="/hoteles"
+                href="/hotels"
                 className="text-sm font-medium text-foreground hover:text-primary transition-colors"
               >
                 Hoteles
               </Link>
               <Link
-                href="/restaurantes"
+                href="/restaurants"
                 className="text-sm font-medium text-foreground hover:text-primary transition-colors"
               >
                 Restaurantes
               </Link>
               <Link
-                href="/actividades"
+                href="/activities"
                 className="text-sm font-medium text-foreground hover:text-primary transition-colors"
               >
                 Actividades

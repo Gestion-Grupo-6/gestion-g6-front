@@ -3,6 +3,9 @@
 
 import { Usuario } from "@/types/user"
 import { sanitizedBaseUrl } from "./config"
+import { uploadImage, getImage } from "@/contexts/SupabaseContext"
+
+
 
 // El frontend usa: firstName, lastName
 function mapBackendUserToUsuario(data: any): Usuario {
@@ -96,19 +99,30 @@ export async function createUser(payload: { name: string; lastname: string; emai
 }
 
 
-// User - POST (upload profile photo) - Mocked
+
+// User - POST (upload profile photo) - Using Supabase
 export async function uploadProfilePhoto(userId: string, file: File): Promise<string> {
+  // Genera una ruta única para el archivo en el bucket
+  const fileExtension = file.name.split('.').pop() || 'jpg'
+  const path = `profile-photos/${userId}.${Date.now()}.${fileExtension}`
+
+  // Sube la imagen al bucket
+  const uploadedPath = await uploadImage(path, file)
   
-  // Mock: Convertir archivo a base64
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader()
-    reader.onload = (e) => {
-      const result = e.target?.result as string
-      console.log("Profile photo would be uploaded to backend for user:", userId)
-      // no se como se mandaria al backend
-      resolve(result)
-    }
-    reader.onerror = () => reject(new Error("Error al leer el archivo"))
-    reader.readAsDataURL(file)
-  })
+  if (!uploadedPath) {
+    console.error("Error al subir la foto de perfil", uploadedPath)
+    throw new Error("Error al subir la foto de perfil")
+  }
+
+  // Obtiene la URL pública del archivo subido
+  const { publicUrl } = getImage(uploadedPath)
+    ? { publicUrl: getImage(uploadedPath) }
+    : { publicUrl: null }
+
+  if (!publicUrl) {
+    throw new Error("No se pudo obtener la URL pública de la imagen")
+  }
+
+  // Devuelve la URL lista para guardar en la base de datos
+  return publicUrl
 }

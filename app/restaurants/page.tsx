@@ -28,7 +28,7 @@ export default async function RestaurantesPage() {
         <div className="container mx-auto px-4 py-8">
           <div className="flex flex-col lg:flex-row gap-8">
             <aside className="lg:w-64 flex-shrink-0">
-              <FilterSidebar category="restaurante" />
+              <FilterSidebar category="restaurant" />
             </aside>
             <div className="flex-1">
               <PlacesList places={restaurants} />
