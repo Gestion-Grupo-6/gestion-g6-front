@@ -279,9 +279,6 @@ export function PlaceDetail({ place }: PlaceDetailProps) {
                 <Separator />
 
                 <div className="space-y-2 pt-2">
-                  <Button className="w-full" size="lg">
-                    Reservar ahora
-                  </Button>
                   <Button 
                     variant={isFavorite ? "default" : "outline"} 
                     className={`w-full flex items-center gap-2 ${isFavorite ? "" : "bg-transparent"}`}
