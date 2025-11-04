@@ -3,6 +3,7 @@
 import { fetchUserByEmail } from "@/api/user"
 import { Usuario } from "@/types/user"
 import { createContext, useContext, useState, useEffect, ReactNode } from "react"
+import { useRouter } from "next/navigation"
 
 interface AuthContextType {
   user: Usuario | null
@@ -17,6 +18,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined)
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<Usuario | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const router = useRouter()
 
   // Verificar si hay una sesión guardada al cargar la página
   useEffect(() => {
@@ -62,6 +64,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = () => {
     setUser(null)
     localStorage.removeItem('user')
+    router.push('/')
   }
 
   const value = {

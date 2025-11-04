@@ -81,7 +81,6 @@ export default function ProfilePage() {
 
   const handleLogout = () => {
     logout()
-    router.push("/")
   }
 
   if (!user) {
