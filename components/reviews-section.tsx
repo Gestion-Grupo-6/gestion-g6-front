@@ -420,23 +420,28 @@ export function ReviewsSection({ placeId, averageRating, totalReviews }: Reviews
           </div>
 
           {/* Write Review Button */}
-          <div className="border-t border-border pt-6">
+          <div className="border-t border-border pt-6 space-y-3">
             {isAuthenticated ? (
-              <Button 
-                onClick={() => {
-                  console.log("🟡 Abriendo modal de reseña")
-                  console.log("🟡 Estado inicial:", {
-                    newReview,
-                    ratings,
-                    submitting,
-                    uploadingImages
-                  })
-                  setShowReviewModal(true)
-                }} 
-                className="w-full sm:w-auto"
-              >
-                Escribir reseña
-              </Button>
+              <>
+                <p className="text-base font-medium text-foreground">
+                  ¿Visitaste este lugar?
+                </p>
+                <Button 
+                  onClick={() => {
+                    console.log("🟡 Abriendo modal de reseña")
+                    console.log("🟡 Estado inicial:", {
+                      newReview,
+                      ratings,
+                      submitting,
+                      uploadingImages
+                    })
+                    setShowReviewModal(true)
+                  }} 
+                  className="w-full sm:w-auto"
+                >
+                  Dejar una reseña
+                </Button>
+              </>
             ) : (
               <p className="text-sm text-muted-foreground">Inicia sesión para escribir una reseña</p>
             )}
