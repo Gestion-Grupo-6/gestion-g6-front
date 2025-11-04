@@ -8,10 +8,11 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Header } from "@/components/header"
-import { User, Mail, Phone, MapPin, Save, LogOut, Pencil } from "lucide-react"
+import { User, Mail, Phone, MapPin, Save, LogOut, Pencil, Heart } from "lucide-react"
 import { useAuth } from "@/contexts/AuthContext"
 import { updateUser, uploadProfilePhoto } from "@/api/user"
 import { Usuario } from "@/types/user"
+import { FavoritesPanel } from "@/components/favorites-panel"
 
 
 export default function ProfilePage() {
@@ -21,6 +22,7 @@ export default function ProfilePage() {
   const [isEditing, setIsEditing] = useState(false)
   const [profilePhoto, setProfilePhoto] = useState(user?.profilePhoto || "/placeholder-user.jpg")
   const [pendingPhotoFile, setPendingPhotoFile] = useState<File | null>(null)
+  const [favoritesOpen, setFavoritesOpen] = useState(false)
   const [formData, setFormData] = useState({
     firstName: user?.name || "",
     lastName: user?.lastname || "",
@@ -75,6 +77,7 @@ export default function ProfilePage() {
       setProfilePhoto(previewUrl)
     }
   }
+
 
   const handleLogout = () => {
     logout()
@@ -198,9 +201,22 @@ export default function ProfilePage() {
                     </Button>
                   </>
                 ) : (
-                  <Button onClick={() => setIsEditing(true)}>
-                    Editar perfil
-                  </Button>
+                  <>
+                    <Button onClick={() => setIsEditing(true)}>
+                      Editar perfil
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      className="flex items-center gap-2"
+                      onClick={() => {
+                        console.log("Click en favoritos, abriendo modal...")
+                        setFavoritesOpen(true)
+                      }}
+                    >
+                      <Heart className="h-4 w-4" />
+                      Favoritos
+                    </Button>
+                  </>
                 )}
               </div>
 
@@ -218,6 +234,7 @@ export default function ProfilePage() {
           </Card>
         </div>
       </main>
+      <FavoritesPanel open={favoritesOpen} onOpenChange={setFavoritesOpen} />
     </div>
   )
 }
