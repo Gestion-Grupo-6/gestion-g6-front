@@ -130,11 +130,11 @@ export function FavoritesPanel({ open, onOpenChange }: FavoritesPanelProps) {
                   return (
                     <Link key={post.id} href={`/${categoryPath}/${post.id}`}>
                       <Card className="group overflow-hidden transition-all hover:shadow-lg h-full">
-                        <div className="relative aspect-[4/3] overflow-hidden">
+                        <div className="relative aspect-[4/3] overflow-hidden max-h-64">
                           <img
                             src={imageUrl}
                             alt={post.name}
-                            className="object-cover w-full h-full transition-transform group-hover:scale-105"
+                            className="object-cover w-full h-full max-w-full max-h-full transition-transform group-hover:scale-105"
                           />
                           <div className="absolute top-3 left-3 flex items-center gap-2">
                             {getCategoryIcon(post.type)}
