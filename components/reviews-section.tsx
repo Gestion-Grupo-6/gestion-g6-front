@@ -38,6 +38,7 @@ export function ReviewsSection({ placeId, averageRating, totalReviews }: Reviews
   const [showReviewModal, setShowReviewModal] = useState(false)
   const [selectedFiles, setSelectedFiles] = useState<File[]>([])
   const [imagePreviews, setImagePreviews] = useState<string[]>([])
+  const [selectedImage, setSelectedImage] = useState<string | null>(null)
 
   // Debug: Monitorear estados del formulario
   useEffect(() => {
@@ -634,7 +635,8 @@ export function ReviewsSection({ placeId, averageRating, totalReviews }: Reviews
                             key={idx}
                             src={getImage(imagePath)}
                             alt={`Imagen de reseña ${idx + 1}`}
-                            className="w-full h-32 object-cover rounded-md border border-border"
+                            className="w-full h-32 object-cover rounded-md border border-border cursor-pointer hover:opacity-90 transition-opacity"
+                            onClick={() => setSelectedImage(getImage(imagePath))}
                           />
                         ))}
                       </div>
@@ -664,6 +666,34 @@ export function ReviewsSection({ placeId, averageRating, totalReviews }: Reviews
           )
         })}
       </div>
+
+      {/* Image Modal */}
+      <Dialog.Root open={selectedImage !== null} onOpenChange={(open) => !open && setSelectedImage(null)}>
+        <Dialog.Portal>
+          <Dialog.Overlay className="fixed inset-0 bg-black/80 z-[70]" />
+          <Dialog.Content className="fixed left-1/2 -translate-x-1/2 top-1/2 -translate-y-1/2 z-[70] w-full max-w-4xl max-h-[90vh] bg-transparent flex items-center justify-center">
+            <Dialog.Title className="sr-only">Imagen ampliada de la reseña</Dialog.Title>
+            <div className="relative w-full h-full flex items-center justify-center">
+              {selectedImage && (
+                <img
+                  src={selectedImage}
+                  alt="Imagen ampliada de la reseña"
+                  className="max-w-full max-h-[90vh] object-contain rounded-lg"
+                />
+              )}
+              <Dialog.Close asChild>
+                <button
+                  aria-label="Cerrar"
+                  className="absolute top-4 right-4 p-2 bg-black/50 hover:bg-black/70 text-white rounded-full transition-colors"
+                  onClick={() => setSelectedImage(null)}
+                >
+                  <X className="h-6 w-6" />
+                </button>
+              </Dialog.Close>
+            </div>
+          </Dialog.Content>
+        </Dialog.Portal>
+      </Dialog.Root>
     </div>
   )
 }
