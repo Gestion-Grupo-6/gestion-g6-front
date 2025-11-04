@@ -1,15 +1,42 @@
+"use client"
+
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Star, MapPin } from "lucide-react"
+import { Star, MapPin, Heart } from "lucide-react"
 import Link from "next/link"
 import type { Place } from "@/types/place"
 import { getImage } from "@/contexts/SupabaseContext"
+import { useEffect, useState } from "react"
+import { useAuth } from "@/contexts/AuthContext"
+import { fetchLikedPosts, type LikedPost } from "@/api/user"
 
 interface PlacesListProps {
   places: Place[]
 }
 
 export function PlacesList({ places }: PlacesListProps) {
+  const { user, isAuthenticated } = useAuth()
+  const [favoriteIds, setFavoriteIds] = useState<Set<string>>(new Set())
+
+  useEffect(() => {
+    if (!isAuthenticated || !user?.id) {
+      setFavoriteIds(new Set())
+      return
+    }
+
+    const loadFavorites = async () => {
+      try {
+        const likedPosts = await fetchLikedPosts(user.id)
+        const ids = new Set(likedPosts.map((post) => post.id))
+        setFavoriteIds(ids)
+      } catch (error) {
+        console.error("Error al cargar favoritos:", error)
+        setFavoriteIds(new Set())
+      }
+    }
+
+    loadFavorites()
+  }, [user?.id, isAuthenticated])
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -38,6 +65,11 @@ export function PlacesList({ places }: PlacesListProps) {
                       alt={place.name}
                       className="object-cover w-full h-full group-hover:scale-110 transition-transform duration-300"
                     />
+                    {isAuthenticated && favoriteIds.has(String(place.id)) && (
+                      <div className="absolute top-3 right-3 z-10 bg-background/50 rounded-full p-1">
+                        <Heart className="h-6 w-6 fill-red-500 text-red-500 drop-shadow-lg" />
+                      </div>
+                    )}
                   </div>
                   <CardContent className="p-4 flex-1 flex flex-col">
                     <div className="flex items-start justify-between mb-2">

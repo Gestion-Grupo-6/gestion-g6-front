@@ -1,7 +1,7 @@
 "use client"
 
-import { useState } from "react"
-import { Star, MapPin, Phone, Mail, Globe, ChevronLeft, ChevronRight } from "lucide-react"
+import { useState, useEffect } from "react"
+import { Star, MapPin, Phone, Mail, Globe, ChevronLeft, ChevronRight, Heart } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -10,12 +10,19 @@ import Link from "next/link"
 import { ReviewsSection } from "@/components/reviews-section"
 import type { Place } from "@/types/place"
 import { getImage } from "@/contexts/SupabaseContext"
+import { useAuth } from "@/contexts/AuthContext"
+import { checkFavorite, toggleFavorite } from "@/api/user"
+import { toast } from "sonner"
 
 interface PlaceDetailProps {
   place: Place
 }
 
 export function PlaceDetail({ place }: PlaceDetailProps) {
+  const { user, isAuthenticated } = useAuth()
+  const [isFavorite, setIsFavorite] = useState(false)
+  const [isLoadingFavorite, setIsLoadingFavorite] = useState(false)
+  
   const images = Array.isArray(place.images) && place.images.length > 0
     ? place.images.map((p) => getImage(p) || "/placeholder.svg")
     : ["/placeholder.svg"]
@@ -37,6 +44,45 @@ export function PlaceDetail({ place }: PlaceDetailProps) {
   const website = place.website ?? ""
   const websiteUrl = website ? (website.startsWith("http") ? website : `https://${website}`) : ""
   const [currentImageIndex, setCurrentImageIndex] = useState(0)
+
+  // Verificar si está en favoritos al cargar
+  useEffect(() => {
+    if (!isAuthenticated || !user?.id) {
+      setIsFavorite(false)
+      return
+    }
+
+    const checkIsFavorite = async () => {
+      try {
+        const status = await checkFavorite(place.category, String(place.id), user.id)
+        setIsFavorite(status.liked)
+      } catch (error) {
+        console.error("Error al verificar favorito:", error)
+        setIsFavorite(false)
+      }
+    }
+
+    checkIsFavorite()
+  }, [place.id, place.category, user?.id, isAuthenticated])
+
+  const handleToggleFavorite = async () => {
+    if (!isAuthenticated || !user?.id) {
+      toast.error("Debes iniciar sesión para marcar favoritos")
+      return
+    }
+
+    setIsLoadingFavorite(true)
+    try {
+      const response = await toggleFavorite(place.category, String(place.id), user.id)
+      setIsFavorite(response.liked)
+      toast.success(response.message)
+    } catch (error: any) {
+      console.error("Error al actualizar favorito:", error)
+      toast.error(error?.message || "No se pudo actualizar el favorito")
+    } finally {
+      setIsLoadingFavorite(false)
+    }
+  }
 
   const nextImage = () => {
     setCurrentImageIndex((prev) => (prev + 1) % images.length)
@@ -236,8 +282,15 @@ export function PlaceDetail({ place }: PlaceDetailProps) {
                   <Button className="w-full" size="lg">
                     Reservar ahora
                   </Button>
-                  <Button variant="outline" className="w-full bg-transparent" size="lg">
-                    Guardar en favoritos
+                  <Button 
+                    variant={isFavorite ? "default" : "outline"} 
+                    className={`w-full flex items-center gap-2 ${isFavorite ? "" : "bg-transparent"}`}
+                    size="lg"
+                    onClick={handleToggleFavorite}
+                    disabled={isLoadingFavorite || !isAuthenticated}
+                  >
+                    <Heart className={`h-4 w-4 ${isFavorite ? "fill-red-500 text-red-500" : ""}`} />
+                    {isFavorite ? "Eliminar de favoritos" : "Guardar en favoritos"}
                   </Button>
                 </div>
               </CardContent>

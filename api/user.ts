@@ -152,3 +152,82 @@ export async function fetchLikedPosts(userId: string): Promise<LikedPost[]> {
 
   return (await response.json()) as LikedPost[]
 }
+
+// Helper para obtener el tipo de publicación según la categoría
+function getPublicationType(category: string): string {
+  const typeMap: Record<string, string> = {
+    hotel: "hotel",
+    hotels: "hotel",
+    restaurant: "restaurant",
+    restaurants: "restaurant",
+    activity: "activity",
+    activities: "activity",
+  }
+  return typeMap[category.toLowerCase()] || category.toLowerCase()
+}
+
+// GET /{{publication}}/{{postId}}/like/{{userId}}
+// Verifica si un usuario le dio like a una publicación
+export interface FavoriteStatus {
+  liked: boolean
+}
+
+export async function checkFavorite(
+  publication: string,
+  postId: string,
+  userId: string
+): Promise<FavoriteStatus> {
+  const publicationType = getPublicationType(publication)
+  const response = await fetch(
+    `${sanitizedBaseUrl}/${publicationType}/${postId}/like/${userId}`,
+    { cache: "no-store" }
+  )
+
+  if (response.status === 401) {
+    // Usuario no autenticado
+    return { liked: false }
+  }
+
+  if (!response.ok) {
+    // Si hay error, asumimos que no está en favoritos
+    return { liked: false }
+  }
+
+  return (await response.json()) as FavoriteStatus
+}
+
+// POST /{{publication}}/{{postId}}/like
+// Agrega o remueve un like de una publicación
+export interface FavoriteToggleResponse {
+  liked: boolean
+  message: string
+}
+
+export async function toggleFavorite(
+  publication: string,
+  postId: string,
+  userId: string
+): Promise<FavoriteToggleResponse> {
+  const publicationType = getPublicationType(publication)
+  const response = await fetch(
+    `${sanitizedBaseUrl}/${publicationType}/${postId}/like`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ userId }),
+    }
+  )
+
+  if (response.status === 401) {
+    throw new Error("Debes iniciar sesión para marcar favoritos")
+  }
+
+  if (!response.ok) {
+    const errorText = await response.text()
+    throw new Error(`Error al actualizar favorito: ${response.status} ${response.statusText}. ${errorText}`)
+  }
+
+  return (await response.json()) as FavoriteToggleResponse
+}

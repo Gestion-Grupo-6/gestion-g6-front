@@ -1,15 +1,43 @@
+"use client"
+
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Star, MapPin } from "lucide-react"
+import { Star, MapPin, Heart } from "lucide-react"
 import Link from "next/link"
 import type { Place } from "@/types/place"
 import { getImage } from "@/contexts/SupabaseContext"
+import { useEffect, useState } from "react"
+import { useAuth } from "@/contexts/AuthContext"
+import { fetchLikedPosts } from "@/api/user"
 
 interface FeaturedPlacesProps {
   places: Place[]
 }
 
 export function FeaturedPlaces({ places }: FeaturedPlacesProps) {
+  const { user, isAuthenticated } = useAuth()
+  const [favoriteIds, setFavoriteIds] = useState<Set<string>>(new Set())
+
+  useEffect(() => {
+    if (!isAuthenticated || !user?.id) {
+      setFavoriteIds(new Set())
+      return
+    }
+
+    const loadFavorites = async () => {
+      try {
+        const likedPosts = await fetchLikedPosts(user.id)
+        const ids = new Set(likedPosts.map((post) => post.id))
+        console.log("Favoritos cargados (FeaturedPlaces):", Array.from(ids))
+        setFavoriteIds(ids)
+      } catch (error) {
+        console.error("Error al cargar favoritos:", error)
+        setFavoriteIds(new Set())
+      }
+    }
+
+    loadFavorites()
+  }, [user?.id, isAuthenticated])
   return (
     <section className="py-16 bg-muted/30">
       <div className="container mx-auto px-4">
@@ -40,6 +68,11 @@ export function FeaturedPlaces({ places }: FeaturedPlacesProps) {
                       <Badge className="absolute top-3 right-3 bg-background/90 text-foreground capitalize">
                         {place.category}
                       </Badge>
+                      {isAuthenticated && favoriteIds.has(String(place.id)) && (
+                        <div className="absolute top-3 left-3 z-10 bg-background/50 rounded-full p-1">
+                          <Heart className="h-6 w-6 fill-red-500 text-red-500 drop-shadow-lg" />
+                        </div>
+                      )}
                     </div>
                     <CardContent className="p-4">
                       <h3 className="font-bold text-lg text-foreground mb-2 group-hover:text-primary transition-colors">
