@@ -34,6 +34,7 @@ export function ReviewsSection({ placeId, averageRating, totalReviews }: Reviews
   const [submitting, setSubmitting] = useState(false)
   const [uploadingImages, setUploadingImages] = useState(false)
   const [authorById, setAuthorById] = useState<Record<string, string>>({})
+  const [profilePhotoById, setProfilePhotoById] = useState<Record<string, string>>({})
   const [showReviewModal, setShowReviewModal] = useState(false)
   const [selectedFiles, setSelectedFiles] = useState<File[]>([])
   const [imagePreviews, setImagePreviews] = useState<string[]>([])
@@ -57,7 +58,7 @@ export function ReviewsSection({ placeId, averageRating, totalReviews }: Reviews
       try {
         const data = await fetchReviewsByPost(placeId)
         const uniqueIds = Array.from(new Set(data.map((r) => r.ownerId).filter(Boolean)))
-        const entries = await Promise.all(
+        const authorEntries = await Promise.all(
           uniqueIds.map(async (id) => {
             try {
               const u = await fetchUser(id)
@@ -68,7 +69,20 @@ export function ReviewsSection({ placeId, averageRating, totalReviews }: Reviews
             }
           })
         )
-        setAuthorById(Object.fromEntries(entries))
+        const photoEntries = await Promise.all(
+          uniqueIds.map(async (id) => {
+            try {
+              const u = await fetchUser(id)
+              const photo = u?.profilePhoto
+              return photo ? [id, photo] as const : null
+            } catch {
+              return null
+            }
+          })
+        )
+        setAuthorById(Object.fromEntries(authorEntries))
+        const validPhotos = photoEntries.filter((entry): entry is [string, string] => entry !== null)
+        setProfilePhotoById(Object.fromEntries(validPhotos))
         setReviews(data)
       } catch (e) {
         // eslint-disable-next-line no-console
@@ -575,7 +589,10 @@ export function ReviewsSection({ placeId, averageRating, totalReviews }: Reviews
               <CardContent className="p-6">
                 <div className="flex items-start gap-4">
                   <Avatar className="h-12 w-12">
-                    <AvatarImage src={(review as any).avatar || "/placeholder.svg"} alt={authorById[review.ownerId] || review.ownerId} />
+                    <AvatarImage 
+                      src={profilePhotoById[review.ownerId] ? getImage(profilePhotoById[review.ownerId]) : "/placeholder-user.jpg"} 
+                      alt={authorById[review.ownerId] || review.ownerId} 
+                    />
                     <AvatarFallback className="bg-primary text-primary-foreground">
                       {(authorById[review.ownerId] || review.ownerId)
                         .split(" ")
