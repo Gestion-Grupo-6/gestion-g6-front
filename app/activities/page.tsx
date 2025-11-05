@@ -1,15 +1,16 @@
 import { Header } from "@/components/header"
 import { PlacesList } from "@/components/places-list"
 import { FilterSidebar } from "@/components/filter-sidebar"
-import { ACTIVIDAD, ACTIVIDADES, fetchPlaces, fetchPlace } from "@/api/place"
+import { ACTIVIDAD, ACTIVIDADES, fetchPlaces, fetchPlace, searchPlaces } from "@/api/place"
+import { SearchBar } from "@/components/search-bar"
 
-export default async function ActividadesPage() {
-  
-  const activities_summaries = await fetchPlaces(ACTIVIDADES)
-
-  const detailed = await Promise.all(activities_summaries.map((s) => fetchPlace(ACTIVIDAD, s.id)))
-
-  const activities = detailed.filter((r): r is NonNullable<typeof r> => r !== null)
+export default async function ActividadesPage({ searchParams }: { searchParams: Promise<{ q?: string }> }) {
+  const { q } = await searchParams
+  const activities = q
+    ? await searchPlaces(ACTIVIDADES, { name: q, sort: null, page: null, pageSize: null })
+    : (await Promise.all((await fetchPlaces(ACTIVIDADES)).map((s) => fetchPlace(ACTIVIDAD, s.id)))).filter(
+        (r): r is NonNullable<typeof r> => r !== null,
+      )
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -23,6 +24,7 @@ export default async function ActividadesPage() {
         </div>
 
         <div className="container mx-auto px-4 py-8">
+          <SearchBar defaultValue={q || ""} />
           <div className="flex flex-col lg:flex-row gap-8">
             <aside className="lg:w-64 flex-shrink-0">
               <FilterSidebar category="activity" />
