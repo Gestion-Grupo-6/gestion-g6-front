@@ -13,6 +13,27 @@
 [![Deployed on Vercel](https://img.shields.io/badge/Deployed%20on-Vercel-black?style=for-the-badge&logo=vercel)](https://vercel.com/tin-gprietos-projects/v0-travel-website-clone)
 [![Built with v0](https://img.shields.io/badge/Built%20with-v0.app-black?style=for-the-badge)](https://v0.app/chat/projects/fNGYdz2woOt)
 
+## IA Support
+
+### Instalacion
+
+### Windows 
+
+- Descargar Ollama (https://ollama.com/download)
+
+### Linux
+
+    curl -fsSL https://ollama.com/install.sh | sh 
+
+### Setup
+
+- Correr modelo lightweight (qwen2.5:0.5b) - tanto en bash como powershell
+
+    > ollama run qwen2.5:0.5b
+
+### Linux 
+
+
 ## Overview
 
 This repository will stay in sync with your deployed chats on [v0.app](https://v0.app).
