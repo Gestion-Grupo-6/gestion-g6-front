@@ -59,6 +59,11 @@ import { createGeminiProvider } from 'ai-sdk-provider-gemini-cli';
     apiKey: process.env.GEMINI_API_KEY,
     });
 
+    // Declaracion del modelo
+    const model = gemini('gemini-2.5-pro');
+
+Gestion de la API key (https://aistudio.google.com/api-keys)
+
 Asi mismo, el modelo deberia reentrenarse exclusivamente con informacion de la aplicacion para que pueda dar respuestas adecuadas a informacion confiable (a determiinar).
 
 
