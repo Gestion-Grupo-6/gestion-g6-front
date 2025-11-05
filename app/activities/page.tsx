@@ -1,29 +1,16 @@
 import { Header } from "@/components/header"
 import { PlacesList } from "@/components/places-list"
 import { FilterSidebar } from "@/components/filter-sidebar"
-import { ACTIVIDAD, ACTIVIDADES, fetchPlaces, fetchPlace, searchPlaces, filterPlaces } from "@/api/place"
+import { ACTIVIDAD, ACTIVIDADES, fetchPlaces, fetchPlace, searchPlaces } from "@/api/place"
 import { SearchBar } from "@/components/search-bar"
 
-export default async function ActividadesPage({ searchParams }: { searchParams: Promise<Record<string, any>> }) {
-  const params = await searchParams
-  const q = params.q as string | undefined
-  const attributesParam = params.attributes as string | string[] | undefined
-
-  let activities
-
-  if (attributesParam) {
-    const attrs = Array.isArray(attributesParam)
-      ? attributesParam
-      : String(attributesParam).split(",").map((s) => decodeURIComponent(s))
-
-    activities = await filterPlaces(ACTIVIDADES, attrs)
-  } else if (q) {
-    activities = await searchPlaces(ACTIVIDADES, { name: q, sort: null, page: null, pageSize: null })
-  } else {
-    activities = (await Promise.all((await fetchPlaces(ACTIVIDADES)).map((s) => fetchPlace(ACTIVIDAD, s.id)))).filter(
-      (r): r is NonNullable<typeof r> => r !== null,
-    )
-  }
+export default async function ActividadesPage({ searchParams }: { searchParams: Promise<{ q?: string }> }) {
+  const { q } = await searchParams
+  const activities = q
+    ? await searchPlaces(ACTIVIDADES, { name: q, sort: null, page: null, pageSize: null })
+    : (await Promise.all((await fetchPlaces(ACTIVIDADES)).map((s) => fetchPlace(ACTIVIDAD, s.id)))).filter(
+        (r): r is NonNullable<typeof r> => r !== null,
+      )
 
   return (
     <div className="min-h-screen flex flex-col">

@@ -98,27 +98,6 @@ export async function searchPlaces(
   return (await response.json()) as Place[]
 }
 
-// Place - FILTER (POST) - attributes array { attributes: string[] }
-export async function filterPlaces(collection: string, attributes: string[]): Promise<Place[]> {
-  const listPath = listPathFor(collection)
-  const url = `${sanitizedBaseUrl}/${listPath}/filter`
-
-  const response = await fetch(url, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ attributes }),
-  })
-
-  if (!response.ok) {
-    const text = await response.text()
-    throw new Error(`Error al filtrar ${collection}: ${response.status} ${response.statusText}. ${text}`)
-  }
-
-  return (await response.json()) as Place[]
-}
-
 // Place - POST (create)
 export async function createPlace(collection: string, payload: PlaceCreatePayload): Promise<Place> {
   const postPath = detailPathFor(collection)

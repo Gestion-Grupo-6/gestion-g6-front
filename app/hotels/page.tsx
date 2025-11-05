@@ -1,31 +1,16 @@
 import { Header } from "@/components/header"
 import { PlacesList } from "@/components/places-list"
 import { FilterSidebar } from "@/components/filter-sidebar"
-import { fetchPlaces, fetchPlace, HOTELES, HOTEL, searchPlaces, filterPlaces } from "@/api/place"
+import { fetchPlaces, fetchPlace, HOTELES, HOTEL, searchPlaces } from "@/api/place"
 import { SearchBar } from "@/components/search-bar"
 
-export default async function HotelesPage({ searchParams }: { searchParams: Promise<Record<string, any>> }) {
-  const params = await searchParams
-  const q = params.q as string | undefined
-  const attributesParam = params.attributes as string | string[] | undefined
-
-  let hotels
-
-  if (attributesParam) {
-    // attributes may be a comma separated string or an array
-    const attrs = Array.isArray(attributesParam)
-      ? attributesParam
-      : String(attributesParam).split(",").map((s) => decodeURIComponent(s))
-
-    // call backend filter endpoint via helper
-    hotels = await filterPlaces(HOTELES, attrs)
-  } else if (q) {
-    hotels = await searchPlaces(HOTELES, { name: q, sort: null, page: null, pageSize: null })
-  } else {
-    hotels = (await Promise.all((await fetchPlaces(HOTELES)).map((s) => fetchPlace(HOTEL, s.id)))).filter(
-      (r): r is NonNullable<typeof r> => r !== null,
-    )
-  }
+export default async function HotelesPage({ searchParams }: { searchParams: Promise<{ q?: string }> }) {
+  const { q } = await searchParams
+  const hotels = q
+    ? await searchPlaces(HOTELES, { name: q, sort: null, page: null, pageSize: null })
+    : (await Promise.all((await fetchPlaces(HOTELES)).map((s) => fetchPlace(HOTEL, s.id)))).filter(
+        (r): r is NonNullable<typeof r> => r !== null,
+      )
 
   return (
     <div className="min-h-screen flex flex-col">
