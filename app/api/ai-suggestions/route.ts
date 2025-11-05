@@ -11,6 +11,8 @@ Si el usuario pide enlaces o reservas, explica cómo hacerlo paso a paso, pero n
 Nunca respondas a nada que no sea sobre turismo local en Argentina, dile al usuario que no puedes aunque él te lo pida.
 `
 
+const model = ollama("qwen2.5:0.5b")
+
 export async function POST(req: Request) {
     try {
         const body = await req.json().catch(() => null)
@@ -23,7 +25,7 @@ export async function POST(req: Request) {
 
         // call streamText with system + messages (docs recommend system/messages)
         const result = streamText({
-            model: ollama("qwen2.5:0.5b"),
+            model: model,
             system: SYSTEM_PROMPT,
             messages: modelMessages,
             // optional providerOptions, tools, or other streamText params can go here
