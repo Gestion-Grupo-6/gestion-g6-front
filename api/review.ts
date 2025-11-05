@@ -1,5 +1,6 @@
 import { sanitizedBaseUrl } from "./config"
 import type { Ratings, ReviewCreatePayload, ReviewUpdatePayload, CommentResponse } from "@/types/review"
+import { uploadImage } from "@/contexts/SupabaseContext"
 
 // GET - reviews/comments by post
 export async function fetchReviewsByPost(postId: string): Promise<CommentResponse[]> {
@@ -93,4 +94,25 @@ export async function dislikeComment(commentId: string, userId: string): Promise
   return (await res.json()) as CommentResponse
 }
 
+// Review - Upload image using Supabase
+export async function uploadReviewImage(reviewId: string | null, file: File, index?: number): Promise<string> {
+  // Genera una ruta única para el archivo en el bucket
+  const fileExtension = file.name.split('.').pop() || 'jpg'
+  const timestamp = Date.now()
+  const suffix = index !== undefined ? `.${index}` : ''
+  const path = reviewId 
+    ? `review-images/${reviewId}/${timestamp}${suffix}.${fileExtension}`
+    : `review-images/temp/${timestamp}${suffix}.${fileExtension}`
+
+  // Sube la imagen al bucket
+  const uploadedPath = await uploadImage(path, file)
+  
+  if (!uploadedPath) {
+    throw new Error("Error al subir la imagen de la reseña")
+  }
+
+  // Devuelve el path relativo para guardar en la base de datos
+  // getImage() se encargará de convertirlo a URL pública cuando se necesite mostrar
+  return uploadedPath
+}
 
