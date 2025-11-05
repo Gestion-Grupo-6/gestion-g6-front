@@ -3,12 +3,12 @@
 import type React from "react"
 
 import { useChat } from "@ai-sdk/react"
-import { DefaultChatTransport } from "ai"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Send, Sparkles, MapPin, Utensils, Hotel } from "lucide-react"
 import { Header } from "@/components/header"
 import { useState } from "react"
+import { DefaultChatTransport } from "ai"
 
 export default function MilongIA() {
   const [inputValue, setInputValue] = useState("")
