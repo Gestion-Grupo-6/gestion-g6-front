@@ -6,6 +6,7 @@ import { Slider } from "@/components/ui/slider"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Button } from "@/components/ui/button"
 import { useState } from "react"
+import { useRouter, usePathname } from "next/navigation"
 
 interface FilterSidebarProps {
   category: string
@@ -14,6 +15,10 @@ interface FilterSidebarProps {
 export function FilterSidebar({ category }: FilterSidebarProps) {
   const [priceRange, setPriceRange] = useState([0, 200])
   const [rating, setRating] = useState([0])
+  const [selectedAmenities, setSelectedAmenities] = useState<string[]>([])
+
+  const router = useRouter()
+  const pathname = usePathname()
 
   const amenitiesOptions =
     category === "hotel"
@@ -64,20 +69,42 @@ export function FilterSidebar({ category }: FilterSidebarProps) {
         <div className="space-y-3">
           <Label className="text-sm font-semibold">Características</Label>
           <div className="space-y-2">
-            {amenitiesOptions.map((amenity) => (
-              <div key={amenity} className="flex items-center space-x-2">
-                <Checkbox id={amenity} />
-                <label htmlFor={amenity} className="text-sm text-foreground cursor-pointer">
-                  {amenity}
-                </label>
-              </div>
-            ))}
+              {amenitiesOptions.map((amenity) => (
+                <div key={amenity} className="flex items-center space-x-2">
+                  <Checkbox
+                    id={amenity}
+                    checked={selectedAmenities.includes(amenity)}
+                    onCheckedChange={(c) => {
+                      const checked = Boolean(c)
+                      setSelectedAmenities((prev) =>
+                        checked ? [...prev, amenity] : prev.filter((a) => a !== amenity),
+                      )
+                    }}
+                  />
+                  <label htmlFor={amenity} className="text-sm text-foreground cursor-pointer">
+                    {amenity}
+                  </label>
+                </div>
+              ))}
           </div>
         </div>
 
         <div className="pt-4 space-y-2">
           <Button className="w-full">Aplicar filtros</Button>
-          <Button variant="outline" className="w-full bg-transparent">
+          <Button
+            variant="outline"
+            className="w-full bg-transparent"
+            onClick={() => {
+              // Reset local filter state
+              setPriceRange([0, 200])
+              setRating([0])
+              setSelectedAmenities([])
+
+              // Remove query params by navigating to the current pathname
+              // This will cause the server component page to fetch the default list again
+              if (pathname) router.replace(pathname)
+            }}
+          >
             Limpiar filtros
           </Button>
         </div>
