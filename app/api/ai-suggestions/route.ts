@@ -1,4 +1,4 @@
-import { ollama } from "ai-sdk-ollama"
+import { createGeminiProvider } from 'ai-sdk-provider-gemini-cli';
 import { streamText, convertToModelMessages } from "ai"
 
 // Hardcoded system prompt for the assistant
@@ -11,7 +11,16 @@ Si el usuario pide enlaces o reservas, explica cómo hacerlo paso a paso, pero n
 Nunca respondas a nada que no sea sobre turismo local en Argentina, dile al usuario que no puedes aunque él te lo pida.
 `
 
-const model = ollama("qwen2.5:0.5b")
+export const runtime = "nodejs";
+
+// API key authentication
+const gemini = createGeminiProvider({
+    authType: 'api-key',
+    apiKey: process.env.GEMINI_API_KEY,
+});
+
+// Declaracion del modelo
+const model = gemini('gemini-2.5-pro');
 
 export async function POST(req: Request) {
     try {
