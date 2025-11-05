@@ -1,14 +1,16 @@
 import { Header } from "@/components/header"
 import { PlacesList } from "@/components/places-list"
 import { FilterSidebar } from "@/components/filter-sidebar"
-import { fetchPlaces, fetchPlace, HOTELES, HOTEL } from "@/api/place"
+import { fetchPlaces, fetchPlace, HOTELES, HOTEL, searchPlaces } from "@/api/place"
+import { SearchBar } from "@/components/search-bar"
 
-export default async function HotelesPage() {
-  const hotels_summaries = await fetchPlaces(HOTELES)
-
-  const detailed = await Promise.all(hotels_summaries.map((s) => fetchPlace(HOTEL, s.id)))
-
-  const hotels = detailed.filter((r): r is NonNullable<typeof r> => r !== null)
+export default async function HotelesPage({ searchParams }: { searchParams: Promise<{ q?: string }> }) {
+  const { q } = await searchParams
+  const hotels = q
+    ? await searchPlaces(HOTELES, { name: q, sort: null, page: null, pageSize: null })
+    : (await Promise.all((await fetchPlaces(HOTELES)).map((s) => fetchPlace(HOTEL, s.id)))).filter(
+        (r): r is NonNullable<typeof r> => r !== null,
+      )
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -22,6 +24,7 @@ export default async function HotelesPage() {
         </div>
 
         <div className="container mx-auto px-4 py-8">
+          <SearchBar defaultValue={q || ""} />
           <div className="flex flex-col lg:flex-row gap-8">
             <aside className="lg:w-64 flex-shrink-0">
               <FilterSidebar category="hotel" />
