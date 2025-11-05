@@ -15,6 +15,8 @@
 
 ## IA Support
 
+Para la implementacion de un chatbot con IA, utilizamos una libreria open-source de Next.js llamada AI SDK (https://ai-sdk.dev/) que permite optar por multiples proveedores de IA como openIA, google, ollama, deepseek, etc.
+
 ### Instalacion
 
 ### Windows 
@@ -27,11 +29,37 @@
 
 ### Setup
 
-- Correr modelo lightweight (qwen2.5:0.5b) - tanto en bash como powershell
+Se opto por el modelo preentrenado y ligero (qwen2.5:0.5b) que brinda un fluido funcionamiento corriendo en local.
+(https://ollama.com/library/qwen2.5:0.5b)
+
+- Correr modelo - tanto en bash como powershell
 
     > ollama run qwen2.5:0.5b
 
-### Linux 
+### Mejoras
+
+Debido a que es un modelo que corre localmente tiene muchas limitaciones debido a la restriccion por hardware. Una alternativa para esto es utilizar a Google como proveedor y utilizar la API de gemini.
+
+https://ai-sdk.dev/providers/community-providers/gemini-cli
+
+    npm install ai-sdk-provider-gemini-cli@^0 ai@^4 
+
+Codigo a implementar 
+
+import { createGeminiProvider } from 'ai-sdk-provider-gemini-cli';
+
+    // OAuth authentication (recommended)
+    const gemini = createGeminiProvider({
+    authType: 'oauth-personal',
+    });
+    
+    // API key authentication
+    const gemini = createGeminiProvider({
+    authType: 'api-key',
+    apiKey: process.env.GEMINI_API_KEY,
+    });
+
+Asi mismo, el modelo deberia reentrenarse exclusivamente con informacion de la aplicacion para que pueda dar respuestas adecuadas a informacion confiable (a determiinar).
 
 
 ## Overview
