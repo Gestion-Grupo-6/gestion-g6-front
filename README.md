@@ -42,12 +42,12 @@ Debido a que es un modelo que corre localmente tiene muchas limitaciones debido 
 
 https://ai-sdk.dev/providers/community-providers/gemini-cli
 
-    npm install ai-sdk-provider-gemini-cli@^0 ai@^4 
+    npm install ai-sdk-provider-gemini-cli ai
 
 Codigo a implementar 
 
-import { createGeminiProvider } from 'ai-sdk-provider-gemini-cli';
-
+    import { createGeminiProvider } from 'ai-sdk-provider-gemini-cli';
+    
     // OAuth authentication (recommended)
     const gemini = createGeminiProvider({
     authType: 'oauth-personal',
