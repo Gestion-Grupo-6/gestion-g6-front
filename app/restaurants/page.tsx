@@ -1,16 +1,28 @@
 import { Header } from "@/components/header"
 import { PlacesList } from "@/components/places-list"
 import { FilterSidebar } from "@/components/filter-sidebar"
-import { fetchPlaces, fetchPlace, RESTAURANTES, RESTAURANT, searchPlaces } from "@/api/place"
+import { fetchPlaces, fetchPlace, RESTAURANTES, RESTAURANT, searchPlaces, filterPlaces } from "@/api/place"
 import { SearchBar } from "@/components/search-bar"
+export default async function RestaurantesPage({ searchParams }: { searchParams: Promise<Record<string, any>> }) {
+  const params = await searchParams
+  const q = params.q as string | undefined
+  const attributesParam = params.attributes as string | string[] | undefined
 
-export default async function RestaurantesPage({ searchParams }: { searchParams: Promise<{ q?: string }> }) {
-  const { q } = await searchParams
-  const restaurants = q
-    ? await searchPlaces(RESTAURANTES, { name: q, sort: null, page: null, pageSize: null })
-    : (await Promise.all((await fetchPlaces(RESTAURANTES)).map((s) => fetchPlace(RESTAURANT, s.id)))).filter(
-        (r): r is NonNullable<typeof r> => r !== null,
-      )
+  let restaurants
+
+  if (attributesParam) {
+    const attrs = Array.isArray(attributesParam)
+      ? attributesParam
+      : String(attributesParam).split(",").map((s) => decodeURIComponent(s))
+
+    restaurants = await filterPlaces(RESTAURANTES, attrs)
+  } else if (q) {
+    restaurants = await searchPlaces(RESTAURANTES, { name: q, sort: null, page: null, pageSize: null })
+  } else {
+    restaurants = (await Promise.all((await fetchPlaces(RESTAURANTES)).map((s) => fetchPlace(RESTAURANT, s.id)))).filter(
+      (r): r is NonNullable<typeof r> => r !== null,
+    )
+  }
 
   
   return (
