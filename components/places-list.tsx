@@ -2,7 +2,7 @@
 
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Star, MapPin, Heart } from "lucide-react"
+import {Star, MapPin, Heart, House} from "lucide-react"
 import Link from "next/link"
 import type { Place } from "@/types/place"
 import { getImage } from "@/contexts/SupabaseContext"
@@ -114,12 +114,12 @@ export function PlacesList({ places }: PlacesListProps) {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {places.map((place) => {
           const mainImage = getImage(place.images?.[0])
-          const displayedAmenities = (place.amenities ?? []).slice(0, 3)
-          const extraAmenities =
-            place.amenities && place.amenities.length > 3 ? place.amenities.length - 3 : 0
+          const displayedAttributes = (place.attributes ?? []).slice(0, 3)
+          const extraAttributes =
+            place.attributes && place.attributes.length > 3 ? place.attributes.length - 3 : 0
           const rating = (place.rating ?? 0).toFixed(1)
           const reviewCount = place.reviews ?? 0
-          const priceLabel = place.priceLabel ?? (place.price != null ? `$${place.price}` : "Consultar")
+          const priceLabel = place.priceCategory != null ? place.priceCategory : "-"
 
           return (
             <Link key={place.id} href={`/${place.category}/${String(place.id)}`}>
@@ -161,20 +161,24 @@ export function PlacesList({ places }: PlacesListProps) {
                     <p className="text-sm text-muted-foreground mb-3 line-clamp-2">{truncate(place.description, 80)}</p>
 
                     <div className="flex items-center gap-1 text-sm text-muted-foreground mb-3">
-                      <MapPin className="h-4 w-4 flex-shrink-0" />
+                      <House className="h-4 w-4 flex-shrink-0" />
                       <span className="truncate">{truncate(place.address, 25)}</span>
-                      
+                    </div>
+
+                    <div className="flex items-center gap-1 text-sm text-muted-foreground mb-3">
+                      <MapPin className="h-4 w-4 flex-shrink-0" />
+                      <span className="truncate">{truncate(place.city, 25)}</span>
                     </div>
 
                     <div className="flex flex-wrap gap-2 mb-3">
-                      {displayedAmenities.map((amenity, index) => (
+                      {displayedAttributes.map((attribute, index) => (
                         <Badge key={index} variant="outline" className="text-xs">
-                          {amenity}
+                          {attribute}
                         </Badge>
                       ))}
-                      {extraAmenities > 0 && (
+                      {extraAttributes > 0 && (
                         <Badge variant="outline" className="text-xs">
-                          +{extraAmenities}
+                          +{extraAttributes}
                         </Badge>
                       )}
                     </div>
