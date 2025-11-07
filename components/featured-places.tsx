@@ -2,7 +2,7 @@
 
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Star, MapPin, Heart } from "lucide-react"
+import {Star, MapPin, Heart, Building2} from "lucide-react"
 import Link from "next/link"
 import type { Place } from "@/types/place"
 import { getImage } from "@/contexts/SupabaseContext"
@@ -115,13 +115,15 @@ export function FeaturedPlaces({ places }: FeaturedPlacesProps) {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {places.map((place) => {
+              console.log("Rendering place:", place)
               const mainImage = getImage(place.images?.[0])
               const rating = (place.rating ?? 0).toFixed(1)
               const reviewCount = place.reviews ?? 0
-              const priceLabel = place.priceLabel ?? (place.price != null ? `$${place.price}` : "Consultar")
+              const priceLabel = place.priceCategory ?? "-"
+              const location = [ (place as any).city, (place as any).country ].filter(Boolean).join(", ")
 
               return (
-                <Link key={place.id} href={`/${place.category}/${place.id}`}>
+                <Link key={place.id} href={`/${place.category}/${String(place.id)}`}>
                   <Card className="group overflow-hidden hover:shadow-xl transition-all duration-300 h-full">
                     <div className="relative aspect-[4/3] overflow-hidden max-h-64">
                       <img
@@ -157,7 +159,12 @@ export function FeaturedPlaces({ places }: FeaturedPlacesProps) {
 
                       <div className="flex items-center gap-1 text-sm text-muted-foreground mb-2">
                         <MapPin className="h-4 w-4" />
-                        <span>{place.location}</span>
+                        <span>{place.address}</span>
+                      </div>
+
+                      <div className="flex items-center gap-1 text-sm text-muted-foreground mb-2">
+                        <Building2 className="h-4 w-4" />
+                        <span>{location}</span>
                       </div>
 
                       <div className="flex items-center justify-between">

@@ -2,7 +2,7 @@
 
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import {Star, MapPin, Heart, House} from "lucide-react"
+import {Star, MapPin, Heart, Building2} from "lucide-react"
 import Link from "next/link"
 import type { Place } from "@/types/place"
 import { getImage } from "@/contexts/SupabaseContext"
@@ -120,6 +120,7 @@ export function PlacesList({ places }: PlacesListProps) {
           const rating = (place.rating ?? 0).toFixed(1)
           const reviewCount = place.reviews ?? 0
           const priceLabel = place.priceCategory != null ? place.priceCategory : "-"
+          const location = [ (place as any).city, (place as any).country ].filter(Boolean).join(", ")
 
           return (
             <Link key={place.id} href={`/${place.category}/${String(place.id)}`}>
@@ -161,13 +162,13 @@ export function PlacesList({ places }: PlacesListProps) {
                     <p className="text-sm text-muted-foreground mb-3 line-clamp-2">{truncate(place.description, 80)}</p>
 
                     <div className="flex items-center gap-1 text-sm text-muted-foreground mb-3">
-                      <House className="h-4 w-4 flex-shrink-0" />
+                      <MapPin className="h-4 w-4 flex-shrink-0" />
                       <span className="truncate">{truncate(place.address, 25)}</span>
                     </div>
 
                     <div className="flex items-center gap-1 text-sm text-muted-foreground mb-3">
-                      <MapPin className="h-4 w-4 flex-shrink-0" />
-                      <span className="truncate">{truncate(place.city, 25)}</span>
+                      <Building2 className="h-4 w-4 flex-shrink-0" />
+                      <span className="truncate">{truncate(location, 25)}</span>
                     </div>
 
                     <div className="flex flex-wrap gap-2 mb-3">
