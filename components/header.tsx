@@ -1,16 +1,19 @@
 "use client"
 
 import Link from "next/link"
-import { Menu, X, User, LogOut, Building2 } from "lucide-react"
+import { Menu, X, User, LogOut, Newspaper, Heart } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useState } from "react"
 import { ThemeToggle } from "@/components/theme-toggle"
 import Image from "next/image"
 import { useAuth } from "@/contexts/AuthContext"
+import {FavoritesPanel} from "@/components/favorites-panel";
+import {HeaderIcon} from "@/components/header-icon";
 
 export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const { user, isAuthenticated, logout } = useAuth()
+  const [favoritesOpen, setFavoritesOpen] = useState(false)
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -43,22 +46,30 @@ export function Header() {
             <ThemeToggle />
             {isAuthenticated ? (
               <>
-                <Button variant="ghost" size="sm" asChild>
-                  <Link href="/mis-publicaciones">
-                    <Building2 className="h-4 w-4 mr-2" />
-                    Mis publicaciones
-                  </Link>
-                </Button>
-                <Button variant="ghost" size="sm" asChild>
-                  <Link href="/profile">
-                    <User className="h-4 w-4 mr-2" />
-                    Mi perfil
-                  </Link>
-                </Button>
-                <Button variant="ghost" size="sm" onClick={logout}>
-                  <LogOut className="h-4 w-4 mr-2" />
-                  Cerrar sesión
-                </Button>
+                <HeaderIcon
+                  icon={Heart}
+                  mobile={false}
+                  label="Mis Favoritos"
+                  onClick={() => {setFavoritesOpen(true)}}
+                />
+                <HeaderIcon
+                  icon={Newspaper}
+                  mobile={false}
+                  label="Mis Publicaciones"
+                  href="/mis-publicaciones"
+                />
+                <HeaderIcon
+                  icon={User}
+                  mobile={false}
+                  label="Mi Perfil"
+                  href="/profile"
+                />
+                <HeaderIcon
+                  icon={LogOut}
+                  mobile={false}
+                  label="Cerrar Sesión"
+                  onClick={logout}
+                />
               </>
             ) : (
               <>
@@ -106,22 +117,30 @@ export function Header() {
                 </div>
                 {isAuthenticated ? (
                   <>
-                    <Button variant="ghost" size="sm" className="w-full" asChild>
-                      <Link href="/mis-publicaciones">
-                        <Building2 className="h-4 w-4 mr-2" />
-                        Mis publicaciones
-                      </Link>
-                    </Button>
-                    <Button variant="ghost" size="sm" className="w-full" asChild>
-                      <Link href="/profile">
-                        <User className="h-4 w-4 mr-2" />
-                        Mi perfil
-                      </Link>
-                    </Button>
-                    <Button variant="ghost" size="sm" className="w-full" onClick={logout}>
-                      <LogOut className="h-4 w-4 mr-2" />
-                      Cerrar sesión
-                    </Button>
+                      <HeaderIcon
+                          icon={Heart}
+                          mobile={true}
+                          label="Mis Favoritos"
+                          onClick={() => {setFavoritesOpen(true)}}
+                      />
+                      <HeaderIcon
+                          icon={Newspaper}
+                          mobile={true}
+                          label="Mis Publicaciones"
+                          href="/mis-publicaciones"
+                      />
+                      <HeaderIcon
+                          icon={User}
+                          mobile={true}
+                          label="Mi Perfil"
+                          href="/profile"
+                      />
+                      <HeaderIcon
+                          icon={LogOut}
+                          mobile={true}
+                          label="Cerrar Sesión"
+                          onClick={logout}
+                      />
                   </>
                 ) : (
                   <>
@@ -138,6 +157,7 @@ export function Header() {
           </nav>
         )}
       </div>
+      <FavoritesPanel open={favoritesOpen} onOpenChange={setFavoritesOpen} />
     </header>
   )
 }
