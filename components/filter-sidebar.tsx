@@ -24,6 +24,8 @@ export function FilterSidebar({ category, onApply, onClear }: FilterSidebarProps
   const [guestsCount, setGuestsCount] = useState<number | null>(null)
   const [roomsCount, setRoomsCount] = useState<number | null>(null)
   const [bathroomsCount, setBathroomsCount] = useState<number | null>(null)
+  // openNow filter for restaurants
+  const [openNow, setOpenNow] = useState<boolean>(false)
 
   const router = useRouter()
   const pathname = usePathname()
@@ -106,9 +108,25 @@ export function FilterSidebar({ category, onApply, onClear }: FilterSidebarProps
 
         {category !== "destino" && (
           <div className="space-y-3">
+            {/* Open now checkbox for restaurants (now shown before price range) */}
+            {category === "restaurant" && (
+              <div className="mb-6 -mt-3">
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="open-now"
+                    checked={openNow}
+                    onCheckedChange={(c) => setOpenNow(Boolean(c))}
+                    className="scale-110"
+                  />
+                  <label htmlFor="open-now" className="text-sm font-semibold text-foreground cursor-pointer">
+                    Abierto ahora
+                  </label>
+                </div>
+              </div>
+            )}
             <Label className="text-sm font-semibold">Rango de precio</Label>
             {category === "restaurant" ? (
-              <div className="space-y-4">
+              <div className="space-y-3">
                 <Slider
                   value={priceCategoryRange}
                   onValueChange={(v) => setPriceCategoryRange(v as number[])}
@@ -223,7 +241,18 @@ export function FilterSidebar({ category, onApply, onClear }: FilterSidebarProps
                   }
                 }
 
+                // include restaurant openNow flag
+                body.openNow = openNow
+
                 if (rating && rating[0] > 0) body.minimumRating = rating[0]
+
+                // remove null or empty-array fields so the backend only receives set filters
+                Object.keys(body).forEach((k) => {
+                  const v = (body as any)[k]
+                  if (v === null) delete (body as any)[k]
+                  // also drop empty arrays
+                  if (Array.isArray(v) && v.length === 0) delete (body as any)[k]
+                })
 
                 if (onApply) {
                   await onApply(body)
@@ -253,6 +282,9 @@ export function FilterSidebar({ category, onApply, onClear }: FilterSidebarProps
               setSelectedAmenities([])
               if (category === "restaurant") {
                 setPriceCategoryRange([1, 4])
+              }
+              if (category === "restaurant") {
+                setOpenNow(false)
               }
               if (category === "hotel") {
                 setGuestsCount(null)
