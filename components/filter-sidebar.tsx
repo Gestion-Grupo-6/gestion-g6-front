@@ -20,6 +20,10 @@ export function FilterSidebar({ category, onApply, onClear }: FilterSidebarProps
   const [priceCategoryRange, setPriceCategoryRange] = useState<number[]>([1, 4])
   const [rating, setRating] = useState([0])
   const [selectedAmenities, setSelectedAmenities] = useState<string[]>([])
+  // quantities for hotels: null means not selected
+  const [guestsCount, setGuestsCount] = useState<number | null>(null)
+  const [roomsCount, setRoomsCount] = useState<number | null>(null)
+  const [bathroomsCount, setBathroomsCount] = useState<number | null>(null)
 
   const router = useRouter()
   const pathname = usePathname()
@@ -44,12 +48,67 @@ export function FilterSidebar({ category, onApply, onClear }: FilterSidebarProps
       <CardHeader>
         <CardTitle className="text-lg">Filtros</CardTitle>
       </CardHeader>
-      <CardContent className="space-y-6">
+  <CardContent className="space-y-4">
+        {category === "hotel" && (
+          <div className="space-y-2 -mt-2">
+            <div className="grid grid-cols-3 gap-6 items-start">
+                <div className="flex flex-col items-center gap-1 min-w-0">
+                  <Label className="text-xs text-center font-semibold">Personas</Label>
+                  <select
+                    className="w-full max-w-[80px] border rounded px-2 py-1 text-xs text-center"
+                    value={guestsCount ?? ""}
+                    onChange={(e) => setGuestsCount(e.target.value ? Number(e.target.value) : null)}
+                  >
+                  <option value="">-</option>
+                  <option value={1}>1</option>
+                  <option value={2}>2</option>
+                  <option value={3}>3</option>
+                  <option value={4}>4</option>
+                  <option value={5}>5</option>
+                  <option value={6}>6+</option>
+                </select>
+              </div>
+              <div className="flex flex-col items-center gap-1 min-w-0">
+                <Label className="text-xs text-center font-semibold">Habitaciones</Label>
+                <select
+                  className="w-full max-w-[80px] border rounded px-2 py-1 text-xs text-center"
+                  value={roomsCount ?? ""}
+                  onChange={(e) => setRoomsCount(e.target.value ? Number(e.target.value) : null)}
+                >
+                  <option value="">-</option>
+                  <option value={1}>1</option>
+                  <option value={2}>2</option>
+                  <option value={3}>3</option>
+                  <option value={4}>4</option>
+                  <option value={5}>5</option>
+                  <option value={6}>6+</option>
+                </select>
+              </div>
+              <div className="flex flex-col items-center gap-1 min-w-0">
+                <Label className="text-xs text-center font-semibold">Baños</Label>
+                <select
+                  className="w-full max-w-[80px] border rounded px-2 py-1 text-xs text-center"
+                  value={bathroomsCount ?? ""}
+                  onChange={(e) => setBathroomsCount(e.target.value ? Number(e.target.value) : null)}
+                >
+                  <option value="">-</option>
+                  <option value={1}>1</option>
+                  <option value={2}>2</option>
+                  <option value={3}>3</option>
+                  <option value={4}>4</option>
+                  <option value={5}>5</option>
+                  <option value={6}>6+</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        )}
+
         {category !== "destino" && (
           <div className="space-y-3">
             <Label className="text-sm font-semibold">Rango de precio</Label>
             {category === "restaurant" ? (
-              <div className="space-y-3">
+              <div className="space-y-4">
                 <Slider
                   value={priceCategoryRange}
                   onValueChange={(v) => setPriceCategoryRange(v as number[])}
@@ -155,6 +214,15 @@ export function FilterSidebar({ category, onApply, onClear }: FilterSidebarProps
                   body.maximumPrice = priceRange[1]
                 }
 
+                // quantities: for hotels include selected counts (null if not selected)
+                if (category === "hotel") {
+                  body.quantities = {
+                    rooms: roomsCount ?? null,
+                    guests: guestsCount ?? null,
+                    bathrooms: bathroomsCount ?? null,
+                  }
+                }
+
                 if (rating && rating[0] > 0) body.minimumRating = rating[0]
 
                 if (onApply) {
@@ -185,6 +253,11 @@ export function FilterSidebar({ category, onApply, onClear }: FilterSidebarProps
               setSelectedAmenities([])
               if (category === "restaurant") {
                 setPriceCategoryRange([1, 4])
+              }
+              if (category === "hotel") {
+                setGuestsCount(null)
+                setRoomsCount(null)
+                setBathroomsCount(null)
               }
 
               if (onClear) {
