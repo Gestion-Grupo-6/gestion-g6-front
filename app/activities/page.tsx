@@ -3,6 +3,7 @@ import { PlacesList } from "@/components/places-list"
 import { FilterSidebar } from "@/components/filter-sidebar"
 import { ACTIVIDAD, ACTIVIDADES, fetchPlaces, fetchPlace, searchPlaces } from "@/api/place"
 import { SearchBar } from "@/components/search-bar"
+import PlacesClient from "@/components/places-client"
 
 export default async function ActividadesPage({ searchParams }: { searchParams: Promise<{ q?: string }> }) {
   const { q } = await searchParams
@@ -23,13 +24,8 @@ export default async function ActividadesPage({ searchParams }: { searchParams: 
 
         <div className="container mx-auto px-4 py-8">
           <SearchBar defaultValue={q || ""} />
-          <div className="flex flex-col lg:flex-row gap-8">
-            <aside className="lg:w-64 flex-shrink-0">
-              <FilterSidebar category="activity" />
-            </aside>
-            <div className="flex-1">
-              <PlacesList places={activities} />
-            </div>
+          <div>
+            <PlacesClient initialPlaces={activities} category="activity" collection={ACTIVIDADES} />
           </div>
         </div>
       </main>
