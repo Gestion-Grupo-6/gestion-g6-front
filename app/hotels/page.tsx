@@ -8,9 +8,7 @@ export default async function HotelesPage({ searchParams }: { searchParams: Prom
   const { q } = await searchParams
   const hotels = q
     ? await searchPlaces(HOTELES, { name: q, sort: null, page: null, pageSize: null })
-    : (await Promise.all((await fetchPlaces(HOTELES)).map((s) => fetchPlace(HOTEL, s.id)))).filter(
-        (r): r is NonNullable<typeof r> => r !== null,
-      )
+    : await fetchPlaces(HOTELES)
 
   return (
     <div className="min-h-screen flex flex-col">

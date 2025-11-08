@@ -8,9 +8,7 @@ export default async function ActividadesPage({ searchParams }: { searchParams: 
   const { q } = await searchParams
   const activities = q
     ? await searchPlaces(ACTIVIDADES, { name: q, sort: null, page: null, pageSize: null })
-    : (await Promise.all((await fetchPlaces(ACTIVIDADES)).map((s) => fetchPlace(ACTIVIDAD, s.id)))).filter(
-        (r): r is NonNullable<typeof r> => r !== null,
-      )
+    : await fetchPlaces(ACTIVIDADES)
 
   return (
     <div className="min-h-screen flex flex-col">

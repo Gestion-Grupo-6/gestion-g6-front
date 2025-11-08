@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Star, MapPin, Phone, Mail, Globe, ChevronLeft, ChevronRight, Heart } from "lucide-react"
+import {Star, MapPin, Phone, Mail, Globe, ChevronLeft, ChevronRight, Heart, Building2} from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"

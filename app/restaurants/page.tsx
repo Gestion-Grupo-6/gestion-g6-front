@@ -8,9 +8,7 @@ export default async function RestaurantesPage({ searchParams }: { searchParams:
   const { q } = await searchParams
   const restaurants = q
     ? await searchPlaces(RESTAURANTES, { name: q, sort: null, page: null, pageSize: null })
-    : (await Promise.all((await fetchPlaces(RESTAURANTES)).map((s) => fetchPlace(RESTAURANT, s.id)))).filter(
-        (r): r is NonNullable<typeof r> => r !== null,
-      )
+    : await fetchPlaces(RESTAURANTES)
 
   
   return (
