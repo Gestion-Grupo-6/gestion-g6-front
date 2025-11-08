@@ -26,6 +26,7 @@ export function FilterSidebar({ category, onApply, onClear }: FilterSidebarProps
   const [bathroomsCount, setBathroomsCount] = useState<number | null>(null)
   // openNow filter for restaurants
   const [openNow, setOpenNow] = useState<boolean>(false)
+  
 
   const router = useRouter()
   const pathname = usePathname()
@@ -46,7 +47,9 @@ export function FilterSidebar({ category, onApply, onClear }: FilterSidebarProps
   }, [category])
 
   return (
-    <Card className="sticky top-20">
+    <>
+      
+      <Card className="sticky top-20">
       <CardHeader>
         <CardTitle className="text-lg">Filtros</CardTitle>
       </CardHeader>
@@ -306,5 +309,6 @@ export function FilterSidebar({ category, onApply, onClear }: FilterSidebarProps
         </div>
       </CardContent>
     </Card>
+    </>
   )
 }

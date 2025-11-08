@@ -4,6 +4,7 @@ import { FilterSidebar } from "@/components/filter-sidebar"
 import { fetchPlaces, fetchPlace, HOTELES, HOTEL, searchPlaces } from "@/api/place"
 import { SearchBar } from "@/components/search-bar"
 import PlacesClient from "@/components/places-client"
+import PlacesPageClient from "@/components/places-page-client"
 
 export default async function HotelesPage({ searchParams }: { searchParams: Promise<{ q?: string }> }) {
   const { q } = await searchParams
@@ -23,10 +24,8 @@ export default async function HotelesPage({ searchParams }: { searchParams: Prom
         </div>
 
         <div className="container mx-auto px-4 py-8">
-          <SearchBar defaultValue={q || ""} />
           <div>
-            {/* Client-side wrapper: allows applying filters via POST and updating the list without navigating */}
-            <PlacesClient initialPlaces={hotels} category="hotel" collection={HOTELES} />
+            <PlacesPageClient initialPlaces={hotels} category="hotel" collection={HOTELES} initialQuery={q || ""} />
           </div>
         </div>
       </main>

@@ -4,6 +4,7 @@ import { FilterSidebar } from "@/components/filter-sidebar"
 import { fetchPlaces, fetchPlace, RESTAURANTES, RESTAURANT, searchPlaces, searchPlacesAdvanced } from "@/api/place"
 import { SearchBar } from "@/components/search-bar"
 import PlacesClient from "@/components/places-client"
+import PlacesPageClient from "@/components/places-page-client"
 export default async function RestaurantesPage({ searchParams }: { searchParams: Promise<Record<string, any>> }) {
   const params = await searchParams
   const q = params.q as string | undefined
@@ -61,10 +62,9 @@ export default async function RestaurantesPage({ searchParams }: { searchParams:
         </div>
 
         <div className="container mx-auto px-4 py-8">
-          <SearchBar defaultValue={q || ""} />
-                <div>
-                  <PlacesClient initialPlaces={restaurants} category="restaurant" collection={RESTAURANTES} />
-                </div>
+          <div>
+            <PlacesPageClient initialPlaces={restaurants} category="restaurant" collection={RESTAURANTES} initialQuery={q || ""} />
+          </div>
         </div>
       </main>
     </div>
