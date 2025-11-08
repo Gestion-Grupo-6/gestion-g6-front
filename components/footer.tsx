@@ -47,7 +47,7 @@ export function Footer() {
             <ul className="space-y-2">
               <li>
                 <Link href="/mis-publicaciones" className="text-sm text-muted-foreground hover:text-primary transition-colors">
-                  Mis negocios
+                  Mis Publicaciones
                 </Link>
               </li>
               <li>
