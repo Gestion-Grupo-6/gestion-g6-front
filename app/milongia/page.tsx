@@ -9,6 +9,7 @@ import { Send, Sparkles, MapPin, Utensils, Hotel } from "lucide-react"
 import { Header } from "@/components/header"
 import { useState } from "react"
 import { DefaultChatTransport } from "ai"
+import Markdown from "react-markdown";
 
 export default function MilongIA() {
   const [inputValue, setInputValue] = useState("")
@@ -48,7 +49,7 @@ export default function MilongIA() {
           </div>
 
           {/* Chat Container */}
-          <Card className="mb-6 p-6 min-h-[500px] max-h-[600px] overflow-y-auto">
+          <Card className="relative mb-6 p-6 min-h-[500px] max-h-[600px] overflow-y-auto">
             {messages.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-full text-center">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8 w-full">
@@ -80,7 +81,6 @@ export default function MilongIA() {
                       variant="outline"
                       className="text-left h-auto py-3 px-4 whitespace-normal bg-transparent"
                       onClick={() => {
-                        setInputValue(question)
                         sendMessage({ text: question })
                       }}
                     >
@@ -101,9 +101,9 @@ export default function MilongIA() {
                       {message.parts.map((part, index) => {
                         if (part.type === "text") {
                           return (
-                            <p key={index} className="whitespace-pre-wrap">
+                            <Markdown key={index}>
                               {part.text}
-                            </p>
+                            </Markdown>
                           )
                         }
                         return null
