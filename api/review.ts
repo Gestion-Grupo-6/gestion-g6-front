@@ -115,4 +115,3 @@ export async function uploadReviewImage(reviewId: string | null, file: File, ind
   // getImage() se encargará de convertirlo a URL pública cuando se necesite mostrar
   return uploadedPath
 }
-

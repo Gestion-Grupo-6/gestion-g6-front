@@ -160,4 +160,3 @@ export function FavoritesPanel({ open, onOpenChange }: FavoritesPanelProps) {
     </Dialog.Root>
   )
 }
-

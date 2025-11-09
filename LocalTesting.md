@@ -10,7 +10,7 @@ Aplicación Next.js que consume el backend de `gestion-g6-back` para listar y ad
 
 ## Variables de entorno
 
-   mv env.local .env.local
+   cp env-template .env
 
 ## Puesta en marcha local
 
