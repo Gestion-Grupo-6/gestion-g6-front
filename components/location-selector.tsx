@@ -12,6 +12,7 @@ import usePlacesAutocomplete, { getGeocode, getLatLng } from "use-places-autocom
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { getStoredLocation } from "@/lib/location-storage";
+import { useTheme } from "next-themes";
 
 type LatLngLiteral = { lat: number; lng: number };
 
@@ -91,6 +92,8 @@ function LocationSelectorContent({ value, onChange, inputId, placeholder }: Loca
   const [mapCenter, setMapCenter] = useState<LatLngLiteral>(value.location ?? DEFAULT_CENTER);
   const [mapZoom, setMapZoom] = useState(value.location ? 16 : 11);
   const [userLocation, setUserLocation] = useState<LatLngLiteral | null>(null);
+  const { resolvedTheme, theme } = useTheme();
+  const activeTheme = resolvedTheme === "dark" || theme === "dark" ? "dark" : "light";
 
   useEffect(() => {
     const stored = getStoredLocation();
@@ -123,6 +126,9 @@ function LocationSelectorContent({ value, onChange, inputId, placeholder }: Loca
     suggestions: { status, data },
     clearSuggestions,
   } = usePlacesAutocomplete({ debounce: 300, requestOptions });
+
+  const mapColorScheme = (activeTheme === "dark" ? "DARK" : "LIGHT") as "DARK" | "LIGHT";
+  const mapThemeKey = `location-selector-map-${mapColorScheme}`;
 
   useEffect(() => {
     if (value.address && value.address !== searchValue) {
@@ -287,12 +293,16 @@ function LocationSelectorContent({ value, onChange, inputId, placeholder }: Loca
         <div className="space-y-2 rounded-md border p-3">
           <div className="h-72 w-full overflow-hidden rounded">
             <Map
+              key={mapThemeKey}
               mapId={process.env.NEXT_PUBLIC_MAP_ID}
               defaultCenter={DEFAULT_CENTER}
               defaultZoom={11}
               center={mapCenter}
               zoom={mapZoom}
               onCameraChanged={handleCameraChanged}
+              colorScheme={mapColorScheme}
+              mapTypeControl={false}
+              streetViewControl={false}
             >
               {markerPosition && <AdvancedMarker position={markerPosition} />}
             </Map>
