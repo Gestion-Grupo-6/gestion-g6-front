@@ -15,6 +15,7 @@ import { useAuth } from "@/contexts/AuthContext"
 import type { Place } from "@/types/place"
 import { ACTIVIDADES, createPlace, fetchPlace, fetchPlacesByOwner, HOTELES, RESTAURANTES, updatePlace, uploadPlaceImage } from "@/api/place"
 import { ReviewsPanel } from "@/components/reviews-panel"
+import { LocationSelector, type LocationValue } from "@/components/location-selector"
 
 const CATEGORY_OPTIONS = [
   { value: HOTELES, label: "Hoteles" },
@@ -31,6 +32,8 @@ const INITIAL_FORM = {
   address: "",
   city: "",
   country: "",
+  locationLat: "",
+  locationLng: "",
   phone: "",
   email: "",
   website: "",
@@ -67,6 +70,7 @@ export default function MisPublicacionesPage() {
   const [selectedFiles, setSelectedFiles] = useState<File[]>([])
   const [imagePreviews, setImagePreviews] = useState<string[]>([])
   const [uploadingImages, setUploadingImages] = useState(false)
+  const [locationConfirmed, setLocationConfirmed] = useState(false)
   
   const [openMenuId, setOpenMenuId] = useState<string | null>(null)
   const [showReviewsForId, setShowReviewsForId] = useState<string | null>(null)
@@ -100,6 +104,20 @@ export default function MisPublicacionesPage() {
     // Usar directamente la categoría del formulario (ya está en inglés)
     return formData.category
   }, [formData.category])
+
+  const confirmedCoordinates = useMemo(() => {
+    const lat = Number(formData.locationLat)
+    const lng = Number(formData.locationLng)
+    if (
+      formData.locationLat.trim() &&
+      formData.locationLng.trim() &&
+      !Number.isNaN(lat) &&
+      !Number.isNaN(lng)
+    ) {
+      return { lat, lng }
+    }
+    return null
+  }, [formData.locationLat, formData.locationLng])
 
   useEffect(() => {
     if (!isAuthenticated || !user?.id) return
@@ -137,6 +155,18 @@ export default function MisPublicacionesPage() {
     }))
   }
 
+  const handleLocationChange = (location: LocationValue, options?: { confirmed?: boolean }) => {
+    setFormData((prev) => ({
+      ...prev,
+      address: location.address,
+      city: location.city,
+      country: location.country,
+      locationLat: location.location?.lat != null ? String(location.location.lat) : "",
+      locationLng: location.location?.lng != null ? String(location.location.lng) : "",
+    }))
+    setLocationConfirmed(Boolean(options?.confirmed && location.location))
+  }
+
   const resetForm = () => {
     // Limpiar URLs de preview para evitar memory leaks
     imagePreviews.forEach(url => URL.revokeObjectURL(url))
@@ -145,6 +175,7 @@ export default function MisPublicacionesPage() {
     setImagePreviews([])
     setShowForm(false)
     setEditingId(null)
+    setLocationConfirmed(false)
   }
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -192,6 +223,11 @@ export default function MisPublicacionesPage() {
     const missing = requiredFields.filter(({ key }) => !formData[key].trim())
     if (missing.length > 0) {
       setErrorMessage(`Completa los campos obligatorios: ${missing.map((field) => field.label).join(", ")}`)
+      return
+    }
+
+    if (formData.address.trim() && !locationConfirmed) {
+      setErrorMessage("Confirma la dirección en el mapa antes de guardar los cambios.")
       return
     }
 
@@ -259,6 +295,17 @@ export default function MisPublicacionesPage() {
       if (formData.phone.trim()) payload.phone = formData.phone.trim()
       if (formData.email.trim()) payload.email = formData.email.trim()
       if (formData.website.trim()) payload.website = formData.website.trim()
+      const lat = Number(formData.locationLat)
+      const lng = Number(formData.locationLng)
+      if (
+        locationConfirmed &&
+        formData.locationLat.trim() &&
+        formData.locationLng.trim() &&
+        !Number.isNaN(lat) &&
+        !Number.isNaN(lng)
+      ) {
+        payload.location = { lat, lng }
+      }
 
       if (editingId) {
         await updatePlace(collectionForPost, editingId, payload)
@@ -371,21 +418,26 @@ export default function MisPublicacionesPage() {
 
                     <div className="space-y-2">
                       <Label htmlFor="city">Ciudad</Label>
-                      <Input id="city" name="city" value={formData.city} onChange={handleFormChange} />
+                      <Input id="city" name="city" value={formData.city} readOnly />
                     </div>
 
                     <div className="space-y-2">
                       <Label htmlFor="country">País</Label>
-                      <Input id="country" name="country" value={formData.country} onChange={handleFormChange} />
+                      <Input id="country" name="country" value={formData.country} readOnly />
                     </div>
 
-                    <div className="space-y-2">
+                    <div className="space-y-2 md:col-span-2">
                       <Label htmlFor="address">Dirección</Label>
-                      <Input
-                        id="address"
-                        name="address"
-                        value={formData.address}
-                        onChange={handleFormChange}
+                      <LocationSelector
+                        inputId="address"
+                        value={{
+                          address: formData.address,
+                          city: formData.city,
+                          country: formData.country,
+                          location: confirmedCoordinates,
+                        }}
+                        onChange={handleLocationChange}
+                        placeholder="Buscar y seleccionar dirección..."
                       />
                     </div>
 
@@ -644,6 +696,7 @@ export default function MisPublicacionesPage() {
                                           const full = await fetchPlace(collection, place.id)
                                           if (!full) return
                                           const categoryForForm = collection === HOTELES ? 'hotel' : collection === RESTAURANTES ? 'restaurant' : 'activity'
+                                          const fullLocation = (full as any).location as { lat?: number; lng?: number } | undefined
                                           setFormData({
                                             name: full.name || "",
                                             description: full.description || "",
@@ -651,6 +704,14 @@ export default function MisPublicacionesPage() {
                                             address: full.address || "",
                                             city: (full as any).city || "",
                                             country: (full as any).country || "",
+                                            locationLat:
+                                              fullLocation?.lat !== undefined && fullLocation?.lat !== null
+                                                ? String(fullLocation.lat)
+                                                : "",
+                                            locationLng:
+                                              fullLocation?.lng !== undefined && fullLocation?.lng !== null
+                                                ? String(fullLocation.lng)
+                                                : "",
                                             phone: full.phone || "",
                                             email: full.email || "",
                                             website: full.website || "",
@@ -663,6 +724,7 @@ export default function MisPublicacionesPage() {
                                                 ? (full as any).amenities.join("\n")
                                                 : "",
                                           })
+                                          setLocationConfirmed(Boolean(full.address && fullLocation))
                                           setEditingId(place.id)
                                           setShowForm(true)
                                           window.scrollTo({ top: 0, behavior: 'smooth' })

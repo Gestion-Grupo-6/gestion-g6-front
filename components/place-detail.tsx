@@ -13,6 +13,7 @@ import { getImage } from "@/contexts/SupabaseContext"
 import { useAuth } from "@/contexts/AuthContext"
 import { checkFavorite, toggleFavorite } from "@/api/user"
 import { toast } from "sonner"
+import { PlaceLocationMap } from "@/components/place-location-map"
 
 interface PlaceDetailProps {
   place: Place
@@ -39,6 +40,8 @@ export function PlaceDetail({ place }: PlaceDetailProps) {
   const categoryLabel = place.category
   const address = place.address ?? "Información no disponible"
   const location = [ (place as any).city, (place as any).country ].filter(Boolean).join(", ")
+  const coordinates = place.location
+  const hasCoordinates = typeof coordinates?.lat === "number" && typeof coordinates?.lng === "number"
   const phone = place.phone ?? ""
   const email = place.email ?? ""
   const website = place.website ?? ""
@@ -295,6 +298,21 @@ export function PlaceDetail({ place }: PlaceDetailProps) {
           </div>
         </div>
       </div>
+
+      {hasCoordinates && coordinates && (
+        <div className="container mx-auto px-4 pb-12">
+          <Card>
+            <CardContent className="p-0">
+              <div className="p-6 space-y-2">
+                <h2 className="text-xl font-bold text-foreground">Ubicación en el mapa</h2>
+              </div>
+              <div className="h-72 w-full border-t">
+                <PlaceLocationMap lat={coordinates.lat} lng={coordinates.lng} />
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
     </div>
   )
 }

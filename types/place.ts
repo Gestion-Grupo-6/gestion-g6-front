@@ -17,6 +17,10 @@ export interface Place {
   rating: number | null
   ratings?: Record<string, number> | null
   reviews: number | null
+  location?: {
+    lat: number
+    lng: number
+  } | null
 }
 
 
@@ -35,4 +39,8 @@ export interface PlaceCreatePayload {
   phone: string
   email: string
   website: string
+  location?: {
+    lat: number
+    lng: number
+  }
 }

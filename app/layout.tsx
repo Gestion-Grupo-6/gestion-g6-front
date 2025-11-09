@@ -6,6 +6,7 @@ import { Analytics } from "@vercel/analytics/next"
 import "./globals.css"
 import { MilongiaButton } from "@/components/milongia-button"
 import { AuthProvider } from "@/contexts/AuthContext"
+import { ThemeProvider } from "@/components/theme-provider"
 import { Toaster } from "sonner"
 
 const _geist = Geist({ subsets: ["latin"] })
@@ -23,14 +24,16 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="es">
-      <body className={`font-sans antialiased`}>
-        <AuthProvider>
-          {children}
-          <MilongiaButton />
-          <Toaster richColors position="top-right" />
-          <Analytics />
-        </AuthProvider>
+    <html lang="es" suppressHydrationWarning>
+      <body className="font-sans antialiased">
+        <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
+          <AuthProvider>
+            {children}
+            <MilongiaButton />
+            <Toaster richColors position="top-right" />
+            <Analytics />
+          </AuthProvider>
+        </ThemeProvider>
       </body>
     </html>
   )
