@@ -19,9 +19,12 @@ export default function MilongIA() {
     transport: new DefaultChatTransport({ api: "/api/ai-suggestions" }),
   })
 
+  console.log("[v0] Status:", status, "Messages count:", messages.length)
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    if (inputValue.trim() && (status as any) !== "in_progress") {
+    if (inputValue.trim() && status !== "in_progress") {
+      console.log("[v0] Sending message:", inputValue)
       sendMessage({ text: inputValue })
       setInputValue("")
     }
@@ -121,7 +124,7 @@ export default function MilongIA() {
                     </div>
                   </div>
                 ))}
-                {(status as any) === "in_progress" && (
+                {status === "in_progress" && (
                   <div className="flex justify-start">
                     <div className="flex-shrink-0 mr-3 mt-1">
                       <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
@@ -135,7 +138,11 @@ export default function MilongIA() {
                       </div>
                     </div>
                     <div className="bg-muted rounded-lg px-4 py-3">
-                      <p className="text-muted-foreground text-sm">...</p>
+                      <div className="flex items-center gap-1">
+                        <span className="text-foreground text-base animate-pulse">•</span>
+                        <span className="text-foreground text-base animate-pulse delay-100">•</span>
+                        <span className="text-foreground text-base animate-pulse delay-200">•</span>
+                      </div>
                     </div>
                   </div>
                 )}
@@ -151,14 +158,9 @@ export default function MilongIA() {
               onChange={(e) => setInputValue(e.target.value)}
               placeholder="Escribe tu pregunta o preferencias..."
               className="flex-1 px-4 py-3 rounded-lg border border-input bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-              disabled={(status as any) === "in_progress"}
+              disabled={status === "in_progress"}
             />
-            <Button
-              type="submit"
-              size="lg"
-              disabled={(status as any) === "in_progress" || !inputValue.trim()}
-              className="px-6"
-            >
+            <Button type="submit" size="lg" disabled={status === "in_progress" || !inputValue.trim()} className="px-6">
               <Send className="w-5 h-5" />
             </Button>
           </form>
