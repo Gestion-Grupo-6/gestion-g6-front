@@ -34,5 +34,3 @@ export type CommentResponse = {
   images?: string[]
   replies?: CommentResponse[]
 }
-
-

@@ -5,11 +5,12 @@ import type React from "react"
 import { useChat } from "@ai-sdk/react"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
-import { Send, Sparkles, MapPin, Utensils, Hotel } from "lucide-react"
+import { Send, MapPin, Utensils, Hotel } from "lucide-react"
 import { Header } from "@/components/header"
 import { useState } from "react"
 import { DefaultChatTransport } from "ai"
-import Markdown from "react-markdown";
+import Markdown from "react-markdown"
+import Image from "next/image"
 
 export default function MilongIA() {
   const [inputValue, setInputValue] = useState("")
@@ -42,7 +43,7 @@ export default function MilongIA() {
           {/* Header Section */}
           <div className="text-center mb-8">
             <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 mb-4">
-              <Sparkles className="w-8 h-8 text-primary" />
+              <Image src="/milongia-logo.png" alt="MilongIA" width={48} height={48} className="rounded-full" />
             </div>
             <h1 className="text-4xl font-bold text-foreground mb-2">MilongIA</h1>
             <p className="text-muted-foreground text-lg">Descubre lugares increíbles personalizados para ti</p>
@@ -93,6 +94,19 @@ export default function MilongIA() {
               <div className="space-y-4">
                 {messages.map((message) => (
                   <div key={message.id} className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}>
+                    {message.role === "assistant" && (
+                      <div className="flex-shrink-0 mr-3 mt-1">
+                        <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                          <Image
+                            src="/milongia-logo.png"
+                            alt="MilongIA"
+                            width={24}
+                            height={24}
+                            className="rounded-full"
+                          />
+                        </div>
+                      </div>
+                    )}
                     <div
                       className={`max-w-[80%] rounded-lg px-4 py-3 ${
                         message.role === "user" ? "bg-primary text-primary-foreground" : "bg-muted text-foreground"
@@ -100,11 +114,7 @@ export default function MilongIA() {
                     >
                       {message.parts.map((part, index) => {
                         if (part.type === "text") {
-                          return (
-                            <Markdown key={index}>
-                              {part.text}
-                            </Markdown>
-                          )
+                          return <Markdown key={index}>{part.text}</Markdown>
                         }
                         return null
                       })}
@@ -113,21 +123,19 @@ export default function MilongIA() {
                 ))}
                 {(status as any) === "in_progress" && (
                   <div className="flex justify-start">
-                    <div className="bg-muted rounded-lg px-4 py-3">
-                      <div className="flex gap-1">
-                        <div
-                          className="w-2 h-2 bg-primary rounded-full animate-bounce"
-                          style={{ animationDelay: "0ms" }}
-                        />
-                        <div
-                          className="w-2 h-2 bg-primary rounded-full animate-bounce"
-                          style={{ animationDelay: "150ms" }}
-                        />
-                        <div
-                          className="w-2 h-2 bg-primary rounded-full animate-bounce"
-                          style={{ animationDelay: "300ms" }}
+                    <div className="flex-shrink-0 mr-3 mt-1">
+                      <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                        <Image
+                          src="/milongia-logo.png"
+                          alt="MilongIA"
+                          width={24}
+                          height={24}
+                          className="rounded-full"
                         />
                       </div>
+                    </div>
+                    <div className="bg-muted rounded-lg px-4 py-3">
+                      <p className="text-muted-foreground text-sm">...</p>
                     </div>
                   </div>
                 )}
@@ -145,13 +153,17 @@ export default function MilongIA() {
               className="flex-1 px-4 py-3 rounded-lg border border-input bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
               disabled={(status as any) === "in_progress"}
             />
-            <Button type="submit" size="lg" disabled={(status as any) === "in_progress" || !inputValue.trim()} className="px-6">
+            <Button
+              type="submit"
+              size="lg"
+              disabled={(status as any) === "in_progress" || !inputValue.trim()}
+              className="px-6"
+            >
               <Send className="w-5 h-5" />
             </Button>
           </form>
         </div>
       </main>
-
     </div>
   )
 }

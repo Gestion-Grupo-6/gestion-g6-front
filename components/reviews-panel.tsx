@@ -128,5 +128,3 @@ export function ReviewsPanel({ open, onOpenChange, placeId }: ReviewsPanelProps)
     </Dialog.Root>
   )
 }
-
-
