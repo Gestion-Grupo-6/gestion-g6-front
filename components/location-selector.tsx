@@ -1,5 +1,8 @@
 "use client";
 
+// NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=AIzaSyAiF6_AClAqvtTJhN54WhKnkHuyHRePOkg
+// NEXT_PUBLIC_MAP_ID=87a2f01c6cc58e67d4a4977e
+
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   APIProvider,
