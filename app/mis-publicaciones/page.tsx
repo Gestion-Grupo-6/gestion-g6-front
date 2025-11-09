@@ -15,6 +15,7 @@ import { useAuth } from "@/contexts/AuthContext"
 import type { Place } from "@/types/place"
 import { ACTIVIDADES, createPlace, fetchPlace, fetchPlacesByOwner, HOTELES, RESTAURANTES, updatePlace, uploadPlaceImage } from "@/api/place"
 import { ReviewsPanel } from "@/components/reviews-panel"
+import { LocationSelector, type LocationValue } from "@/components/location-selector"
 
 const CATEGORY_OPTIONS = [
   { value: HOTELES, label: "Hoteles" },
@@ -67,6 +68,7 @@ export default function MisPublicacionesPage() {
   const [selectedFiles, setSelectedFiles] = useState<File[]>([])
   const [imagePreviews, setImagePreviews] = useState<string[]>([])
   const [uploadingImages, setUploadingImages] = useState(false)
+  const [locationConfirmed, setLocationConfirmed] = useState(false)
   
   const [openMenuId, setOpenMenuId] = useState<string | null>(null)
   const [showReviewsForId, setShowReviewsForId] = useState<string | null>(null)
@@ -137,6 +139,16 @@ export default function MisPublicacionesPage() {
     }))
   }
 
+  const handleLocationChange = (location: LocationValue, options?: { confirmed?: boolean }) => {
+    setFormData((prev) => ({
+      ...prev,
+      address: location.address,
+      city: location.city,
+      country: location.country,
+    }))
+    setLocationConfirmed(Boolean(options?.confirmed))
+  }
+
   const resetForm = () => {
     // Limpiar URLs de preview para evitar memory leaks
     imagePreviews.forEach(url => URL.revokeObjectURL(url))
@@ -145,6 +157,7 @@ export default function MisPublicacionesPage() {
     setImagePreviews([])
     setShowForm(false)
     setEditingId(null)
+    setLocationConfirmed(false)
   }
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -192,6 +205,11 @@ export default function MisPublicacionesPage() {
     const missing = requiredFields.filter(({ key }) => !formData[key].trim())
     if (missing.length > 0) {
       setErrorMessage(`Completa los campos obligatorios: ${missing.map((field) => field.label).join(", ")}`)
+      return
+    }
+
+    if (formData.address.trim() && !locationConfirmed) {
+      setErrorMessage("Confirma la dirección en el mapa antes de guardar los cambios.")
       return
     }
 
@@ -371,21 +389,21 @@ export default function MisPublicacionesPage() {
 
                     <div className="space-y-2">
                       <Label htmlFor="city">Ciudad</Label>
-                      <Input id="city" name="city" value={formData.city} onChange={handleFormChange} />
+                      <Input id="city" name="city" value={formData.city} readOnly />
                     </div>
 
                     <div className="space-y-2">
                       <Label htmlFor="country">País</Label>
-                      <Input id="country" name="country" value={formData.country} onChange={handleFormChange} />
+                      <Input id="country" name="country" value={formData.country} readOnly />
                     </div>
 
-                    <div className="space-y-2">
+                    <div className="space-y-2 md:col-span-2">
                       <Label htmlFor="address">Dirección</Label>
-                      <Input
-                        id="address"
-                        name="address"
-                        value={formData.address}
-                        onChange={handleFormChange}
+                      <LocationSelector
+                        inputId="address"
+                        value={{ address: formData.address, city: formData.city, country: formData.country }}
+                        onChange={handleLocationChange}
+                        placeholder="Buscar y seleccionar dirección..."
                       />
                     </div>
 
@@ -663,6 +681,7 @@ export default function MisPublicacionesPage() {
                                                 ? (full as any).amenities.join("\n")
                                                 : "",
                                           })
+                                          setLocationConfirmed(Boolean(full.address))
                                           setEditingId(place.id)
                                           setShowForm(true)
                                           window.scrollTo({ top: 0, behavior: 'smooth' })
