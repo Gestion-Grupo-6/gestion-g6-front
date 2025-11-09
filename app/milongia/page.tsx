@@ -54,7 +54,7 @@ export default function MilongIA() {
           </div>
 
           {/* Chat Container */}
-          <Card className="relative mb-6 p-6 min-h-[500px] max-h-[600px] overflow-y-auto">
+          <Card className="mb-6 p-6 min-h-[500px] max-h-[600px] overflow-y-auto">
             {messages.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-full text-center">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8 w-full">

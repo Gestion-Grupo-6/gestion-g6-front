@@ -21,5 +21,3 @@ export function SearchBar({ defaultValue, placeholder }: SearchBarProps) {
     </form>
   )
 }
-
-
