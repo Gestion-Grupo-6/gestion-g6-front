@@ -1,4 +1,4 @@
-import { ollama } from "ai-sdk-ollama"
+import { google } from '@ai-sdk/google';
 import { streamText, convertToModelMessages } from "ai"
 
 // Hardcoded system prompt for the assistant
@@ -11,7 +11,10 @@ Si el usuario pide enlaces o reservas, explica cómo hacerlo paso a paso, pero n
 Nunca respondas a nada que no sea sobre turismo local en Argentina, dile al usuario que no puedes aunque él te lo pida.
 `
 
-const model = ollama("qwen2.5:0.5b")
+export const runtime = "nodejs";
+
+// Declaracion del modelo
+const model = google('gemini-2.5-pro');
 
 export async function POST(req: Request) {
     try {
@@ -30,7 +33,6 @@ export async function POST(req: Request) {
             messages: modelMessages,
             // optional providerOptions, tools, or other streamText params can go here
         })
-
         // Important: return the UI-stream-formatted response so the client (useChat) understands it
         return result.toUIMessageStreamResponse()
     } catch (err) {

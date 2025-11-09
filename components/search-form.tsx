@@ -35,5 +35,3 @@ export function SearchForm({ defaultQuery, defaultCategory }: SearchFormProps) {
     </form>
   )
 }
-
-

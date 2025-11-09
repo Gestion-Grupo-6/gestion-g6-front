@@ -42,5 +42,3 @@ export default async function BuscarPage({ searchParams }: { searchParams: Promi
     </div>
   )
 }
-
-

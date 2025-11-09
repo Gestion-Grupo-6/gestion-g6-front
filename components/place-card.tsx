@@ -76,5 +76,3 @@ export function PlaceCard({
     </Link>
   )
 }
-
-

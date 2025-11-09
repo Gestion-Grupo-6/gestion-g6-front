@@ -8,7 +8,11 @@
 
     npm start
 
-*Automatically synced with your [v0.app](https://v0.app) deployments*
+## Variables de entorno
+
+Rename `env-template` to `.env`
+
+   cp env-template .env
 
 [![Deployed on Vercel](https://img.shields.io/badge/Deployed%20on-Vercel-black?style=for-the-badge&logo=vercel)](https://vercel.com/tin-gprietos-projects/v0-travel-website-clone)
 [![Built with v0](https://img.shields.io/badge/Built%20with-v0.app-black?style=for-the-badge)](https://v0.app/chat/projects/fNGYdz2woOt)
@@ -42,12 +46,12 @@ Debido a que es un modelo que corre localmente tiene muchas limitaciones debido 
 
 https://ai-sdk.dev/providers/community-providers/gemini-cli
 
-    npm install ai-sdk-provider-gemini-cli@^0 ai@^4 
+    npm install ai-sdk-provider-gemini-cli ai
 
 Codigo a implementar 
 
-import { createGeminiProvider } from 'ai-sdk-provider-gemini-cli';
-
+    import { createGeminiProvider } from 'ai-sdk-provider-gemini-cli';
+    
     // OAuth authentication (recommended)
     const gemini = createGeminiProvider({
     authType: 'oauth-personal',
@@ -58,6 +62,11 @@ import { createGeminiProvider } from 'ai-sdk-provider-gemini-cli';
     authType: 'api-key',
     apiKey: process.env.GEMINI_API_KEY,
     });
+
+    // Declaracion del modelo
+    const model = gemini('gemini-2.5-pro');
+
+Gestion de la API key (https://aistudio.google.com/api-keys)
 
 Asi mismo, el modelo deberia reentrenarse exclusivamente con informacion de la aplicacion para que pueda dar respuestas adecuadas a informacion confiable (a determiinar).
 
