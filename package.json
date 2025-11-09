@@ -9,6 +9,7 @@
     "start": "next start"
   },
   "dependencies": {
+    "@ai-sdk/google": "^2.0.29",
     "@ai-sdk/react": "latest",
     "@ai-sdk/xai": "latest",
     "@hookform/resolvers": "^3.10.0",
@@ -44,7 +45,6 @@
     "@vercel/analytics": "latest",
     "ai": "^5.0.87",
     "ai-sdk-ollama": "^1.0.1",
-    "ai-sdk-provider-gemini-cli": "^1.2.0",
     "autoprefixer": "^10.4.20",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",

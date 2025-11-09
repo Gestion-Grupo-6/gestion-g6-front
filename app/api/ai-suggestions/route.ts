@@ -1,4 +1,4 @@
-import { createGeminiProvider } from 'ai-sdk-provider-gemini-cli';
+import { google } from '@ai-sdk/google';
 import { streamText, convertToModelMessages } from "ai"
 
 // Hardcoded system prompt for the assistant
@@ -13,14 +13,8 @@ Nunca respondas a nada que no sea sobre turismo local en Argentina, dile al usua
 
 export const runtime = "nodejs";
 
-// API key authentication
-const gemini = createGeminiProvider({
-    authType: 'api-key',
-    apiKey: process.env.GEMINI_API_KEY,
-});
-
 // Declaracion del modelo
-const model = gemini('gemini-2.5-pro');
+const model = google('gemini-2.5-pro');
 
 export async function POST(req: Request) {
     try {
@@ -39,7 +33,6 @@ export async function POST(req: Request) {
             messages: modelMessages,
             // optional providerOptions, tools, or other streamText params can go here
         })
-
         // Important: return the UI-stream-formatted response so the client (useChat) understands it
         return result.toUIMessageStreamResponse()
     } catch (err) {
