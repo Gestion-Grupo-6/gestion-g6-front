@@ -32,6 +32,8 @@ const INITIAL_FORM = {
   address: "",
   city: "",
   country: "",
+  locationLat: "",
+  locationLng: "",
   phone: "",
   email: "",
   website: "",
@@ -103,6 +105,20 @@ export default function MisPublicacionesPage() {
     return formData.category
   }, [formData.category])
 
+  const confirmedCoordinates = useMemo(() => {
+    const lat = Number(formData.locationLat)
+    const lng = Number(formData.locationLng)
+    if (
+      formData.locationLat.trim() &&
+      formData.locationLng.trim() &&
+      !Number.isNaN(lat) &&
+      !Number.isNaN(lng)
+    ) {
+      return { lat, lng }
+    }
+    return null
+  }, [formData.locationLat, formData.locationLng])
+
   useEffect(() => {
     if (!isAuthenticated || !user?.id) return
 
@@ -145,8 +161,10 @@ export default function MisPublicacionesPage() {
       address: location.address,
       city: location.city,
       country: location.country,
+      locationLat: location.location?.lat != null ? String(location.location.lat) : "",
+      locationLng: location.location?.lng != null ? String(location.location.lng) : "",
     }))
-    setLocationConfirmed(Boolean(options?.confirmed))
+    setLocationConfirmed(Boolean(options?.confirmed && location.location))
   }
 
   const resetForm = () => {
@@ -277,6 +295,17 @@ export default function MisPublicacionesPage() {
       if (formData.phone.trim()) payload.phone = formData.phone.trim()
       if (formData.email.trim()) payload.email = formData.email.trim()
       if (formData.website.trim()) payload.website = formData.website.trim()
+      const lat = Number(formData.locationLat)
+      const lng = Number(formData.locationLng)
+      if (
+        locationConfirmed &&
+        formData.locationLat.trim() &&
+        formData.locationLng.trim() &&
+        !Number.isNaN(lat) &&
+        !Number.isNaN(lng)
+      ) {
+        payload.location = { lat, lng }
+      }
 
       if (editingId) {
         await updatePlace(collectionForPost, editingId, payload)
@@ -401,7 +430,12 @@ export default function MisPublicacionesPage() {
                       <Label htmlFor="address">Dirección</Label>
                       <LocationSelector
                         inputId="address"
-                        value={{ address: formData.address, city: formData.city, country: formData.country }}
+                        value={{
+                          address: formData.address,
+                          city: formData.city,
+                          country: formData.country,
+                          location: confirmedCoordinates,
+                        }}
                         onChange={handleLocationChange}
                         placeholder="Buscar y seleccionar dirección..."
                       />
@@ -662,6 +696,7 @@ export default function MisPublicacionesPage() {
                                           const full = await fetchPlace(collection, place.id)
                                           if (!full) return
                                           const categoryForForm = collection === HOTELES ? 'hotel' : collection === RESTAURANTES ? 'restaurant' : 'activity'
+                                          const fullLocation = (full as any).location as { lat?: number; lng?: number } | undefined
                                           setFormData({
                                             name: full.name || "",
                                             description: full.description || "",
@@ -669,6 +704,14 @@ export default function MisPublicacionesPage() {
                                             address: full.address || "",
                                             city: (full as any).city || "",
                                             country: (full as any).country || "",
+                                            locationLat:
+                                              fullLocation?.lat !== undefined && fullLocation?.lat !== null
+                                                ? String(fullLocation.lat)
+                                                : "",
+                                            locationLng:
+                                              fullLocation?.lng !== undefined && fullLocation?.lng !== null
+                                                ? String(fullLocation.lng)
+                                                : "",
                                             phone: full.phone || "",
                                             email: full.email || "",
                                             website: full.website || "",
@@ -681,7 +724,7 @@ export default function MisPublicacionesPage() {
                                                 ? (full as any).amenities.join("\n")
                                                 : "",
                                           })
-                                          setLocationConfirmed(Boolean(full.address))
+                                          setLocationConfirmed(Boolean(full.address && fullLocation))
                                           setEditingId(place.id)
                                           setShowForm(true)
                                           window.scrollTo({ top: 0, behavior: 'smooth' })

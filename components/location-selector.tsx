@@ -45,6 +45,7 @@ export function LocationSelector({ value, onChange, inputId, placeholder }: Loca
               {
                 ...value,
                 address: event.target.value,
+                location: null,
               },
               { confirmed: false },
             )
@@ -97,6 +98,14 @@ function LocationSelectorContent({ value, onChange, inputId, placeholder }: Loca
       setUserLocation({ lat: stored.lat, lng: stored.lng });
     }
   }, []);
+
+  useEffect(() => {
+    if (value.location) {
+      setConfirmedLocation(value.location);
+      setMapCenter(value.location);
+      setMapZoom((currentZoom) => (currentZoom < 13 ? 13 : currentZoom));
+    }
+  }, [value.location]);
 
   const requestOptions = useMemo(() => {
     if (!userLocation) return undefined;
@@ -192,10 +201,14 @@ function LocationSelectorContent({ value, onChange, inputId, placeholder }: Loca
   const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const newAddress = event.target.value;
     setValue(newAddress);
-    onChange({
-      ...value,
-      address: newAddress,
-    }, { confirmed: false });
+    onChange(
+      {
+        ...value,
+        address: newAddress,
+        location: null,
+      },
+      { confirmed: false },
+    );
   };
 
   const handleClearSelection = () => {
