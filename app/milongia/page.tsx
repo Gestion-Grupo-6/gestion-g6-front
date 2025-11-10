@@ -40,10 +40,10 @@ export default function MilongiIA() {
     }
 
     return (
-        <div className="min-h-screen flex flex-col">
+        <div className="min-h-screen flex flex-col bg-background">
           <Header />
-          <main className="flex-1">
-            <div className="max-w-4xl mx-auto">
+          <main  className="flex-1 container mx-auto px-4 py-8">
+            <div  className="max-w-4xl mx-auto">
               {/* Header Section */}
               <div className="text-center mb-8">
                 <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 mb-4">
