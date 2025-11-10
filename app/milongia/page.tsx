@@ -1,173 +1,61 @@
 "use client"
 
-import type React from "react"
-
-import { useChat } from "@ai-sdk/react"
-import { Button } from "@/components/ui/button"
-import { Card } from "@/components/ui/card"
-import { Send, MapPin, Utensils, Hotel } from "lucide-react"
 import { Header } from "@/components/header"
-import { useState } from "react"
-import { DefaultChatTransport } from "ai"
-import Markdown from "react-markdown"
-import Image from "next/image"
-import BouncingDotsLoader from "@/components/ui/BouncingDotsLoader";
-import "../../styles/BouncingDotsStyle.css";
+import { notFound } from "next/navigation"
+import {loadChat} from "@/app/api/ai-suggestions/utils";
+import React, {useEffect, useState} from "react";
+import Image from "next/image";
+import {useAuth} from "@/contexts/AuthContext";
+import {Chatbot} from "@/app/milongia/chatbot";
+import {UIMessage} from "ai";
 
-export default function MilongIA() {
-  const [inputValue, setInputValue] = useState("")
 
-  const { messages, sendMessage, status } = useChat({
-    transport: new DefaultChatTransport({ api: "/api/ai-suggestions" }),
-  })
+export default function MilongiIA() {
+    const { user, isAuthenticated } = useAuth()
+    const [previousMessages, setPreviousMessages] = useState<UIMessage[]>(new Array<UIMessage>())
+    const id = user?.id
+    const name = user?.name || "Usuario"
 
-  const isThinking = status === "submitted"
+    useEffect(() => {
+        if (!isAuthenticated || !user?.id) {
+          setPreviousMessages(new Array<UIMessage>())
+          return
+        }
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    if (inputValue.trim() && !isThinking) {
-        sendMessage({ text: inputValue })
-        setInputValue("")
+        const loadMessages = async () => {
+              try {
+                const messagesLoaded = await loadChat(id)
+                setPreviousMessages(messagesLoaded)
+              } catch (error) {
+                console.error("Error al cargar favoritos:", error)
+                setPreviousMessages(new Array<UIMessage>())
+              }
+            }
+        loadMessages()
+    }, [user?.id, isAuthenticated])
+
+
+    if (!previousMessages) {
+        notFound()
     }
-  }
 
-  const suggestedQuestions = [
-    "¿Qué restaurantes de comida argentina me recomiendas?",
-    "Busco un hotel boutique en Buenos Aires",
-    "¿Qué actividades puedo hacer en Mendoza?",
-    "Recomiéndame lugares románticos para cenar",
-  ]
-
-  return (
-    <div className="min-h-screen flex flex-col bg-background">
-      <Header />
-
-      <main className="flex-1 container mx-auto px-4 py-8">
-        <div className="max-w-4xl mx-auto">
-          {/* Header Section */}
-          <div className="text-center mb-8">
-            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 mb-4">
-              <Image src="/milongia-logo.png" alt="MilongIA" width={48} height={48} className="rounded-full" />
-            </div>
-            <h1 className="text-4xl font-bold text-foreground mb-2">MilongIA</h1>
-            <p className="text-muted-foreground text-lg">Descubre lugares increíbles personalizados para ti</p>
-          </div>
-
-          {/* Chat Container */}
-          <Card className="mb-6 p-6 min-h-[500px] max-h-[600px] overflow-y-auto">
-            {messages.length === 0 ? (
-              <div className="flex flex-col items-center justify-center h-full text-center">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8 w-full">
-                  <div className="flex flex-col items-center p-4 rounded-lg bg-muted/50">
-                    <Hotel className="w-8 h-8 text-primary mb-2" />
-                    <h3 className="font-semibold text-sm">Hoteles</h3>
-                    <p className="text-xs text-muted-foreground">Encuentra tu alojamiento ideal</p>
-                  </div>
-                  <div className="flex flex-col items-center p-4 rounded-lg bg-muted/50">
-                    <Utensils className="w-8 h-8 text-primary mb-2" />
-                    <h3 className="font-semibold text-sm">Restaurantes</h3>
-                    <p className="text-xs text-muted-foreground">Descubre sabores únicos</p>
-                  </div>
-                  <div className="flex flex-col items-center p-4 rounded-lg bg-muted/50">
-                    <MapPin className="w-8 h-8 text-primary mb-2" />
-                    <h3 className="font-semibold text-sm">Actividades</h3>
-                    <p className="text-xs text-muted-foreground">Experiencias inolvidables</p>
-                  </div>
+    return (
+        <div className="min-h-screen flex flex-col">
+          <Header />
+          <main className="flex-1">
+            <div className="max-w-4xl mx-auto">
+              {/* Header Section */}
+              <div className="text-center mb-8">
+                <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 mb-4">
+                  <Image src="/milongia-logo.png" alt="MilongIA" width={48} height={48} className="rounded-full" />
                 </div>
-
-                <p className="text-muted-foreground mb-6">
-                  Cuéntame qué tipo de experiencia buscas y te ayudaré a encontrar los mejores lugares
-                </p>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 w-full">
-                  {suggestedQuestions.map((question, index) => (
-                    <Button
-                      key={index}
-                      variant="outline"
-                      className="text-left h-auto py-3 px-4 whitespace-normal bg-transparent"
-                      onClick={() => {
-                        sendMessage({ text: question })
-                      }}
-                    >
-                      {question}
-                    </Button>
-                  ))}
-                </div>
+                <h1 className="text-4xl font-bold text-foreground mb-2">MilongIA</h1>
+                <p className="text-muted-foreground text-lg">Descubre lugares increíbles personalizados para ti</p>
               </div>
-            ) : (
-              <div className="space-y-4">
-                {messages.map((message) => (
-                  <div key={message.id} className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}>
-                    {message.role === "assistant" && (
-                      <div className="flex-shrink-0 mr-3 mt-1">
-                        <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-                          <Image
-                            src="/milongia-logo.png"
-                            alt="MilongIA"
-                            width={24}
-                            height={24}
-                            className="rounded-full"
-                          />
-                        </div>
-                      </div>
-                    )}
-                    <div
-                      className={`max-w-[80%] rounded-lg px-4 py-3 ${
-                        message.role === "user" ? "bg-primary text-primary-foreground" : "bg-muted text-foreground"
-                      }`}
-                    >
-                      {message.parts.map((part, index) => {
-                        if (part.type === "text") {
-                          return <Markdown key={index}>{part.text}</Markdown>
-                        }
-                        return null
-                      })}
-                    </div>
-                  </div>
-                ))}
-                {isThinking && (
-                  <div className="flex justify-start">
-                    <div className="flex-shrink-0 mr-3 mt-1">
-                      <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-                        <Image
-                          src="/milongia-logo.png"
-                          alt="MilongIA"
-                          width={24}
-                          height={24}
-                          className="rounded-full"
-                        />
-                      </div>
-                    </div>
-                    <div className="bg-muted rounded-lg px-4 py-3">
-                        <BouncingDotsLoader />
-                    </div>
-                  </div>
-                )}
+                {/* Chat Section */}
+                <Chatbot userId={id} userName={name} initialMessages={previousMessages}></Chatbot>
               </div>
-            )}
-          </Card>
-
-          {/* Input Form */}
-          <form onSubmit={handleSubmit} className="flex gap-2">
-            <input
-              type="text"
-              value={inputValue}
-              onChange={(e) => setInputValue(e.target.value)}
-              placeholder="Escribe tu pregunta o preferencias..."
-              className="flex-1 px-4 py-3 rounded-lg border border-input bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-              disabled={isThinking}
-            />
-            <Button
-              type="submit"
-              size="lg"
-              disabled={isThinking || !inputValue.trim()}
-              className="px-6"
-            >
-              <Send className="w-5 h-5" />
-            </Button>
-          </form>
+          </main>
         </div>
-      </main>
-    </div>
-  )
+    )
 }
