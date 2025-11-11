@@ -1,6 +1,7 @@
 import { google } from '@ai-sdk/google';
 import {streamText, convertToModelMessages, UIMessage} from "ai"
-import {saveChat} from "@/app/api/ai-suggestions/utils";
+import {upsertMessages} from "@/api/messages";
+import {MessagesPayload} from "@/types/messages";
 
 // Hardcoded system prompt for the assistant
 const SYSTEM_PROMPT = `
@@ -40,8 +41,13 @@ export async function POST(req: Request) {
         return result.toUIMessageStreamResponse({
             originalMessages: messages,
             onFinish:  ({ messages }) => {
-                saveChat(userId, messages)
-                console.log("[AI-SUGGESTIONS] Response finished")
+                if (!userId) {
+                    console.log("[AI-SUGGESTIONS] No userId provided, skipping message upsert")
+                    return
+                }
+                const payload = {userId: userId!, messages: messages} as unknown as MessagesPayload
+                upsertMessages(payload)
+                console.log("[AI-SUGGESTIONS] Response stored for userId:", userId)
             }
         })
     } catch (err) {

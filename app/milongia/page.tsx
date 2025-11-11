@@ -3,12 +3,12 @@
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
 import { notFound } from "next/navigation"
-import { loadChat } from "@/app/api/ai-suggestions/utils"
 import { useEffect, useState } from "react"
 import Image from "next/image"
 import { useAuth } from "@/contexts/AuthContext"
 import { Chatbot } from "@/app/milongia/chatbot"
 import type { UIMessage } from "ai"
+import {fetchMessages} from "@/api/messages";
 
 export default function MilongiIA() {
   const { user, isAuthenticated } = useAuth()
@@ -17,26 +17,34 @@ export default function MilongiIA() {
   const name = user?.name || "Usuario"
 
   useEffect(() => {
+
+    if (isAuthenticated === undefined) return; // wait until auth is resolved
+
     if (!isAuthenticated || !user?.id) {
+      console.error("El usuario no está autenticado o no tiene ID.")
       setPreviousMessages(new Array<UIMessage>())
       return
     }
 
     const loadMessages = async () => {
       try {
-        const messagesLoaded = await loadChat(id)
-        setPreviousMessages(messagesLoaded)
+        const messages = await fetchMessages(id)
+        if (!messages){
+            setPreviousMessages(new Array<UIMessage>())
+            console.log("No se encontraron mensajes para el usuario:", id)
+        }else{
+            const messagesLoaded: UIMessage[] = messages.messages || new Array<UIMessage>()
+            console.log("Mensajes cargados:", messagesLoaded)
+            setPreviousMessages(messagesLoaded)
+        }
       } catch (error) {
-        console.error("Error al cargar favoritos:", error)
+        console.error("Error al cargar mensajes:", error)
         setPreviousMessages(new Array<UIMessage>())
       }
     }
+
     loadMessages()
   }, [user?.id, isAuthenticated])
-
-  if (!previousMessages) {
-    notFound()
-  }
 
   return (
     <div className="min-h-screen w-full flex flex-col">
