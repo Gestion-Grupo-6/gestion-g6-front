@@ -91,8 +91,8 @@ export function Chatbot({
           </div>
         ) : (
           <div className="space-y-4">
-            {messages.map((message) => (
-              <div key={message.id} className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}>
+            {messages.map((message, index) => (
+              <div key={message.id + index} className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}>
                 {message.role === "assistant" && (
                   <div className="flex-shrink-0 mr-3 mt-1">
                     <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
