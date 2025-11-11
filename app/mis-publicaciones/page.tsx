@@ -1,5 +1,7 @@
 "use client"
 
+import type React from "react"
+
 import { useEffect, useMemo, useState } from "react"
 import { toast } from "sonner"
 import { Header } from "@/components/header"
@@ -10,10 +12,19 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Separator } from "@/components/ui/separator"
 import { Badge } from "@/components/ui/badge"
-import { MapPin, Phone, Mail, Globe, Loader2, Plus, Building2, MoreVertical, Star, Edit, Trash2, X, Upload } from "lucide-react"
+import { MapPin, Loader2, Plus, Building2, MoreVertical, Star, Edit, Trash2, X, Upload } from "lucide-react"
 import { useAuth } from "@/contexts/AuthContext"
 import type { Place } from "@/types/place"
-import { ACTIVIDADES, createPlace, fetchPlace, fetchPlacesByOwner, HOTELES, RESTAURANTES, updatePlace, uploadPlaceImage } from "@/api/place"
+import {
+  ACTIVIDADES,
+  createPlace,
+  fetchPlace,
+  fetchPlacesByOwner,
+  HOTELES,
+  RESTAURANTES,
+  updatePlace,
+  uploadPlaceImage,
+} from "@/api/place"
 import { ReviewsPanel } from "@/components/reviews-panel"
 
 const CATEGORY_OPTIONS = [
@@ -43,7 +54,7 @@ const INITIAL_FORM = {
 export default function MisPublicacionesPage() {
   const { isAuthenticated, user } = useAuth()
   // Filtro: 'all' muestra todas; o por categoría específica
-  const [selectedFilter, setSelectedFilter] = useState<'all' | CategoryValue>('all')
+  const [selectedFilter, setSelectedFilter] = useState<"all" | CategoryValue>("all")
   const [allPlaces, setAllPlaces] = useState<Place[]>([])
   // Normaliza el tipo (backend) a colección del UI para filtros y rutas
   const toCollection = (value: string | undefined): CategoryValue | string | undefined => {
@@ -55,8 +66,10 @@ export default function MisPublicacionesPage() {
     return value
   }
   const places = useMemo(() => {
-    if (selectedFilter === 'all') return allPlaces
-    return allPlaces.filter((p) => toCollection(((p as any).type as string | undefined) ?? (p as any).category) === selectedFilter)
+    if (selectedFilter === "all") return allPlaces
+    return allPlaces.filter(
+      (p) => toCollection(((p as any).type as string | undefined) ?? (p as any).category) === selectedFilter,
+    )
   }, [allPlaces, selectedFilter])
   const [loading, setLoading] = useState(false)
   const [submitting, setSubmitting] = useState(false)
@@ -67,13 +80,13 @@ export default function MisPublicacionesPage() {
   const [selectedFiles, setSelectedFiles] = useState<File[]>([])
   const [imagePreviews, setImagePreviews] = useState<string[]>([])
   const [uploadingImages, setUploadingImages] = useState(false)
-  
+
   const [openMenuId, setOpenMenuId] = useState<string | null>(null)
   const [showReviewsForId, setShowReviewsForId] = useState<string | null>(null)
 
   const categoryLabel = useMemo(() => {
-    if (selectedFilter === 'all') return 'Todas las publicaciones'
-    return CATEGORY_OPTIONS.find((option) => option.value === selectedFilter)?.label ?? 'Publicaciones'
+    if (selectedFilter === "all") return "Todas las publicaciones"
+    return CATEGORY_OPTIONS.find((option) => option.value === selectedFilter)?.label ?? "Publicaciones"
   }, [selectedFilter])
 
   const getCategoryRoute = (category: CategoryValue) => {
@@ -114,7 +127,7 @@ export default function MisPublicacionesPage() {
           // eslint-disable-next-line no-console
           console.log(
             "MisPublicaciones - fetched posts:",
-            data.map((p: any) => ({ id: p.id, category: p.category, type: p.type }))
+            data.map((p: any) => ({ id: p.id, category: p.category, type: p.type })),
           )
         } catch {}
         setAllPlaces(data)
@@ -139,7 +152,7 @@ export default function MisPublicacionesPage() {
 
   const resetForm = () => {
     // Limpiar URLs de preview para evitar memory leaks
-    imagePreviews.forEach(url => URL.revokeObjectURL(url))
+    imagePreviews.forEach((url) => URL.revokeObjectURL(url))
     setFormData(INITIAL_FORM)
     setSelectedFiles([])
     setImagePreviews([])
@@ -152,8 +165,8 @@ export default function MisPublicacionesPage() {
     if (files.length === 0) return
 
     // Filtrar solo imágenes
-    const imageFiles = files.filter(file => file.type.startsWith('image/'))
-    
+    const imageFiles = files.filter((file) => file.type.startsWith("image/"))
+
     if (imageFiles.length !== files.length) {
       toast.error("Algunos archivos no son imágenes y fueron omitidos")
     }
@@ -163,18 +176,18 @@ export default function MisPublicacionesPage() {
     setSelectedFiles(newFiles)
 
     // Crear previews
-    const newPreviews = imageFiles.map(file => URL.createObjectURL(file))
+    const newPreviews = imageFiles.map((file) => URL.createObjectURL(file))
     setImagePreviews([...imagePreviews, ...newPreviews])
   }
 
   const removeImage = (index: number) => {
     // Limpiar URL del preview
     URL.revokeObjectURL(imagePreviews[index])
-    
+
     // Remover de los arrays
     const newFiles = selectedFiles.filter((_, i) => i !== index)
     const newPreviews = imagePreviews.filter((_, i) => i !== index)
-    
+
     setSelectedFiles(newFiles)
     setImagePreviews(newPreviews)
   }
@@ -183,11 +196,8 @@ export default function MisPublicacionesPage() {
     event.preventDefault()
 
     setErrorMessage(null)
-    
 
-    const requiredFields: Array<{ key: keyof typeof INITIAL_FORM; label: string }> = [
-      { key: "name", label: "Nombre" },
-    ]
+    const requiredFields: Array<{ key: keyof typeof INITIAL_FORM; label: string }> = [{ key: "name", label: "Nombre" }]
 
     const missing = requiredFields.filter(({ key }) => !formData[key].trim())
     if (missing.length > 0) {
@@ -207,7 +217,7 @@ export default function MisPublicacionesPage() {
       try {
         setUploadingImages(true)
         uploadedImageUrls = await Promise.all(
-          selectedFiles.map((file, index) => uploadPlaceImage(editingId, file, index))
+          selectedFiles.map((file, index) => uploadPlaceImage(editingId, file, index)),
         )
       } catch (error) {
         setErrorMessage("Error al subir las imágenes. Intenta nuevamente.")
@@ -238,15 +248,16 @@ export default function MisPublicacionesPage() {
     try {
       setSubmitting(true)
       // Determinar la colección (ruta) correcta según la categoría elegida en el formulario
-      const collectionForPost = formData.category === "hotel" ? HOTELES : formData.category === "restaurant" ? RESTAURANTES : ACTIVIDADES
-      
+      const collectionForPost =
+        formData.category === "hotel" ? HOTELES : formData.category === "restaurant" ? RESTAURANTES : ACTIVIDADES
+
       // Limpiar campos vacíos antes de enviar (solo enviar campos con valor)
       const payload: any = {
         name: formData.name.trim(),
         ownerId: user.id,
         category: backendCategory,
       }
-      
+
       // Solo agregar campos que tengan valor
       if (price > 0) payload.price = price
       if (formData.priceCategory?.trim()) payload.priceCategory = formData.priceCategory.trim()
@@ -272,7 +283,11 @@ export default function MisPublicacionesPage() {
       toast.success(editingId ? "Publicación actualizada correctamente." : "Publicación creada correctamente.")
     } catch (error) {
       console.error(error)
-      setErrorMessage(editingId ? "No se pudo actualizar la publicación. Intenta nuevamente." : "No se pudo crear la publicación. Revisa los datos e intenta nuevamente.")
+      setErrorMessage(
+        editingId
+          ? "No se pudo actualizar la publicación. Intenta nuevamente."
+          : "No se pudo crear la publicación. Revisa los datos e intenta nuevamente.",
+      )
     } finally {
       setSubmitting(false)
     }
@@ -280,9 +295,9 @@ export default function MisPublicacionesPage() {
 
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen flex flex-col bg-background">
+      <div className="min-h-screen w-full flex flex-col bg-background">
         <Header />
-        <main className="flex-1 flex items-center justify-center py-12 px-4">
+        <main className="flex-1 w-full flex items-center justify-center py-12 px-4">
           <Card className="w-full max-w-md">
             <CardHeader className="text-center">
               <CardTitle className="text-2xl font-bold">Acceso requerido</CardTitle>
@@ -306,10 +321,10 @@ export default function MisPublicacionesPage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-background">
+    <div className="min-h-screen w-full flex flex-col bg-background">
       <Header />
 
-      <main className="flex-1 py-12 px-4">
+      <main className="flex-1 w-full py-12 px-4">
         <div className="container mx-auto max-w-7xl space-y-8">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
@@ -381,12 +396,7 @@ export default function MisPublicacionesPage() {
 
                     <div className="space-y-2">
                       <Label htmlFor="address">Dirección</Label>
-                      <Input
-                        id="address"
-                        name="address"
-                        value={formData.address}
-                        onChange={handleFormChange}
-                      />
+                      <Input id="address" name="address" value={formData.address} onChange={handleFormChange} />
                     </div>
 
                     <div className="space-y-2">
@@ -396,13 +406,7 @@ export default function MisPublicacionesPage() {
 
                     <div className="space-y-2">
                       <Label htmlFor="email">Email</Label>
-                      <Input
-                        id="email"
-                        type="email"
-                        name="email"
-                        value={formData.email}
-                        onChange={handleFormChange}
-                      />
+                      <Input id="email" type="email" name="email" value={formData.email} onChange={handleFormChange} />
                     </div>
 
                     <div className="space-y-2">
@@ -475,7 +479,7 @@ export default function MisPublicacionesPage() {
                         <Button
                           type="button"
                           variant="outline"
-                          onClick={() => document.getElementById('file-upload')?.click()}
+                          onClick={() => document.getElementById("file-upload")?.click()}
                           className="flex items-center gap-2"
                         >
                           <Upload className="h-4 w-4" />
@@ -497,7 +501,7 @@ export default function MisPublicacionesPage() {
                           {imagePreviews.map((preview, index) => (
                             <div key={index} className="relative group">
                               <img
-                                src={preview}
+                                src={preview || "/placeholder.svg"}
                                 alt={`Preview ${index + 1}`}
                                 className="w-full h-32 object-cover rounded-md border border-border"
                               />
@@ -548,14 +552,18 @@ export default function MisPublicacionesPage() {
                   {/* Campos extra eliminados para ajustarse al DTO del backend */}
 
                   {errorMessage && <p className="text-sm text-destructive">{errorMessage}</p>}
-                  
 
                   <div className="flex flex-wrap gap-3">
                     <Button type="submit" disabled={submitting || uploadingImages}>
                       {(submitting || uploadingImages) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                       {uploadingImages ? "Subiendo imágenes..." : editingId ? "Guardar" : "Crear publicación"}
                     </Button>
-                    <Button type="button" variant="outline" onClick={resetForm} disabled={submitting || uploadingImages}>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={resetForm}
+                      disabled={submitting || uploadingImages}
+                    >
                       Cancelar
                     </Button>
                   </div>
@@ -567,11 +575,7 @@ export default function MisPublicacionesPage() {
           <Card>
             <CardHeader>
               <CardTitle>{categoryLabel}</CardTitle>
-              {loading && (
-                <CardDescription>
-                  Cargando publicaciones...
-                </CardDescription>
-              )}
+              {loading && <CardDescription>Cargando publicaciones...</CardDescription>}
             </CardHeader>
             <CardContent className="space-y-4">
               {loading ? (
@@ -598,114 +602,121 @@ export default function MisPublicacionesPage() {
                             <h3 className="text-xl font-bold text-foreground mb-2">{place.name}</h3>
                             <Badge variant="secondary" className="mb-3">
                               {(() => {
-                                const rawType = ((place as any).type as string | undefined) ?? ((place as any).category as string | undefined)
-                                const t = String(rawType || '').toUpperCase()
+                                const rawType =
+                                  ((place as any).type as string | undefined) ??
+                                  ((place as any).category as string | undefined)
+                                const t = String(rawType || "").toUpperCase()
                                 const singularMap: Record<string, string> = {
-                                  HOTEL: 'Hotel',
-                                  RESTAURANT: 'Restaurante',
-                                  ACTIVITY: 'Actividad',
+                                  HOTEL: "Hotel",
+                                  RESTAURANT: "Restaurante",
+                                  ACTIVITY: "Actividad",
                                 }
-                                return singularMap[t] || 'Sin categoría'
+                                return singularMap[t] || "Sin categoría"
                               })()}
                             </Badge>
-                              {place.address && (
-                                <div className="flex items-start gap-2 text-sm text-muted-foreground">
-                                  <MapPin className="h-4 w-4 mt-0.5 flex-shrink-0" />
-                                  <span className="line-clamp-2">{place.address}</span>
-                                </div>
-                              )}
-                            </div>
-                            {/* Menú de tres puntos */}
-                            <div className="relative">
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8"
-                                onClick={() => setOpenMenuId(openMenuId === place.id ? null : place.id)}
-                              >
-                                <MoreVertical className="h-4 w-4" />
-                              </Button>
-                              {openMenuId === place.id && (
-                                <>
-                                  <div
-                                    className="fixed inset-0 z-10"
-                                    onClick={() => setOpenMenuId(null)}
-                                  />
-                                  <div className="absolute right-0 mt-2 w-48 bg-background border border-border rounded-md shadow-lg z-20">
-                                    <Button
-                                      variant="ghost"
-                                      className="w-full justify-start px-4 py-2 text-sm"
-                                      onClick={async () => {
-                                        setOpenMenuId(null)
-                                        try {
-                                          const rawType = ((place as any).type as string | undefined) ?? ((place as any).category as string | undefined)
-                                          const t = String(rawType || '').toUpperCase()
-                                          const collection: CategoryValue = t === 'HOTEL' ? HOTELES : t === 'RESTAURANT' ? RESTAURANTES : ACTIVIDADES
-                                          const full = await fetchPlace(collection, place.id)
-                                          if (!full) return
-                                          const categoryForForm = collection === HOTELES ? 'hotel' : collection === RESTAURANTES ? 'restaurant' : 'activity'
-                                          setFormData({
-                                            name: full.name || "",
-                                            description: full.description || "",
-                                            category: categoryForForm,
-                                            address: full.address || "",
-                                            city: (full as any).city || "",
-                                            country: (full as any).country || "",
-                                            phone: full.phone || "",
-                                            email: full.email || "",
-                                            website: full.website || "",
-                                            price: String(full.price ?? ""),
-                                            priceCategory: (full.priceCategory as any) || "$$",
-                                            images: Array.isArray(full.images) ? full.images.join("\n") : "",
-                                            attributes: Array.isArray((full as any).attributes)
-                                              ? (full as any).attributes.join("\n")
-                                              : Array.isArray((full as any).amenities)
-                                                ? (full as any).amenities.join("\n")
-                                                : "",
-                                          })
-                                          setEditingId(place.id)
-                                          setShowForm(true)
-                                          window.scrollTo({ top: 0, behavior: 'smooth' })
-                                        } catch (e) {
-                                          // eslint-disable-next-line no-console
-                                          console.error(e)
-                                        }
-                                      }}
-                                    >
-                                      <Edit className="h-4 w-4 mr-2" />
-                                      Editar
-                                    </Button>
-                                    <Button
-                                      variant="ghost"
-                                      className="w-full justify-start px-4 py-2 text-sm text-destructive hover:text-destructive hover:bg-destructive/10"
-                                      onClick={() => {
-                                        // TODO: Implementar eliminación
-                                        setOpenMenuId(null)
-                                      }}
-                                    >
-                                      <Trash2 className="h-4 w-4 mr-2" />
-                                      Eliminar Publicación
-                                    </Button>
-                                  </div>
-                                </>
-                              )}
-                            </div>
+                            {place.address && (
+                              <div className="flex items-start gap-2 text-sm text-muted-foreground">
+                                <MapPin className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                                <span className="line-clamp-2">{place.address}</span>
+                              </div>
+                            )}
                           </div>
+                          {/* Menú de tres puntos */}
+                          <div className="relative">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8"
+                              onClick={() => setOpenMenuId(openMenuId === place.id ? null : place.id)}
+                            >
+                              <MoreVertical className="h-4 w-4" />
+                            </Button>
+                            {openMenuId === place.id && (
+                              <>
+                                <div className="fixed inset-0 z-10" onClick={() => setOpenMenuId(null)} />
+                                <div className="absolute right-0 mt-2 w-48 bg-background border border-border rounded-md shadow-lg z-20">
+                                  <Button
+                                    variant="ghost"
+                                    className="w-full justify-start px-4 py-2 text-sm"
+                                    onClick={async () => {
+                                      setOpenMenuId(null)
+                                      try {
+                                        const rawType =
+                                          ((place as any).type as string | undefined) ??
+                                          ((place as any).category as string | undefined)
+                                        const t = String(rawType || "").toUpperCase()
+                                        const collection: CategoryValue =
+                                          t === "HOTEL" ? HOTELES : t === "RESTAURANT" ? RESTAURANTES : ACTIVIDADES
+                                        const full = await fetchPlace(collection, place.id)
+                                        if (!full) return
+                                        const categoryForForm =
+                                          collection === HOTELES
+                                            ? "hotel"
+                                            : collection === RESTAURANTES
+                                              ? "restaurant"
+                                              : "activity"
+                                        setFormData({
+                                          name: full.name || "",
+                                          description: full.description || "",
+                                          category: categoryForForm,
+                                          address: full.address || "",
+                                          city: (full as any).city || "",
+                                          country: (full as any).country || "",
+                                          phone: full.phone || "",
+                                          email: full.email || "",
+                                          website: full.website || "",
+                                          price: String(full.price ?? ""),
+                                          priceCategory: (full.priceCategory as any) || "$$",
+                                          images: Array.isArray(full.images) ? full.images.join("\n") : "",
+                                          attributes: Array.isArray((full as any).attributes)
+                                            ? (full as any).attributes.join("\n")
+                                            : Array.isArray((full as any).amenities)
+                                              ? (full as any).amenities.join("\n")
+                                              : "",
+                                        })
+                                        setEditingId(place.id)
+                                        setShowForm(true)
+                                        window.scrollTo({ top: 0, behavior: "smooth" })
+                                      } catch (e) {
+                                        // eslint-disable-next-line no-console
+                                        console.error(e)
+                                      }
+                                    }}
+                                  >
+                                    <Edit className="h-4 w-4 mr-2" />
+                                    Editar
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    className="w-full justify-start px-4 py-2 text-sm text-destructive hover:text-destructive hover:bg-destructive/10"
+                                    onClick={() => {
+                                      // TODO: Implementar eliminación
+                                      setOpenMenuId(null)
+                                    }}
+                                  >
+                                    <Trash2 className="h-4 w-4 mr-2" />
+                                    Eliminar Publicación
+                                  </Button>
+                                </div>
+                              </>
+                            )}
+                          </div>
+                        </div>
 
-                          <Separator />
+                        <Separator />
 
-                          {/* Botón de consultar reseñas y rating */}
-                          <Button
-                            variant="outline"
-                            className="w-full"
-                            onClick={() => setShowReviewsForId(place.id)}
-                          >
-                            <Star className="h-4 w-4 mr-2 fill-yellow-400 text-yellow-400" />
-                            Consultar Reseñas y Rating
-                          </Button>
-                        </CardContent>
-                      </Card>
-                    ))}
+                        {/* Botón de consultar reseñas y rating */}
+                        <Button
+                          variant="outline"
+                          className="w-full bg-transparent"
+                          onClick={() => setShowReviewsForId(place.id)}
+                        >
+                          <Star className="h-4 w-4 mr-2 fill-yellow-400 text-yellow-400" />
+                          Consultar Reseñas y Rating
+                        </Button>
+                      </CardContent>
+                    </Card>
+                  ))}
                 </div>
               )}
             </CardContent>
@@ -715,7 +726,7 @@ export default function MisPublicacionesPage() {
       {showReviewsForId && (
         <ReviewsPanel
           open={Boolean(showReviewsForId)}
-          onOpenChange={(open) => !open ? setShowReviewsForId(null) : null}
+          onOpenChange={(open) => (!open ? setShowReviewsForId(null) : null)}
           placeId={showReviewsForId}
         />
       )}

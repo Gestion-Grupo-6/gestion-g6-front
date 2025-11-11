@@ -1,5 +1,7 @@
 "use client"
 
+import type React from "react"
+
 import { useState, useRef } from "react"
 import { toast } from "sonner"
 import { useRouter } from "next/navigation"
@@ -8,12 +10,11 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Header } from "@/components/header"
-import { User, Mail, Phone, MapPin, Save, LogOut, Pencil, Heart } from "lucide-react"
+import { User, Mail, Save, LogOut, Pencil, Heart } from "lucide-react"
 import { useAuth } from "@/contexts/AuthContext"
 import { updateUser, uploadProfilePhoto } from "@/api/user"
-import { Usuario } from "@/types/user"
+import type { Usuario } from "@/types/user"
 import { FavoritesPanel } from "@/components/favorites-panel"
-
 
 export default function ProfilePage() {
   const { user, logout } = useAuth()
@@ -34,7 +35,7 @@ export default function ProfilePage() {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value
+      [e.target.name]: e.target.value,
     })
   }
 
@@ -78,16 +79,15 @@ export default function ProfilePage() {
     }
   }
 
-
   const handleLogout = () => {
     logout()
   }
 
   if (!user) {
     return (
-      <div className="min-h-screen flex flex-col bg-background">
+      <div className="min-h-screen w-full flex flex-col bg-background">
         <Header />
-        <main className="flex-1 flex items-center justify-center">
+        <main className="flex-1 w-full flex items-center justify-center">
           <Card className="w-full max-w-md">
             <CardContent className="p-6 text-center">
               <p className="text-muted-foreground mb-4">No tienes una sesión activa</p>
@@ -102,10 +102,10 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-background">
+    <div className="min-h-screen w-full flex flex-col bg-background">
       <Header />
-      
-      <main className="flex-1 py-12 px-4">
+
+      <main className="flex-1 w-full py-12 px-4">
         <div className="container mx-auto max-w-2xl">
           <Card>
             <CardHeader>
@@ -113,17 +113,15 @@ export default function ProfilePage() {
                 <User className="h-5 w-5" />
                 Mi Perfil
               </CardTitle>
-              <CardDescription>
-                Gestiona tu información personal
-              </CardDescription>
+              <CardDescription>Gestiona tu información personal</CardDescription>
             </CardHeader>
-            
+
             <CardContent className="space-y-6">
               {/* Profile Photo Section */}
               <div className="flex items-center justify-center pb-6">
                 <div className="relative">
                   <img
-                    src={profilePhoto}
+                    src={profilePhoto || "/placeholder.svg"}
                     alt="Profile Photo"
                     className="w-32 h-32 rounded-full object-cover border-4 border-border"
                   />
@@ -157,7 +155,7 @@ export default function ProfilePage() {
                     disabled={!isEditing}
                   />
                 </div>
-                
+
                 <div className="space-y-2">
                   <Label htmlFor="lastName">Apellido</Label>
                   <Input
@@ -169,7 +167,7 @@ export default function ProfilePage() {
                   />
                 </div>
               </div>
-              
+
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
                 <div className="relative">
@@ -185,7 +183,7 @@ export default function ProfilePage() {
                   />
                 </div>
               </div>
-              
+
               {}
 
               <div className="flex gap-3 pt-4">
@@ -201,12 +199,10 @@ export default function ProfilePage() {
                   </>
                 ) : (
                   <>
-                    <Button onClick={() => setIsEditing(true)}>
-                      Editar perfil
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      className="flex items-center gap-2"
+                    <Button onClick={() => setIsEditing(true)}>Editar perfil</Button>
+                    <Button
+                      variant="outline"
+                      className="flex items-center gap-2 bg-transparent"
                       onClick={() => {
                         console.log("Click en favoritos, abriendo modal...")
                         setFavoritesOpen(true)
@@ -220,11 +216,7 @@ export default function ProfilePage() {
               </div>
 
               <div className="pt-6 border-t">
-                <Button 
-                  variant="destructive" 
-                  onClick={handleLogout}
-                  className="flex items-center gap-2"
-                >
+                <Button variant="destructive" onClick={handleLogout} className="flex items-center gap-2">
                   <LogOut className="h-4 w-4" />
                   Cerrar sesión
                 </Button>

@@ -1,5 +1,7 @@
 "use client"
 
+import type React from "react"
+
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
@@ -8,9 +10,8 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Header } from "@/components/header"
-import { Eye, EyeOff, Mail, Lock, User, Phone, MapPin } from "lucide-react"
+import { Eye, EyeOff, Mail, Lock, User } from "lucide-react"
 import { createUser } from "@/api/user"
-
 
 export default function RegisterPage() {
   const [formData, setFormData] = useState({
@@ -20,7 +21,7 @@ export default function RegisterPage() {
     // phone: "",
     // address: "",
     password: "",
-    confirmPassword: ""
+    confirmPassword: "",
   })
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
@@ -31,7 +32,7 @@ export default function RegisterPage() {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value
+      [e.target.name]: e.target.value,
     })
   }
 
@@ -55,7 +56,7 @@ export default function RegisterPage() {
 
     try {
       console.log("Register attempt:", formData)
-      
+
       // Mapear a los campos que espera el backend
       const payload = {
         name: formData.firstName,
@@ -75,7 +76,6 @@ export default function RegisterPage() {
 
       console.log("User created:", response)
       router.push("/login")
-      
     } catch (err) {
       setError("Error al crear la cuenta. Inténtalo de nuevo.")
       setIsLoading(false)
@@ -83,18 +83,16 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-background">
+    <div className="min-h-screen w-full flex flex-col bg-background">
       <Header />
-      
-      <main className="flex-1 flex items-center justify-center py-12 px-4">
+
+      <main className="flex-1 w-full flex items-center justify-center py-12 px-4">
         <Card className="w-full max-w-md">
           <CardHeader className="text-center">
             <CardTitle className="text-2xl font-bold">Crear Cuenta</CardTitle>
-            <CardDescription>
-              Únete a TanGo y descubre tu próximo destino
-            </CardDescription>
+            <CardDescription>Únete a TanGo y descubre tu próximo destino</CardDescription>
           </CardHeader>
-          
+
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
@@ -114,7 +112,7 @@ export default function RegisterPage() {
                     />
                   </div>
                 </div>
-                
+
                 <div className="space-y-2">
                   <Label htmlFor="lastName">Apellido</Label>
                   <Input
@@ -128,7 +126,7 @@ export default function RegisterPage() {
                   />
                 </div>
               </div>
-              
+
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
                 <div className="relative">
@@ -199,15 +197,11 @@ export default function RegisterPage() {
                     className="absolute right-0 top-0 h-full px-3 hover:bg-transparent"
                     onClick={() => setShowPassword(!showPassword)}
                   >
-                    {showPassword ? (
-                      <EyeOff className="h-4 w-4" />
-                    ) : (
-                      <Eye className="h-4 w-4" />
-                    )}
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </Button>
                 </div>
               </div>
-              
+
               <div className="space-y-2">
                 <Label htmlFor="confirmPassword">Confirmar Contraseña</Label>
                 <div className="relative">
@@ -229,36 +223,21 @@ export default function RegisterPage() {
                     className="absolute right-0 top-0 h-full px-3 hover:bg-transparent"
                     onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                   >
-                    {showConfirmPassword ? (
-                      <EyeOff className="h-4 w-4" />
-                    ) : (
-                      <Eye className="h-4 w-4" />
-                    )}
+                    {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </Button>
                 </div>
               </div>
 
-              {error && (
-                <div className="text-sm text-red-500 text-center">
-                  {error}
-                </div>
-              )}
+              {error && <div className="text-sm text-red-500 text-center">{error}</div>}
 
-              <Button 
-                type="submit" 
-                className="w-full" 
-                disabled={isLoading}
-              >
+              <Button type="submit" className="w-full" disabled={isLoading}>
                 {isLoading ? "Creando cuenta..." : "Crear Cuenta"}
               </Button>
             </form>
 
             <div className="mt-6 text-center text-sm">
               <span className="text-muted-foreground">¿Ya tienes cuenta? </span>
-              <Link 
-                href="/login" 
-                className="text-primary hover:underline font-medium"
-              >
+              <Link href="/login" className="text-primary hover:underline font-medium">
                 Inicia sesión aquí
               </Link>
             </div>

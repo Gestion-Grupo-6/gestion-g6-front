@@ -11,15 +11,14 @@ export default async function ActividadDetailPage({ params }: PageProps) {
   const { id } = await params
   const place = await fetchPlace(ACTIVIDAD, id)
 
-
   if (!place) {
     notFound()
   }
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen w-full flex flex-col">
       <Header />
-      <main className="flex-1">
+      <main className="flex-1 w-full">
         <PlaceDetail place={place} />
       </main>
     </div>
