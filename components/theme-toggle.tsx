@@ -1,32 +1,36 @@
 "use client"
 
-import { Moon, Sun } from "lucide-react"
-import { Button } from "@/components/ui/button"
 import { useEffect, useState } from "react"
+import { Moon, Sun } from "lucide-react"
+import { useTheme } from "next-themes"
+import { Button } from "@/components/ui/button"
 
 export function ThemeToggle() {
-  const [theme, setTheme] = useState<"light" | "dark">("light")
+  const { resolvedTheme, theme, setTheme } = useTheme()
+  const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
-    // Check for saved theme preference or default to light
-    const savedTheme = localStorage.getItem("theme") as "light" | "dark" | null
-    const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches
-
-    const initialTheme = savedTheme || (prefersDark ? "dark" : "light")
-    setTheme(initialTheme)
-    document.documentElement.classList.toggle("dark", initialTheme === "dark")
+    setMounted(true)
   }, [])
 
-  const toggleTheme = () => {
-    const newTheme = theme === "light" ? "dark" : "light"
-    setTheme(newTheme)
-    localStorage.setItem("theme", newTheme)
-    document.documentElement.classList.toggle("dark", newTheme === "dark")
+  const activeTheme = (resolvedTheme ?? theme) === "dark" ? "dark" : "light"
+  const handleToggle = () => setTheme(activeTheme === "dark" ? "light" : "dark")
+
+  if (!mounted) {
+    return (
+      <Button variant="ghost" size="icon" aria-label="Cambiar tema" disabled>
+        <Moon className="h-5 w-5 text-foreground" />
+      </Button>
+    )
   }
 
   return (
-    <Button variant="ghost" size="icon" onClick={toggleTheme} aria-label="Cambiar tema">
-      {theme === "light" ? <Moon className="h-5 w-5 text-foreground" /> : <Sun className="h-5 w-5 text-foreground" />}
+    <Button variant="ghost" size="icon" onClick={handleToggle} aria-label="Cambiar tema">
+      {activeTheme === "light" ? (
+        <Moon className="h-5 w-5 text-foreground" />
+      ) : (
+        <Sun className="h-5 w-5 text-foreground" />
+      )}
     </Button>
   )
 }

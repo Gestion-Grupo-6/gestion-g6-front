@@ -43,6 +43,7 @@
     "@supabase/ssr": "latest",
     "@supabase/supabase-js": "latest",
     "@vercel/analytics": "latest",
+    "@vis.gl/react-google-maps": "^1.7.1",
     "ai": "latest",
     "ai-sdk-ollama": "^1.0.1",
     "autoprefixer": "^10.4.20",
@@ -65,11 +66,13 @@
     "sonner": "latest",
     "tailwind-merge": "^2.5.5",
     "tailwindcss-animate": "^1.0.7",
+    "use-places-autocomplete": "^4.0.1",
     "vaul": "^0.9.9",
     "zod": "3.25.76"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.1.9",
+    "@types/google.maps": "^3.58.1",
     "@types/node": "^22",
     "@types/react": "^18.3.26",
     "@types/react-dom": "^18.3.7",
