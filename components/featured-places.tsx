@@ -115,7 +115,6 @@ export function FeaturedPlaces({ places }: FeaturedPlacesProps) {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {places.map((place) => {
-              console.log("Rendering place:", place)
               const mainImage = getImage(place.images?.[0])
               const rating = (place.rating ?? 0).toFixed(1)
               const reviewCount = place.reviews ?? 0

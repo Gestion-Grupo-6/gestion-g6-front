@@ -1,5 +1,7 @@
 "use client"
 
+import type React from "react"
+
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
@@ -25,7 +27,7 @@ export default function LoginPage() {
 
     try {
       const success = await login(email, password)
-      
+
       if (success) {
         router.push("/")
       } else {
@@ -37,18 +39,16 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-background">
+    <div className="min-h-screen w-full flex flex-col bg-background">
       <Header />
-      
-      <main className="flex-1 flex items-center justify-center py-12 px-4">
+
+      <main className="flex-1 w-full flex items-center justify-center py-12 px-4">
         <Card className="w-full max-w-md">
           <CardHeader className="text-center">
             <CardTitle className="text-2xl font-bold">Iniciar Sesión</CardTitle>
-            <CardDescription>
-              Ingresa a tu cuenta para continuar
-            </CardDescription>
+            <CardDescription>Ingresa a tu cuenta para continuar</CardDescription>
           </CardHeader>
-          
+
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
@@ -66,7 +66,7 @@ export default function LoginPage() {
                   />
                 </div>
               </div>
-              
+
               <div className="space-y-2">
                 <Label htmlFor="password">Contraseña</Label>
                 <div className="relative">
@@ -87,45 +87,27 @@ export default function LoginPage() {
                     className="absolute right-0 top-0 h-full px-3 hover:bg-transparent"
                     onClick={() => setShowPassword(!showPassword)}
                   >
-                    {showPassword ? (
-                      <EyeOff className="h-4 w-4" />
-                    ) : (
-                      <Eye className="h-4 w-4" />
-                    )}
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </Button>
                 </div>
               </div>
 
-              {error && (
-                <div className="text-sm text-red-500 text-center">
-                  {error}
-                </div>
-              )}
+              {error && <div className="text-sm text-red-500 text-center">{error}</div>}
 
-              <Button 
-                type="submit" 
-                className="w-full" 
-                disabled={isLoading}
-              >
+              <Button type="submit" className="w-full" disabled={isLoading}>
                 {isLoading ? "Iniciando sesión..." : "Iniciar Sesión"}
               </Button>
             </form>
 
             <div className="mt-6 text-center text-sm">
               <span className="text-muted-foreground">¿No tienes cuenta? </span>
-              <Link 
-                href="/register" 
-                className="text-primary hover:underline font-medium"
-              >
+              <Link href="/register" className="text-primary hover:underline font-medium">
                 Regístrate aquí
               </Link>
             </div>
 
             <div className="mt-4 text-center">
-              <Link 
-                href="/forgot-password" 
-                className="text-sm text-muted-foreground hover:text-primary"
-              >
+              <Link href="/forgot-password" className="text-sm text-muted-foreground hover:text-primary">
                 ¿Olvidaste tu contraseña?
               </Link>
             </div>

@@ -4,6 +4,8 @@ import { fetchUserByEmail } from "@/api/user"
 import { Usuario } from "@/types/user"
 import { createContext, useContext, useState, useEffect, ReactNode } from "react"
 import { useRouter } from "next/navigation"
+import {fetchMessages} from "@/api/messages";
+import {UIMessage} from "ai";
 
 interface AuthContextType {
   user: Usuario | null
@@ -46,8 +48,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           return false
         }
 
+        const messages = await fetchMessages(user.id)
+        user.chatHistory = messages ? messages.messages : new Array<UIMessage>()
+
         setUser(user)
         localStorage.setItem('user', JSON.stringify(user))
+
         setIsLoading(false)
         return true
       }

@@ -9,7 +9,14 @@ export default async function BuscarPage({ searchParams }: { searchParams: Promi
   const { q, c } = await searchParams
 
   const cat = (c || "").toLowerCase()
-  const selectedCollections = cat === "hoteles" ? [HOTELES] : cat === "restaurantes" ? [RESTAURANTES] : cat === "actividades" ? [ACTIVIDADES] : [HOTELES, RESTAURANTES, ACTIVIDADES]
+  const selectedCollections =
+    cat === "hoteles"
+      ? [HOTELES]
+      : cat === "restaurantes"
+        ? [RESTAURANTES]
+        : cat === "actividades"
+          ? [ACTIVIDADES]
+          : [HOTELES, RESTAURANTES, ACTIVIDADES]
 
   const results: Place[] = q
     ? (
@@ -20,9 +27,9 @@ export default async function BuscarPage({ searchParams }: { searchParams: Promi
     : []
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen w-full flex flex-col">
       <Header />
-      <main className="flex-1">
+      <main className="flex-1 w-full">
         <div className="container mx-auto px-4 py-6">
           <SearchForm defaultQuery={q || ""} defaultCategory={c || ""} />
           {q ? (
