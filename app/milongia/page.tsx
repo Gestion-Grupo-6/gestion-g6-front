@@ -12,38 +12,14 @@ import {fetchMessages} from "@/api/messages";
 
 export default function MilongiIA() {
   const { user, isAuthenticated } = useAuth()
-  const [previousMessages, setPreviousMessages] = useState<UIMessage[]>(new Array<UIMessage>())
-  const id = user?.id
-  const name = user?.name || "Usuario"
 
   useEffect(() => {
-
     if (isAuthenticated === undefined) return; // wait until auth is resolved
 
     if (!isAuthenticated || !user?.id) {
-      console.error("El usuario no está autenticado o no tiene ID.")
-      setPreviousMessages(new Array<UIMessage>())
+      console.log("El usuario no está autenticado o no tiene ID.")
       return
     }
-
-    const loadMessages = async () => {
-      try {
-        const messages = await fetchMessages(id)
-        if (!messages){
-            setPreviousMessages(new Array<UIMessage>())
-            console.log("No se encontraron mensajes para el usuario:", id)
-        }else{
-            const messagesLoaded: UIMessage[] = messages.messages || new Array<UIMessage>()
-            console.log("Mensajes cargados:", messagesLoaded)
-            setPreviousMessages(messagesLoaded)
-        }
-      } catch (error) {
-        console.error("Error al cargar mensajes:", error)
-        setPreviousMessages(new Array<UIMessage>())
-      }
-    }
-
-    loadMessages()
   }, [user?.id, isAuthenticated])
 
   return (
@@ -61,7 +37,7 @@ export default function MilongiIA() {
               <p className="text-muted-foreground text-lg">Descubre lugares increíbles personalizados para ti</p>
             </div>
             {/* Chat Section */}
-            <Chatbot userId={id} userName={name} initialMessages={previousMessages}></Chatbot>
+            <Chatbot userId={user?.id} userName={user?.name} initialMessages={user?.chatHistory}></Chatbot>
           </div>
         </div>
       </main>
