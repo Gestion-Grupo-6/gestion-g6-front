@@ -23,7 +23,7 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
   ].filter((place): place is Place => Boolean(place))
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen w-full flex flex-col">
       <LocationConsentRequester />
       <Header />
       <main className="flex-1">

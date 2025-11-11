@@ -327,9 +327,9 @@ export default function MisPublicacionesPage() {
 
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen flex flex-col bg-background">
+      <div className="min-h-screen w-full flex flex-col bg-background">
         <Header />
-        <main className="flex-1 flex items-center justify-center py-12 px-4">
+        <main className="flex-1 w-full flex items-center justify-center py-12 px-4">
           <Card className="w-full max-w-md">
             <CardHeader className="text-center">
               <CardTitle className="text-2xl font-bold">Acceso requerido</CardTitle>
@@ -353,10 +353,10 @@ export default function MisPublicacionesPage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-background">
+    <div className="min-h-screen w-full flex flex-col bg-background">
       <Header />
 
-      <main className="flex-1 py-12 px-4">
+      <main className="flex-1 w-full py-12 px-4">
         <div className="container mx-auto max-w-7xl space-y-8">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
