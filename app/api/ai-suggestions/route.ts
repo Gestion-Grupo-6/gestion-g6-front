@@ -16,7 +16,7 @@ Nunca respondas a nada que no sea sobre turismo local en Argentina, dile al usua
 export const runtime = "nodejs";
 
 // Declaracion del modelo
-const model = google('gemini-2.5-pro');
+const model = google(process.env.GEMINI_MODEL || "gemini-2.5-flash-lite");
 
 export async function POST(req: Request) {
     try {
