@@ -15,33 +15,29 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
     fetchPlaces(ACTIVIDADES, { limit: 1 }),
   ])
 
-  const featuredPlaces = [
-    hotels[0],
-    restaurants[0],
-    activities[0]
-  ].filter((place): place is Place => Boolean(place))
+  const featuredPlaces = [hotels[0], restaurants[0], activities[0]].filter((place): place is Place => Boolean(place))
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen w-full flex flex-col">
       <Header />
-      <main className="flex-1">
+      <main className="flex-1 w-full">
         <HeroSection />
         {q ? (
-          <div className="container mx-auto px-4 py-6">
-            {await (async () => {
-              const [hs, rs, as] = await Promise.all([
-                searchPlaces(HOTELES, { name: q, sort: null, page: null, pageSize: null }),
-                searchPlaces(RESTAURANTES, { name: q, sort: null, page: null, pageSize: null }),
-                searchPlaces(ACTIVIDADES, { name: q, sort: null, page: null, pageSize: null }),
-              ])
-              const results: Place[] = [...hs, ...rs, ...as]
-              if (results.length === 0) {
-                return (
-                  <p className="text-muted-foreground">No se encontraron resultados para "{q}".</p>
-                )
-              }
-              return <PlacesList places={results} />
-            })()}
+          <div className="container mx-auto px-4 py-6 w-full">
+            {
+              await (async () => {
+                const [hs, rs, as] = await Promise.all([
+                  searchPlaces(HOTELES, { name: q, sort: null, page: null, pageSize: null }),
+                  searchPlaces(RESTAURANTES, { name: q, sort: null, page: null, pageSize: null }),
+                  searchPlaces(ACTIVIDADES, { name: q, sort: null, page: null, pageSize: null }),
+                ])
+                const results: Place[] = [...hs, ...rs, ...as]
+                if (results.length === 0) {
+                  return <p className="text-muted-foreground">No se encontraron resultados para "{q}".</p>
+                }
+                return <PlacesList places={results} />
+              })()
+            }
           </div>
         ) : (
           <>
