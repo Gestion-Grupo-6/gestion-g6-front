@@ -24,7 +24,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="es">
-      <body className={`font-sans antialiased`}>
+      <body className={`min-h-screen w-full font-sans antialiased`}>
         <AuthProvider>
           {children}
           <MilongiaButton />
