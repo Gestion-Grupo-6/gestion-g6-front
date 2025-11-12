@@ -21,6 +21,15 @@ export interface Place {
     lat: number
     lng: number
   } | null
+  openingHours?: {
+    monday?: { start?: number; end?: number }
+    tuesday?: { start?: number; end?: number }
+    wednesday?: { start?: number; end?: number }
+    thursday?: { start?: number; end?: number }
+    friday?: { start?: number; end?: number }
+    saturday?: { start?: number; end?: number }
+    sunday?: { start?: number; end?: number }
+  } | null
 }
 
 
@@ -42,5 +51,14 @@ export interface PlaceCreatePayload {
   location?: {
     lat: number
     lng: number
+  }
+  openingHours?: {
+    monday?: { start?: number; end?: number }
+    tuesday?: { start?: number; end?: number }
+    wednesday?: { start?: number; end?: number }
+    thursday?: { start?: number; end?: number }
+    friday?: { start?: number; end?: number }
+    saturday?: { start?: number; end?: number }
+    sunday?: { start?: number; end?: number }
   }
 }

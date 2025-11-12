@@ -80,6 +80,15 @@ const INITIAL_FORM = {
   priceCategory: "$$",
   images: "",
   attributes: [] as string[],
+  openingHours: {
+    monday: { start: undefined, end: undefined },
+    tuesday: { start: undefined, end: undefined },
+    wednesday: { start: undefined, end: undefined },
+    thursday: { start: undefined, end: undefined },
+    friday: { start: undefined, end: undefined },
+    saturday: { start: undefined, end: undefined },
+    sunday: { start: undefined, end: undefined },
+  },
 }
 
 export default function MisPublicacionesPage() {
@@ -247,6 +256,22 @@ export default function MisPublicacionesPage() {
     setLocationConfirmed(Boolean(options?.confirmed && location.location))
   }
 
+  const handleOpeningHoursChange = (day: string, field: 'start' | 'end', value: string) => {
+    setFormData((prev) => {
+      const numValue = value === "" ? undefined : Number(value)
+      return {
+        ...prev,
+        openingHours: {
+          ...prev.openingHours,
+          [day]: {
+            ...prev.openingHours[day as keyof typeof prev.openingHours],
+            [field]: numValue,
+          },
+        },
+      }
+    })
+  }
+
   const resetForm = () => {
     // Limpiar URLs de preview para evitar memory leaks
     imagePreviews.forEach(url => URL.revokeObjectURL(url))
@@ -391,6 +416,28 @@ export default function MisPublicacionesPage() {
         !Number.isNaN(lng)
       ) {
         payload.location = { lat, lng }
+      }
+
+      // Agregar openingHours si hay al menos un día con horarios definidos
+      if (formData.openingHours) {
+        const cleanedHours: any = {}
+        const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
+        let hasAnyHours = false
+        
+        days.forEach(day => {
+          const dayHours = formData.openingHours[day as keyof typeof formData.openingHours]
+          if (dayHours && (dayHours.start !== undefined || dayHours.end !== undefined)) {
+            cleanedHours[day] = {
+              ...(dayHours.start !== undefined && { start: dayHours.start }),
+              ...(dayHours.end !== undefined && { end: dayHours.end }),
+            }
+            hasAnyHours = true
+          }
+        })
+        
+        if (hasAnyHours) {
+          payload.openingHours = cleanedHours
+        }
       }
 
       if (editingId) {
@@ -667,6 +714,55 @@ export default function MisPublicacionesPage() {
                     </p>
                   </div>
 
+                  <div className="space-y-2">
+                    <Label>Horarios</Label>
+                    <p className="text-xs text-muted-foreground mb-3">
+                      {formData.category === "hotel" && "Horario de recepción"}
+                      {formData.category === "restaurant" && "Horario de atención"}
+                      {formData.category === "activity" && "Aproximado de entre qué horarios se puede hacer esta actividad"}
+                    </p>
+                    <div className="space-y-3 border border-input rounded-md p-4">
+                      {[
+                        { key: "monday", label: "Lunes" },
+                        { key: "tuesday", label: "Martes" },
+                        { key: "wednesday", label: "Miércoles" },
+                        { key: "thursday", label: "Jueves" },
+                        { key: "friday", label: "Viernes" },
+                        { key: "saturday", label: "Sábado" },
+                        { key: "sunday", label: "Domingo" },
+                      ].map(({ key, label }) => {
+                        const dayHours = formData.openingHours?.[key as keyof typeof formData.openingHours]
+                        return (
+                          <div key={key} className="flex items-center gap-3">
+                            <span className="text-sm font-medium w-20 flex-shrink-0">{label}</span>
+                            <div className="flex items-center gap-2 flex-1">
+                              <Input
+                                type="number"
+                                min="0"
+                                max="23"
+                                placeholder="Inicio"
+                                value={dayHours?.start ?? ""}
+                                onChange={(e) => handleOpeningHoursChange(key, 'start', e.target.value)}
+                                className="w-24"
+                              />
+                              <span className="text-sm text-muted-foreground">-</span>
+                              <Input
+                                type="number"
+                                min="0"
+                                max="23"
+                                placeholder="Fin"
+                                value={dayHours?.end ?? ""}
+                                onChange={(e) => handleOpeningHoursChange(key, 'end', e.target.value)}
+                                className="w-24"
+                              />
+                              <span className="text-sm text-muted-foreground">hs</span>
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </div>
+
                   <div className="space-y-4">
                     <div className="space-y-2">
                       <Label htmlFor="file-upload">Subir imágenes desde el dispositivo</Label>
@@ -864,6 +960,15 @@ export default function MisPublicacionesPage() {
                                               : Array.isArray((full as any).amenities)
                                                 ? (full as any).amenities
                                                 : [],
+                                            openingHours: (full as any).openingHours || {
+                                              monday: { start: undefined, end: undefined },
+                                              tuesday: { start: undefined, end: undefined },
+                                              wednesday: { start: undefined, end: undefined },
+                                              thursday: { start: undefined, end: undefined },
+                                              friday: { start: undefined, end: undefined },
+                                              saturday: { start: undefined, end: undefined },
+                                              sunday: { start: undefined, end: undefined },
+                                            },
                                           })
                                           setLocationConfirmed(Boolean(full.address && fullLocation))
                                           setEditingId(place.id)
