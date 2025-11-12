@@ -90,6 +90,12 @@ export function ReviewsSection({ placeId, averageRating, totalReviews, ratingsBy
     return averageRating || 0
   }, [averageRating])
 
+  // Verificar si el usuario actual ya tiene una review
+  const userHasReview = useMemo(() => {
+    if (!user?.id) return false
+    return reviews.some((review) => review.ownerId === user.id)
+  }, [reviews, user?.id])
+
   const validCategories = useMemo(() => {
     if (!ratingsByCategory || Object.keys(ratingsByCategory).length === 0) {
       return []
@@ -515,17 +521,23 @@ export function ReviewsSection({ placeId, averageRating, totalReviews, ratingsBy
           <div className="border-t border-border pt-6 space-y-3">
             {isAuthenticated ? (
               <>
-                <p className="text-base font-medium text-foreground">
-                  ¿Visitaste este lugar?
-                </p>
-                <Button 
-                  onClick={() => {
-                    setShowReviewModal(true)
-                  }} 
-                  className="w-full sm:w-auto"
-                >
-                  Dejar una reseña
-                </Button>
+                {userHasReview ? (
+                  <p className="text-sm text-muted-foreground">Ya has dejado una reseña para este lugar</p>
+                ) : (
+                  <>
+                    <p className="text-base font-medium text-foreground">
+                      ¿Visitaste este lugar?
+                    </p>
+                    <Button 
+                      onClick={() => {
+                        setShowReviewModal(true)
+                      }} 
+                      className="w-full sm:w-auto"
+                    >
+                      Dejar una reseña
+                    </Button>
+                  </>
+                )}
               </>
             ) : (
               <p className="text-sm text-muted-foreground">Inicia sesión para escribir una reseña</p>
@@ -536,12 +548,15 @@ export function ReviewsSection({ placeId, averageRating, totalReviews, ratingsBy
 
       {/* Review Modal */}
       <Dialog.Root 
-        open={showReviewModal} 
+        open={showReviewModal && !userHasReview} 
         onOpenChange={(open) => {
           if (!open) {
             resetReviewForm()
           }
-          setShowReviewModal(open)
+          // Solo permitir abrir el modal si el usuario no tiene una review
+          if (!userHasReview) {
+            setShowReviewModal(open)
+          }
         }}
       >
         <Dialog.Portal>
