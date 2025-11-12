@@ -118,7 +118,7 @@ export function PlacesList({ places }: PlacesListProps) {
           const extraAttributes =
             place.attributes && place.attributes.length > 3 ? place.attributes.length - 3 : 0
           const rating = ((place as any).ratingAverage ?? place.rating ?? 0).toFixed(1)
-          const reviewCount = place.reviews ?? 0
+          const reviewCount = (place as any).numberOfReviews ?? place.reviews ?? 0
           const priceLabel = place.priceCategory != null ? place.priceCategory : "-"
           const location = [ (place as any).city, (place as any).country ].filter(Boolean).join(", ")
 
@@ -185,10 +185,18 @@ export function PlacesList({ places }: PlacesListProps) {
                     </div>
 
                     <div className="flex items-center justify-between mt-auto pt-3 border-t border-border">
-                      <div className="flex items-center gap-1">
-                        <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                        <span className="font-semibold text-foreground">{rating}</span>
-                        <span className="text-sm text-muted-foreground">({reviewCount})</span>
+                      <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-1">
+                          <Star className="h-5 w-5 fill-yellow-400 text-yellow-400" />
+                          <span className="font-bold text-lg text-foreground">{rating}</span>
+                        </div>
+                        <span className="text-sm text-muted-foreground">
+                          {reviewCount === 0 
+                            ? "Sin reseñas" 
+                            : reviewCount === 1 
+                            ? "1 reseña" 
+                            : `${reviewCount} reseñas`}
+                        </span>
                       </div>
                       <span className="font-bold text-primary">{priceLabel}</span>
                     </div>
