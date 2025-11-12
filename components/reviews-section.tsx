@@ -548,13 +548,13 @@ export function ReviewsSection({ placeId, averageRating, totalReviews, ratingsBy
 
       {/* Review Modal */}
       <Dialog.Root 
-        open={showReviewModal && !userHasReview} 
+        open={showReviewModal && (!userHasReview || editingReviewId !== null)} 
         onOpenChange={(open) => {
           if (!open) {
             resetReviewForm()
           }
-          // Solo permitir abrir el modal si el usuario no tiene una review
-          if (!userHasReview) {
+          // Permitir abrir el modal si el usuario no tiene una review O si está editando una existente
+          if (!userHasReview || editingReviewId !== null) {
             setShowReviewModal(open)
           }
         }}
