@@ -1,14 +1,54 @@
 import { Header } from "@/components/header"
 import { PlacesList } from "@/components/places-list"
 import { FilterSidebar } from "@/components/filter-sidebar"
-import { fetchPlaces, RESTAURANTES, searchPlaces } from "@/api/place"
+import { fetchPlaces, fetchPlace, RESTAURANTES, RESTAURANT, searchPlaces, searchPlacesAdvanced } from "@/api/place"
 import { SearchBar } from "@/components/search-bar"
+import PlacesClient from "@/components/places-client"
+import PlacesPageClient from "@/components/places-page-client"
+export default async function RestaurantesPage({ searchParams }: { searchParams: Promise<Record<string, any>> }) {
+  const params = await searchParams
+  const q = params.q as string | undefined
+  const attributesParam = params.attributes as string | string[] | undefined
+  const minPriceCategory = params.minimumPriceCategory as string | undefined
+  const maxPriceCategory = params.maximumPriceCategory as string | undefined
+  const minimumRating = params.minimumRating ? Number(params.minimumRating) : undefined
+  const maximumRating = params.maximumRating ? Number(params.maximumRating) : undefined
+  const sort = params.sort as string | undefined
+  const page = params.page !== undefined ? Number(params.page) : undefined
+  const pageSize = params.pageSize !== undefined ? Number(params.pageSize) : undefined
 
-export default async function RestaurantesPage({ searchParams }: { searchParams: Promise<{ q?: string }> }) {
-  const { q } = await searchParams
-  const restaurants = q
-    ? await searchPlaces(RESTAURANTES, { name: q, sort: null, page: null, pageSize: null })
-    : await fetchPlaces(RESTAURANTES)
+  let restaurants
+
+  // If any advanced filter params are present, use advanced search endpoint
+  if (attributesParam || minPriceCategory || maxPriceCategory || minimumRating !== undefined || maximumRating !== undefined) {
+    const attributes = Array.isArray(attributesParam)
+      ? attributesParam
+      : attributesParam
+      ? String(attributesParam).split(",").map((s) => decodeURIComponent(s))
+      : []
+
+    const body = {
+      name: q ?? null,
+      city: null,
+      category: null,
+      minimumPriceCategory: minPriceCategory ?? null,
+      maximumPriceCategory: maxPriceCategory ?? null,
+      minimumRating: minimumRating ?? null,
+      maximumRating: maximumRating ?? null,
+      attributes: attributes,
+      quantities: null,
+      openNow: false,
+      sort: sort ?? null,
+      page: page ?? null,
+      pageSize: pageSize ?? null,
+    }
+
+    restaurants = await searchPlacesAdvanced(RESTAURANTES, body)
+  } else if (q) {
+    restaurants = await searchPlaces(RESTAURANTES, { name: q, sort: null, page: null, pageSize: null })
+  } else {
+    restaurants = await fetchPlaces(RESTAURANTES)
+  }
 
   return (
     <div className="min-h-screen w-full flex flex-col">
@@ -21,15 +61,9 @@ export default async function RestaurantesPage({ searchParams }: { searchParams:
           </div>
         </div>
 
-        <div className="container mx-auto px-4 py-8 w-full">
-          <SearchBar defaultValue={q || ""} />
-          <div className="flex flex-col lg:flex-row gap-8">
-            <aside className="lg:w-64 flex-shrink-0">
-              <FilterSidebar category="restaurant" />
-            </aside>
-            <div className="flex-1">
-              <PlacesList places={restaurants} />
-            </div>
+        <div className="container mx-auto px-4 py-8">
+          <div>
+            <PlacesPageClient initialPlaces={restaurants} category="restaurant" collection={RESTAURANTES} initialQuery={q || ""} />
           </div>
         </div>
       </main>

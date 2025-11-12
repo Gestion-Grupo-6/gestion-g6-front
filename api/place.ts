@@ -98,6 +98,25 @@ export async function searchPlaces(
   return (await response.json()) as Place[]
 }
 
+// Advanced search: accepts the full search body used by the backend search endpoints.
+export async function searchPlacesAdvanced(collection: string, body: Record<string, any>): Promise<Place[]> {
+  const postPath = detailPathFor(collection)
+  const searchPath = `search/${postPath}`
+
+  const response = await fetch(`${sanitizedBaseUrl}/${searchPath}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  })
+
+  if (!response.ok) {
+    const fallback = await response.text()
+    throw new Error(`Error en búsqueda avanzada: ${response.status} ${response.statusText}. ${fallback}`)
+  }
+
+  return (await response.json()) as Place[]
+}
+
 // Place - POST (create)
 export async function createPlace(collection: string, payload: PlaceCreatePayload): Promise<Place> {
   const postPath = detailPathFor(collection)
