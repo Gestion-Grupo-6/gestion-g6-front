@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState, useRef } from "react"
+import { useState, useRef, useEffect } from "react"
 import { toast } from "sonner"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
@@ -17,7 +17,7 @@ import type { Usuario } from "@/types/user"
 import { FavoritesPanel } from "@/components/favorites-panel"
 
 export default function ProfilePage() {
-  const { user, logout } = useAuth()
+  const { user, logout, updateUser: updateAuthUser } = useAuth()
   const router = useRouter()
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [isEditing, setIsEditing] = useState(false)
@@ -32,6 +32,18 @@ export default function ProfilePage() {
     // address: user?.address || ""
   })
 
+  // Actualizar el estado cuando el usuario esté disponible (después de recargar)
+  useEffect(() => {
+    if (user) {
+      setFormData({
+        firstName: user.name || "",
+        lastName: user.lastname || "",
+        email: user.email || "",
+      })
+      setProfilePhoto(user.profilePhoto || "/placeholder-user.jpg")
+    }
+  }, [user])
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({
       ...formData,
@@ -45,7 +57,8 @@ export default function ProfilePage() {
       userToUpdate.id = user?.id as string
       userToUpdate.name = formData.firstName
       userToUpdate.lastname = formData.lastName
-      userToUpdate.email = formData.email
+      // No actualizar el email - se mantiene el original del usuario
+      userToUpdate.email = user?.email || ""
       userToUpdate.password = user?.password as string
 
       if (pendingPhotoFile && user) {
@@ -54,6 +67,15 @@ export default function ProfilePage() {
       }
 
       const updated = await updateUser(userToUpdate)
+      
+      // Actualizar el usuario en el contexto de autenticación y localStorage
+      // Mantener el chatHistory si existe
+      const updatedWithHistory = {
+        ...updated,
+        chatHistory: user?.chatHistory || []
+      }
+      updateAuthUser(updatedWithHistory)
+      
       setProfilePhoto(updated.profilePhoto || profilePhoto)
       setPendingPhotoFile(null)
       setIsEditing(false)
@@ -178,10 +200,12 @@ export default function ProfilePage() {
                     type="email"
                     value={formData.email}
                     onChange={handleChange}
-                    disabled={!isEditing}
-                    className="pl-10"
+                    disabled={true}
+                    className="pl-10 bg-muted cursor-not-allowed"
+                    title="El email no se puede modificar"
                   />
                 </div>
+                <p className="text-xs text-muted-foreground">El email no se puede modificar</p>
               </div>
 
               {}

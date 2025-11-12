@@ -4,18 +4,23 @@ export type Ratings = {
   location?: number
 }
 
+export type RatingItem = {
+  type: string
+  score: number
+}
+
 export type ReviewCreatePayload = {
   ownerId: string
   postId: string
   comment?: string
-  ratings: Ratings
+  ratings: RatingItem[]
   images?: string[]
 }
 
 export type ReviewUpdatePayload = {
   ownerId: string
   comment?: string
-  ratings: Ratings
+  ratings: RatingItem[]
   images?: string[]
 }
 
@@ -30,7 +35,7 @@ export type CommentResponse = {
   dislikes: number
   deleted: boolean
   edited: boolean
-  ratings?: Ratings
+  ratings?: RatingItem[] | Ratings // Puede ser array (formato backend) u objeto plano (compatibilidad)
   images?: string[]
   replies?: CommentResponse[]
 }

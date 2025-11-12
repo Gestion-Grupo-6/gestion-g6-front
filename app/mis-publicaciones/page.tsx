@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Separator } from "@/components/ui/separator"
 import { Badge } from "@/components/ui/badge"
+import { Checkbox } from "@/components/ui/checkbox"
 import { MapPin, Phone, Mail, Globe, Loader2, Plus, Building2, MoreVertical, Star, Edit, Trash2, X, Upload } from "lucide-react"
 import { useAuth } from "@/contexts/AuthContext"
 import type { Place } from "@/types/place"
@@ -24,6 +25,44 @@ const CATEGORY_OPTIONS = [
 ] as const
 
 type CategoryValue = (typeof CATEGORY_OPTIONS)[number]["value"]
+
+// Categorías predeterminadas por tipo de lugar
+const HOTEL_ATTRIBUTES = [
+  "WiFi",
+  "Spa",
+  "Piscina",
+  "Gimnasio",
+  "Restaurante",
+  "Desayuno incluido",
+  "Estacionamiento",
+  "Sala de juegos",
+  "Espacio de Co-Working",
+]
+
+const RESTAURANT_ATTRIBUTES = [
+  "WiFi",
+  "Estacionamiento",
+  "Terraza",
+  "Bar",
+  "Cafetería",
+  "Para llevar",
+  "Reserva anticipada",
+  "Menú vegetariano",
+  "Menú vegano",
+  "Patio",
+  "Work-friendly",
+  "Música en vivo",
+  "Vista al mar",
+]
+
+const ACTIVITY_ATTRIBUTES = [
+  "Guía",
+  "Transporte",
+  "Aire libre",
+  "Gastronómico",
+  "Equipo incluido",
+  "Para familias",
+]
 
 const INITIAL_FORM = {
   name: "",
@@ -40,7 +79,16 @@ const INITIAL_FORM = {
   price: "",
   priceCategory: "$$",
   images: "",
-  attributes: "",
+  attributes: [] as string[],
+  openingHours: {
+    monday: { start: undefined, end: undefined },
+    tuesday: { start: undefined, end: undefined },
+    wednesday: { start: undefined, end: undefined },
+    thursday: { start: undefined, end: undefined },
+    friday: { start: undefined, end: undefined },
+    saturday: { start: undefined, end: undefined },
+    sunday: { start: undefined, end: undefined },
+  },
 }
 
 export default function MisPublicacionesPage() {
@@ -74,6 +122,7 @@ export default function MisPublicacionesPage() {
   
   const [openMenuId, setOpenMenuId] = useState<string | null>(null)
   const [showReviewsForId, setShowReviewsForId] = useState<string | null>(null)
+  const [attributesDropdownOpen, setAttributesDropdownOpen] = useState(false)
 
   const categoryLabel = useMemo(() => {
     if (selectedFilter === 'all') return 'Todas las publicaciones'
@@ -147,12 +196,52 @@ export default function MisPublicacionesPage() {
     void loadPlaces()
   }, [isAuthenticated, user?.id])
 
+  // Función para obtener las categorías según el tipo
+  const getAttributesForCategory = (category: string): string[] => {
+    if (category === "hotel") return HOTEL_ATTRIBUTES
+    if (category === "restaurant") return RESTAURANT_ATTRIBUTES
+    if (category === "activity") return ACTIVITY_ATTRIBUTES
+    return []
+  }
+
   const handleFormChange = (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = event.target
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }))
+    
+    // Si cambia la categoría, resetear las características seleccionadas
+    if (name === "category") {
+      setFormData((prev) => ({
+        ...prev,
+        [name]: value,
+        attributes: [], // Resetear características al cambiar categoría
+      }))
+    } else {
+      setFormData((prev) => ({
+        ...prev,
+        [name]: value,
+      }))
+    }
+  }
+
+  // Función para manejar el toggle de checkboxes de características
+  const handleAttributeToggle = (attribute: string) => {
+    setFormData((prev) => {
+      const currentAttributes = prev.attributes || []
+      const isSelected = currentAttributes.includes(attribute)
+      
+      if (isSelected) {
+        // Remover si ya está seleccionado
+        return {
+          ...prev,
+          attributes: currentAttributes.filter((a) => a !== attribute),
+        }
+      } else {
+        // Agregar si no está seleccionado
+        return {
+          ...prev,
+          attributes: [...currentAttributes, attribute],
+        }
+      }
+    })
   }
 
   const handleLocationChange = (location: LocationValue, options?: { confirmed?: boolean }) => {
@@ -165,6 +254,22 @@ export default function MisPublicacionesPage() {
       locationLng: location.location?.lng != null ? String(location.location.lng) : "",
     }))
     setLocationConfirmed(Boolean(options?.confirmed && location.location))
+  }
+
+  const handleOpeningHoursChange = (day: string, field: 'start' | 'end', value: string) => {
+    setFormData((prev) => {
+      const numValue = value === "" ? undefined : Number(value)
+      return {
+        ...prev,
+        openingHours: {
+          ...prev.openingHours,
+          [day]: {
+            ...prev.openingHours[day as keyof typeof prev.openingHours],
+            [field]: numValue,
+          },
+        },
+      }
+    })
   }
 
   const resetForm = () => {
@@ -220,7 +325,13 @@ export default function MisPublicacionesPage() {
       { key: "name", label: "Nombre" },
     ]
 
-    const missing = requiredFields.filter(({ key }) => !formData[key].trim())
+    const missing = requiredFields.filter(({ key }) => {
+      const value = formData[key]
+      // attributes es un array, no necesita trim
+      if (key === "attributes") return false
+      // Para otros campos, verificar si es string y tiene contenido
+      return typeof value === "string" ? !value.trim() : !value
+    })
     if (missing.length > 0) {
       setErrorMessage(`Completa los campos obligatorios: ${missing.map((field) => field.label).join(", ")}`)
       return
@@ -257,10 +368,10 @@ export default function MisPublicacionesPage() {
     // Combinar URLs manuales con URLs subidas
     const images = [...manualImageUrls, ...uploadedImageUrls]
 
-    const attributes = (formData.attributes ?? "")
-      .split(/[\n,]/)
-      .map((item) => item.trim())
-      .filter(Boolean)
+    // attributes ya es un array, solo necesitamos asegurarnos de que no esté vacío
+    const attributes = Array.isArray(formData.attributes) 
+      ? formData.attributes.filter(Boolean)
+      : []
 
     const price = Number(formData.price)
 
@@ -305,6 +416,28 @@ export default function MisPublicacionesPage() {
         !Number.isNaN(lng)
       ) {
         payload.location = { lat, lng }
+      }
+
+      // Agregar openingHours si hay al menos un día con horarios definidos
+      if (formData.openingHours) {
+        const cleanedHours: any = {}
+        const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
+        let hasAnyHours = false
+        
+        days.forEach(day => {
+          const dayHours = formData.openingHours[day as keyof typeof formData.openingHours]
+          if (dayHours && (dayHours.start !== undefined || dayHours.end !== undefined)) {
+            cleanedHours[day] = {
+              ...(dayHours.start !== undefined && { start: dayHours.start }),
+              ...(dayHours.end !== undefined && { end: dayHours.end }),
+            }
+            hasAnyHours = true
+          }
+        })
+        
+        if (hasAnyHours) {
+          payload.openingHours = cleanedHours
+        }
       }
 
       if (editingId) {
@@ -512,6 +645,124 @@ export default function MisPublicacionesPage() {
                     />
                   </div>
 
+                  <div className="space-y-2">
+                    <Label>Características</Label>
+                    <div className="relative">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="w-full justify-between"
+                        onClick={() => setAttributesDropdownOpen(!attributesDropdownOpen)}
+                      >
+                        <span className="text-sm">
+                          {formData.attributes && formData.attributes.length > 0
+                            ? `Seleccionar características`
+                            : "Seleccionar características"}
+                        </span>
+                        <svg
+                          className={`h-4 w-4 transition-transform ${attributesDropdownOpen ? 'rotate-180' : ''}`}
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                        </svg>
+                      </Button>
+                      {attributesDropdownOpen && (
+                        <>
+                          <div
+                            className="fixed inset-0 z-10"
+                            onClick={() => setAttributesDropdownOpen(false)}
+                          />
+                          <div className="absolute z-20 w-full mt-1 bg-background border border-input rounded-md shadow-lg max-h-64 overflow-y-auto">
+                            <div className="p-2 space-y-1">
+                              {getAttributesForCategory(formData.category).map((attribute) => {
+                                const isSelected = formData.attributes?.includes(attribute) || false
+                                return (
+                                  <label
+                                    key={attribute}
+                                    htmlFor={`attribute-${attribute}`}
+                                    className="flex items-center space-x-2 p-2 rounded hover:bg-muted cursor-pointer"
+                                  >
+                                    <Checkbox
+                                      id={`attribute-${attribute}`}
+                                      checked={isSelected}
+                                      onCheckedChange={() => handleAttributeToggle(attribute)}
+                                    />
+                                    <span className="text-sm font-normal flex-1">
+                                      {attribute}
+                                    </span>
+                                  </label>
+                                )
+                              })}
+                            </div>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                    {formData.attributes && formData.attributes.length > 0 && (
+                      <div className="flex flex-wrap gap-2 mt-2">
+                        {formData.attributes.map((attribute) => (
+                          <Badge key={attribute} variant="secondary" className="text-xs">
+                            {attribute}
+                          </Badge>
+                        ))}
+                      </div>
+                    )}
+                    <p className="text-xs text-muted-foreground">
+                      Selecciona las características que aplican a tu {createSingularLabel.toLowerCase()}
+                    </p>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Horarios</Label>
+                    <p className="text-xs text-muted-foreground mb-3">
+                      {formData.category === "hotel" && "Horario de recepción"}
+                      {formData.category === "restaurant" && "Horario de atención"}
+                      {formData.category === "activity" && "Aproximado de entre qué horarios se puede hacer esta actividad"}
+                    </p>
+                    <div className="space-y-3 border border-input rounded-md p-4">
+                      {[
+                        { key: "monday", label: "Lunes" },
+                        { key: "tuesday", label: "Martes" },
+                        { key: "wednesday", label: "Miércoles" },
+                        { key: "thursday", label: "Jueves" },
+                        { key: "friday", label: "Viernes" },
+                        { key: "saturday", label: "Sábado" },
+                        { key: "sunday", label: "Domingo" },
+                      ].map(({ key, label }) => {
+                        const dayHours = formData.openingHours?.[key as keyof typeof formData.openingHours]
+                        return (
+                          <div key={key} className="flex items-center gap-3">
+                            <span className="text-sm font-medium w-20 flex-shrink-0">{label}</span>
+                            <div className="flex items-center gap-2 flex-1">
+                              <Input
+                                type="number"
+                                min="0"
+                                max="23"
+                                placeholder="Inicio"
+                                value={dayHours?.start ?? ""}
+                                onChange={(e) => handleOpeningHoursChange(key, 'start', e.target.value)}
+                                className="w-24"
+                              />
+                              <span className="text-sm text-muted-foreground">-</span>
+                              <Input
+                                type="number"
+                                min="0"
+                                max="23"
+                                placeholder="Fin"
+                                value={dayHours?.end ?? ""}
+                                onChange={(e) => handleOpeningHoursChange(key, 'end', e.target.value)}
+                                className="w-24"
+                              />
+                              <span className="text-sm text-muted-foreground">hs</span>
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </div>
+
                   <div className="space-y-4">
                     <div className="space-y-2">
                       <Label htmlFor="file-upload">Subir imágenes desde el dispositivo</Label>
@@ -567,33 +818,19 @@ export default function MisPublicacionesPage() {
                       </div>
                     )}
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="images">O agregar URLs de imágenes (una por línea)</Label>
-                        <Textarea
-                          id="images"
-                          name="images"
-                          value={formData.images}
-                          onChange={handleFormChange}
-                          placeholder="https://ejemplo.com/imagen1.jpg\nhttps://ejemplo.com/imagen2.jpg"
-                          rows={4}
-                        />
-                        <p className="text-xs text-muted-foreground">
-                          También puedes agregar URLs manualmente si prefieres
-                        </p>
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label htmlFor="attributes">Características (una por línea)</Label>
-                        <Textarea
-                          id="attributes"
-                          name="attributes"
-                          value={formData.attributes}
-                          onChange={handleFormChange}
-                          placeholder="WiFi\nPiscina\nSpa"
-                          rows={4}
-                        />
-                      </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="images">O agregar URLs de imágenes (una por línea)</Label>
+                      <Textarea
+                        id="images"
+                        name="images"
+                        value={formData.images}
+                        onChange={handleFormChange}
+                        placeholder="https://ejemplo.com/imagen1.jpg\nhttps://ejemplo.com/imagen2.jpg"
+                        rows={4}
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        También puedes agregar URLs manualmente si prefieres
+                      </p>
                     </div>
                   </div>
 
@@ -719,10 +956,19 @@ export default function MisPublicacionesPage() {
                                             priceCategory: (full.priceCategory as any) || "$$",
                                             images: Array.isArray(full.images) ? full.images.join("\n") : "",
                                             attributes: Array.isArray((full as any).attributes)
-                                              ? (full as any).attributes.join("\n")
+                                              ? (full as any).attributes
                                               : Array.isArray((full as any).amenities)
-                                                ? (full as any).amenities.join("\n")
-                                                : "",
+                                                ? (full as any).amenities
+                                                : [],
+                                            openingHours: (full as any).openingHours || {
+                                              monday: { start: undefined, end: undefined },
+                                              tuesday: { start: undefined, end: undefined },
+                                              wednesday: { start: undefined, end: undefined },
+                                              thursday: { start: undefined, end: undefined },
+                                              friday: { start: undefined, end: undefined },
+                                              saturday: { start: undefined, end: undefined },
+                                              sunday: { start: undefined, end: undefined },
+                                            },
                                           })
                                           setLocationConfirmed(Boolean(full.address && fullLocation))
                                           setEditingId(place.id)

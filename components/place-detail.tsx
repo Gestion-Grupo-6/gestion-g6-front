@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import {Star, MapPin, Phone, Mail, Globe, ChevronLeft, ChevronRight, Heart, Building2} from "lucide-react"
+import {Star, MapPin, Phone, Mail, Globe, ChevronLeft, ChevronRight, Heart, Building2, ChevronDown, Clock} from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -19,16 +19,22 @@ interface PlaceDetailProps {
   place: Place
 }
 
+function formatHour(hour: number | undefined): string {
+  if (hour === undefined || hour === null) return ""
+  return `${hour}hs`
+}
+
 export function PlaceDetail({ place }: PlaceDetailProps) {
   const { user, isAuthenticated } = useAuth()
   const [isFavorite, setIsFavorite] = useState(false)
   const [isLoadingFavorite, setIsLoadingFavorite] = useState(false)
+  const [isHoursOpen, setIsHoursOpen] = useState(false)
   
   const images = Array.isArray(place.images) && place.images.length > 0
     ? place.images.map((p) => getImage(p) || "/placeholder.svg")
     : ["/placeholder.svg"]
   const amenities = (place as any).attributes && (place as any).attributes.length > 0 ? (place as any).attributes : []
-  const rating = (place as any).rating ?? (place as any).ratings?.average ?? 0
+  const rating = (place as any).ratingAverage ?? (place as any).rating ?? (place as any).ratings?.average ?? 0
   const reviewCount = (place as any).reviews ?? (place as any).numberOfReviews ?? 0
   const priceLabel = (place as any).priceCategory ?? (place.price != null ? `$${place.price}` : "Consultar")
   const categoryRoutes: Record<string, string> = {
@@ -207,7 +213,12 @@ export function PlaceDetail({ place }: PlaceDetailProps) {
 
             {/* Se eliminan campos no soportados por el backend (checkIn, checkOut, hours, duration, includes, bestTime, howToGet) */}
 
-            <ReviewsSection placeId={String(place.id)} averageRating={rating} totalReviews={reviewCount} />
+            <ReviewsSection 
+              placeId={String(place.id)} 
+              averageRating={rating} 
+              totalReviews={reviewCount}
+              ratingsByCategory={(place as any).ratings}
+            />
           </div>
 
           {/* Sidebar */}
@@ -278,6 +289,52 @@ export function PlaceDetail({ place }: PlaceDetailProps) {
                     </div>
                   </div>
                 </div>
+
+                {place.openingHours && (
+                  <>
+                    <Separator />
+                    <div>
+                      <button
+                        onClick={() => setIsHoursOpen(!isHoursOpen)}
+                        className="w-full flex items-center justify-between py-2 text-left hover:text-primary transition-colors"
+                      >
+                        <div className="flex items-center gap-3">
+                          <Clock className="h-5 w-5 text-muted-foreground flex-shrink-0" />
+                          <p className="text-sm font-medium text-foreground">Horarios</p>
+                        </div>
+                        <ChevronDown 
+                          className={`h-4 w-4 text-muted-foreground transition-transform ${isHoursOpen ? 'rotate-180' : ''}`}
+                        />
+                      </button>
+                      {isHoursOpen && (
+                        <div className="mt-3 space-y-2 pl-8">
+                          {[
+                            { key: "monday", label: "Lunes" },
+                            { key: "tuesday", label: "Martes" },
+                            { key: "wednesday", label: "Miércoles" },
+                            { key: "thursday", label: "Jueves" },
+                            { key: "friday", label: "Viernes" },
+                            { key: "saturday", label: "Sábado" },
+                            { key: "sunday", label: "Domingo" },
+                          ].map(({ key, label }) => {
+                            const dayHours = place.openingHours?.[key as keyof typeof place.openingHours]
+                            if (!dayHours || dayHours.start === undefined || dayHours.end === undefined) {
+                              return null
+                            }
+                            return (
+                              <div key={key} className="flex justify-between items-center py-1">
+                                <span className="text-sm text-foreground">{label}</span>
+                                <span className="text-sm text-muted-foreground">
+                                  {formatHour(dayHours.start)} - {formatHour(dayHours.end)}
+                                </span>
+                              </div>
+                            )
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  </>
+                )}
 
                 <Separator />
 
