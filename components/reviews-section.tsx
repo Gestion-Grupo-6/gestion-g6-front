@@ -96,7 +96,6 @@ export function ReviewsSection({ placeId, averageRating, totalReviews, ratingsBy
     }
     
     const allCategories = [
-      { key: "general", label: "General" },
       { key: "cleanliness", label: "Limpieza" },
       { key: "service", label: "Servicio" },
       { key: "location", label: "Ubicación" },
@@ -400,15 +399,20 @@ export function ReviewsSection({ placeId, averageRating, totalReviews, ratingsBy
   const StarRating = ({ 
     value, 
     onStarClick, 
-    label 
+    label,
+    size = "normal"
   }: {
     value: number
     onStarClick: (star: number) => void
     label: string
+    size?: "normal" | "large"
   }) => {
+    const starSize = size === "large" ? "h-8 w-8" : "h-6 w-6"
+    const labelSize = size === "large" ? "text-base font-semibold" : "text-sm font-medium"
+    
     return (
       <div className="space-y-2">
-        <Label className="text-sm font-medium text-foreground">{label}</Label>
+        <Label className={`${labelSize} text-foreground`}>{label}</Label>
         <div className="flex items-center gap-2">
           {[1, 2, 3, 4, 5].map((star) => (
             <button
@@ -422,7 +426,7 @@ export function ReviewsSection({ placeId, averageRating, totalReviews, ratingsBy
               className="transition-transform hover:scale-110 cursor-pointer"
             >
               <Star
-                className={`h-6 w-6 ${
+                className={`${starSize} ${
                   star <= value
                     ? "fill-yellow-400 text-yellow-400"
                     : "text-muted-foreground"
@@ -430,7 +434,7 @@ export function ReviewsSection({ placeId, averageRating, totalReviews, ratingsBy
               />
             </button>
           ))}
-          {value > 0 && <span className="ml-2 text-sm text-muted-foreground">({value}/5)</span>}
+          {value > 0 && <span className={`ml-2 ${size === "large" ? "text-base" : "text-sm"} text-muted-foreground`}>({value}/5)</span>}
         </div>
       </div>
     )
@@ -477,7 +481,7 @@ export function ReviewsSection({ placeId, averageRating, totalReviews, ratingsBy
           {validCategories.length > 0 && (
             <div className="mb-8 border-t border-border pt-6">
               <h3 className="text-lg font-semibold text-foreground mb-4">Valoraciones por categoría</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="flex flex-wrap justify-center gap-4">
                 {validCategories.map(({ key, label }) => {
                   const categoryRating = ratingsByCategory?.[key]
                   if (!categoryRating || categoryRating.numberOfRatings === 0) return null
@@ -485,7 +489,7 @@ export function ReviewsSection({ placeId, averageRating, totalReviews, ratingsBy
                   const avg = categoryRating.average
                   
                   return (
-                    <div key={key} className="p-4 bg-muted/30 rounded-lg">
+                    <div key={key} className="p-4 bg-muted/30 rounded-lg w-full md:w-[calc(50%-0.5rem)] lg:w-[calc(25%-0.75rem)] max-w-xs">
                       <div className="flex items-center justify-between mb-2">
                         <span className="text-sm font-medium text-foreground">{label}</span>
                         <span className="text-lg font-bold text-foreground">{avg.toFixed(1)}</span>
@@ -563,36 +567,47 @@ export function ReviewsSection({ placeId, averageRating, totalReviews, ratingsBy
 
             <div className="p-6 overflow-y-auto space-y-6">
               {/* Ratings */}
-              <div className="space-y-4">
+              <div className="space-y-6">
                 <h3 className="text-lg font-semibold text-foreground">Calificaciones</h3>
-                <StarRating
-                  value={ratings.general}
-                  onStarClick={(star) => {
-                    setRatings((prev) => ({ ...prev, general: star }))
-                  }}
-                  label="Valoración general *"
-                />
-                <StarRating
-                  value={ratings.cleanliness}
-                  onStarClick={(star) => {
-                    setRatings((prev) => ({ ...prev, cleanliness: star }))
-                  }}
-                  label="Limpieza (opcional)"
-                />
-                <StarRating
-                  value={ratings.service}
-                  onStarClick={(star) => {
-                    setRatings((prev) => ({ ...prev, service: star }))
-                  }}
-                  label="Servicio (opcional)"
-                />
-                <StarRating
-                  value={ratings.location}
-                  onStarClick={(star) => {
-                    setRatings((prev) => ({ ...prev, location: star }))
-                  }}
-                  label="Ubicación (opcional)"
-                />
+                
+                {/* Valoración obligatoria */}
+                <div className="space-y-3">
+                  <p className="text-sm font-medium text-muted-foreground">Obligatoria</p>
+                  <StarRating
+                    value={ratings.general}
+                    onStarClick={(star) => {
+                      setRatings((prev) => ({ ...prev, general: star }))
+                    }}
+                    label="Valoración general *"
+                    size="large"
+                  />
+                </div>
+
+                {/* Valoraciones opcionales */}
+                <div className="space-y-4 border-t border-border pt-4">
+                  <p className="text-sm font-medium text-muted-foreground">Opcionales</p>
+                  <StarRating
+                    value={ratings.cleanliness}
+                    onStarClick={(star) => {
+                      setRatings((prev) => ({ ...prev, cleanliness: star }))
+                    }}
+                    label="Limpieza"
+                  />
+                  <StarRating
+                    value={ratings.service}
+                    onStarClick={(star) => {
+                      setRatings((prev) => ({ ...prev, service: star }))
+                    }}
+                    label="Servicio"
+                  />
+                  <StarRating
+                    value={ratings.location}
+                    onStarClick={(star) => {
+                      setRatings((prev) => ({ ...prev, location: star }))
+                    }}
+                    label="Ubicación"
+                  />
+                </div>
               </div>
 
               {/* Comment */}
