@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState, useRef } from "react"
+import { useState, useRef, useEffect } from "react"
 import { toast } from "sonner"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
@@ -31,6 +31,18 @@ export default function ProfilePage() {
     // phone: user?.phone || "",
     // address: user?.address || ""
   })
+
+  // Actualizar el estado cuando el usuario esté disponible (después de recargar)
+  useEffect(() => {
+    if (user) {
+      setFormData({
+        firstName: user.name || "",
+        lastName: user.lastname || "",
+        email: user.email || "",
+      })
+      setProfilePhoto(user.profilePhoto || "/placeholder-user.jpg")
+    }
+  }, [user])
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({
