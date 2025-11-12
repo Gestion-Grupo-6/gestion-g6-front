@@ -15,8 +15,10 @@ export interface Place {
   email: string | null
   website: string | null
   rating: number | null
-  ratings?: Record<string, number> | null
+  ratingAverage?: number | null
+  ratings?: Record<string, { average: number; numberOfRatings: number }> | null
   reviews: number | null
+  numberOfReviews?: number | null
   location?: {
     lat: number
     lng: number

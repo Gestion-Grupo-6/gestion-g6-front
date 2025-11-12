@@ -84,7 +84,26 @@ export function ReviewsPanel({ open, onOpenChange, placeId }: ReviewsPanelProps)
               ) : (
                 reviews.map((review) => {
                   const name = authorById[review.ownerId] || "Usuario"
-                  const stars = Math.round(((review.ratings?.cleanliness ?? 0) + (review.ratings?.service ?? 0) + (review.ratings?.location ?? 0)) / ([(review.ratings?.cleanliness),(review.ratings?.service),(review.ratings?.location)].filter((n)=>typeof n === 'number').length || 1))
+                  // Usar el rating "general" directamente (obligatorio)
+                  const stars = (() => {
+                    if (!review.ratings) return 0
+                    
+                    let generalScore: number | null = null
+                    
+                    // Manejar formato array (formato actual del backend)
+                    if (Array.isArray(review.ratings)) {
+                      const generalRating = review.ratings.find(r => r != null && typeof r === 'object' && 'type' in r && r.type === 'general')
+                      if (generalRating && 'score' in generalRating && typeof generalRating.score === 'number') {
+                        generalScore = generalRating.score
+                      }
+                    } 
+                    // Manejar formato objeto plano (compatibilidad)
+                    else if (typeof review.ratings === 'object') {
+                      generalScore = (review.ratings as any).general
+                    }
+                    
+                    return generalScore ? Math.round(generalScore) : 0
+                  })()
                   return (
                     <Card key={review.id}>
                       <CardContent className="p-6 space-y-3">

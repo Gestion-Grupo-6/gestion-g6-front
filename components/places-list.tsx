@@ -117,7 +117,7 @@ export function PlacesList({ places }: PlacesListProps) {
           const displayedAttributes = (place.attributes ?? []).slice(0, 3)
           const extraAttributes =
             place.attributes && place.attributes.length > 3 ? place.attributes.length - 3 : 0
-          const rating = (place.rating ?? 0).toFixed(1)
+          const rating = ((place as any).ratingAverage ?? place.rating ?? 0).toFixed(1)
           const reviewCount = place.reviews ?? 0
           const priceLabel = place.priceCategory != null ? place.priceCategory : "-"
           const location = [ (place as any).city, (place as any).country ].filter(Boolean).join(", ")

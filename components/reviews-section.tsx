@@ -20,16 +20,18 @@ interface ReviewsSectionProps {
   placeId: string
   averageRating: number
   totalReviews: number
+  ratingsByCategory?: Record<string, { average: number; numberOfRatings: number }> | null
 }
 
-export function ReviewsSection({ placeId, averageRating, totalReviews }: ReviewsSectionProps) {
+export function ReviewsSection({ placeId, averageRating, totalReviews, ratingsByCategory }: ReviewsSectionProps) {
   const { user, isAuthenticated } = useAuth()
   const [reviews, setReviews] = useState<CommentResponse[]>([])
   const [newReview, setNewReview] = useState("")
   const [ratings, setRatings] = useState({
-    cleanliness: 0,
-    service: 0,
-    location: 0,
+    general: 0, // Obligatorio
+    cleanliness: 0, // Opcional
+    service: 0, // Opcional
+    location: 0, // Opcional
   })
   const [submitting, setSubmitting] = useState(false)
   const [uploadingImages, setUploadingImages] = useState(false)
@@ -85,29 +87,67 @@ export function ReviewsSection({ placeId, averageRating, totalReviews }: Reviews
   }, [placeId])
 
   const derivedAverage = useMemo(() => {
-    if (!reviews.length) return averageRating
-    const stars = reviews
-      .map((r) => r.ratings)
-      .filter(Boolean)
-      .map((rt) => {
-        const vals = [rt!.cleanliness, rt!.service, rt!.location].filter((n) => typeof n === "number") as number[]
-        if (!vals.length) return 0
-        return vals.reduce((a, b) => a + b, 0) / vals.length
-      })
-    if (!stars.length) return averageRating
-    return Number((stars.reduce((a, b) => a + b, 0) / stars.length).toFixed(1))
-  }, [reviews, averageRating])
+    return averageRating || 0
+  }, [averageRating])
+
+  const validCategories = useMemo(() => {
+    if (!ratingsByCategory || Object.keys(ratingsByCategory).length === 0) {
+      return []
+    }
+    
+    const allCategories = [
+      { key: "general", label: "General" },
+      { key: "cleanliness", label: "Limpieza" },
+      { key: "service", label: "Servicio" },
+      { key: "location", label: "Ubicación" },
+    ]
+    
+    return allCategories.filter(({ key }) => {
+      const categoryRating = ratingsByCategory[key]
+      return categoryRating && categoryRating.numberOfRatings > 0
+    })
+  }, [ratingsByCategory])
 
   const ratingDistribution = useMemo(() => {
-    // Simple distribución basada en promedio (placeholder). Se puede reemplazar cuando backend provea histograma.
-    return [
-      { stars: 5, percentage: 65, count: Math.floor(totalReviews * 0.65) },
-      { stars: 4, percentage: 20, count: Math.floor(totalReviews * 0.2) },
-      { stars: 3, percentage: 10, count: Math.floor(totalReviews * 0.1) },
-      { stars: 2, percentage: 3, count: Math.floor(totalReviews * 0.03) },
-      { stars: 1, percentage: 2, count: Math.floor(totalReviews * 0.02) },
-    ]
-  }, [totalReviews])
+    // Calcular la distribución real basada en el rating "general" de las reseñas
+    const distribution = { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 }
+    
+    reviews.forEach((review) => {
+      if (!review.ratings) return
+      
+      let generalScore: number | null = null
+      
+      // Manejar formato array (formato actual del backend)
+      if (Array.isArray(review.ratings)) {
+        const generalRating = review.ratings.find(r => r != null && typeof r === 'object' && 'type' in r && r.type === 'general')
+        if (generalRating && 'score' in generalRating && typeof generalRating.score === 'number') {
+          generalScore = generalRating.score
+        }
+      } 
+      // Manejar formato objeto plano (compatibilidad)
+      else if (typeof review.ratings === 'object') {
+        generalScore = (review.ratings as any).general
+      }
+      
+      if (generalScore == null || generalScore === 0) return
+      
+      const rounded = Math.round(generalScore)
+      
+      if (rounded >= 5) distribution[5]++
+      else if (rounded >= 4) distribution[4]++
+      else if (rounded >= 3) distribution[3]++
+      else if (rounded >= 2) distribution[2]++
+      else if (rounded >= 1) distribution[1]++
+    })
+    
+    const total = Object.values(distribution).reduce((a, b) => a + b, 0)
+    
+    return [5, 4, 3, 2, 1].map((stars) => {
+      const count = distribution[stars as keyof typeof distribution]
+      const percentage = total > 0 ? (count / total) * 100 : 0
+      return { stars, percentage, count }
+    })
+  }, [reviews])
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(event.target.files || [])
@@ -181,7 +221,7 @@ export function ReviewsSection({ placeId, averageRating, totalReviews }: Reviews
       }
     })
     setNewReview("")
-    setRatings({ cleanliness: 0, service: 0, location: 0 })
+    setRatings({ general: 0, cleanliness: 0, service: 0, location: 0 })
     setSelectedFiles([])
     setImagePreviews([])
     setEditingReviewId(null)
@@ -194,9 +234,18 @@ export function ReviewsSection({ placeId, averageRating, totalReviews }: Reviews
     setEditingReviewId(review.id)
     setNewReview(review.comment || "")
     setRatings({
-      cleanliness: review.ratings?.cleanliness || 0,
-      service: review.ratings?.service || 0,
-      location: review.ratings?.location || 0,
+      general: Array.isArray(review.ratings) 
+        ? review.ratings.find(r => r.type === 'general')?.score || 0
+        : (review.ratings as any)?.general || 0,
+      cleanliness: Array.isArray(review.ratings) 
+        ? review.ratings.find(r => r.type === 'cleanliness')?.score || 0
+        : (review.ratings as any)?.cleanliness || 0,
+      service: Array.isArray(review.ratings)
+        ? review.ratings.find(r => r.type === 'service')?.score || 0
+        : (review.ratings as any)?.service || 0,
+      location: Array.isArray(review.ratings)
+        ? review.ratings.find(r => r.type === 'location')?.score || 0
+        : (review.ratings as any)?.location || 0,
     })
     
     // Si hay imágenes existentes, mostrarlas como previews
@@ -223,10 +272,9 @@ export function ReviewsSection({ placeId, averageRating, totalReviews }: Reviews
       return
     }
     
-    // Validar que haya al menos un rating
-    const hasRating = ratings.cleanliness > 0 || ratings.service > 0 || ratings.location > 0
-    if (!hasRating) {
-      toast.error("Debes calificar al menos una categoría")
+    // Validar que haya un rating "general" obligatorio
+    if (!ratings.general || ratings.general === 0) {
+      toast.error("Debes calificar la valoración general (obligatorio)")
       return
     }
 
@@ -260,14 +308,30 @@ export function ReviewsSection({ placeId, averageRating, totalReviews }: Reviews
 
       if (editingReviewId) {
         // Modo edición
+        // Convertir ratings del objeto plano a lista de objetos con type y score
+        // "general" es obligatorio, los demás son opcionales
+        const ratingsList: Array<{ type: string; score: number }> = []
+        
+        // General es obligatorio
+        if (ratings.general > 0) {
+          ratingsList.push({ type: "general", score: ratings.general })
+        }
+        
+        // Los demás son opcionales
+        if (ratings.cleanliness > 0) {
+          ratingsList.push({ type: "cleanliness", score: ratings.cleanliness })
+        }
+        if (ratings.service > 0) {
+          ratingsList.push({ type: "service", score: ratings.service })
+        }
+        if (ratings.location > 0) {
+          ratingsList.push({ type: "location", score: ratings.location })
+        }
+
         const payload = {
           ownerId: user.id,
           comment: newReview.trim(),
-          ratings: {
-            cleanliness: ratings.cleanliness > 0 ? ratings.cleanliness : undefined,
-            service: ratings.service > 0 ? ratings.service : undefined,
-            location: ratings.location > 0 ? ratings.location : undefined,
-          },
+          ratings: ratingsList,
           images: allImagePaths.length > 0 ? allImagePaths : undefined,
         }
         
@@ -281,15 +345,31 @@ export function ReviewsSection({ placeId, averageRating, totalReviews }: Reviews
         window.location.reload()
       } else {
         // Modo creación
+        // Convertir ratings del objeto plano a lista de objetos con type y score
+        // "general" es obligatorio, los demás son opcionales
+        const ratingsList: Array<{ type: string; score: number }> = []
+        
+        // General es obligatorio
+        if (ratings.general > 0) {
+          ratingsList.push({ type: "general", score: ratings.general })
+        }
+        
+        // Los demás son opcionales
+        if (ratings.cleanliness > 0) {
+          ratingsList.push({ type: "cleanliness", score: ratings.cleanliness })
+        }
+        if (ratings.service > 0) {
+          ratingsList.push({ type: "service", score: ratings.service })
+        }
+        if (ratings.location > 0) {
+          ratingsList.push({ type: "location", score: ratings.location })
+        }
+
         const payload = {
           ownerId: user.id,
           postId: placeId,
           comment: newReview.trim(),
-          ratings: {
-            cleanliness: ratings.cleanliness > 0 ? ratings.cleanliness : undefined,
-            service: ratings.service > 0 ? ratings.service : undefined,
-            location: ratings.location > 0 ? ratings.location : undefined,
-          },
+          ratings: ratingsList,
           images: uploadedImagePaths.length > 0 ? uploadedImagePaths : undefined,
         }
         
@@ -365,7 +445,7 @@ export function ReviewsSection({ placeId, averageRating, totalReviews }: Reviews
           {/* Rating Overview */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
             <div className="flex flex-col items-center justify-center p-6 bg-muted/30 rounded-lg">
-              <div className="text-5xl font-bold text-foreground mb-2">{derivedAverage}</div>
+              <div className="text-5xl font-bold text-foreground mb-2">{derivedAverage.toFixed(1)}</div>
               <div className="flex items-center gap-1 mb-2">
                 {[1, 2, 3, 4, 5].map((star) => (
                   <Star
@@ -392,6 +472,40 @@ export function ReviewsSection({ placeId, averageRating, totalReviews }: Reviews
               ))}
             </div>
           </div>
+
+          {/* Category Ratings Breakdown */}
+          {validCategories.length > 0 && (
+            <div className="mb-8 border-t border-border pt-6">
+              <h3 className="text-lg font-semibold text-foreground mb-4">Valoraciones por categoría</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                {validCategories.map(({ key, label }) => {
+                  const categoryRating = ratingsByCategory?.[key]
+                  if (!categoryRating || categoryRating.numberOfRatings === 0) return null
+                  
+                  const avg = categoryRating.average
+                  
+                  return (
+                    <div key={key} className="p-4 bg-muted/30 rounded-lg">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-sm font-medium text-foreground">{label}</span>
+                        <span className="text-lg font-bold text-foreground">{avg.toFixed(1)}</span>
+                      </div>
+                      <div className="flex items-center gap-1 mb-2">
+                        {[1, 2, 3, 4, 5].map((star) => (
+                          <Star
+                            key={star}
+                            className={`h-4 w-4 ${
+                              star <= Math.round(avg) ? "fill-yellow-400 text-yellow-400" : "text-muted-foreground"
+                            }`}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          )}
 
           {/* Write Review Button */}
           <div className="border-t border-border pt-6 space-y-3">
@@ -452,25 +566,32 @@ export function ReviewsSection({ placeId, averageRating, totalReviews }: Reviews
               <div className="space-y-4">
                 <h3 className="text-lg font-semibold text-foreground">Calificaciones</h3>
                 <StarRating
+                  value={ratings.general}
+                  onStarClick={(star) => {
+                    setRatings((prev) => ({ ...prev, general: star }))
+                  }}
+                  label="Valoración general *"
+                />
+                <StarRating
                   value={ratings.cleanliness}
                   onStarClick={(star) => {
                     setRatings((prev) => ({ ...prev, cleanliness: star }))
                   }}
-                  label="Limpieza"
+                  label="Limpieza (opcional)"
                 />
                 <StarRating
                   value={ratings.service}
                   onStarClick={(star) => {
                     setRatings((prev) => ({ ...prev, service: star }))
                   }}
-                  label="Servicio"
+                  label="Servicio (opcional)"
                 />
                 <StarRating
                   value={ratings.location}
                   onStarClick={(star) => {
                     setRatings((prev) => ({ ...prev, location: star }))
                   }}
-                  label="Ubicación"
+                  label="Ubicación (opcional)"
                 />
               </div>
 
@@ -557,7 +678,7 @@ export function ReviewsSection({ placeId, averageRating, totalReviews }: Reviews
                     e.stopPropagation()
                     void handleSubmitReview(e)
                   }}
-                  disabled={submitting || uploadingImages || !newReview.trim() || (ratings.cleanliness === 0 && ratings.service === 0 && ratings.location === 0)}
+                  disabled={submitting || uploadingImages || !newReview.trim() || !ratings.general || ratings.general === 0}
                   className="flex-1 cursor-pointer"
                 >
                   {(submitting || uploadingImages) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
@@ -585,14 +706,25 @@ export function ReviewsSection({ placeId, averageRating, totalReviews }: Reviews
         <h3 className="text-xl font-bold text-foreground">Reseñas de usuarios</h3>
 
         {reviews.map((review) => {
+          // Usar el rating "general" directamente (obligatorio)
           const avgRating = (() => {
-            const vals = [
-              review.ratings?.cleanliness,
-              review.ratings?.service,
-              review.ratings?.location
-            ].filter((n) => typeof n === "number") as number[]
-            if (!vals.length) return 0
-            return vals.reduce((a, b) => a + b, 0) / vals.length
+            if (!review.ratings) return 0
+            
+            let generalScore: number | null = null
+            
+            // Manejar formato array (formato actual del backend)
+            if (Array.isArray(review.ratings)) {
+              const generalRating = review.ratings.find(r => r != null && typeof r === 'object' && 'type' in r && r.type === 'general')
+              if (generalRating && 'score' in generalRating && typeof generalRating.score === 'number') {
+                generalScore = generalRating.score
+              }
+            } 
+            // Manejar formato objeto plano (compatibilidad)
+            else if (typeof review.ratings === 'object') {
+              generalScore = (review.ratings as any).general
+            }
+            
+            return generalScore || 0
           })()
 
           return (
