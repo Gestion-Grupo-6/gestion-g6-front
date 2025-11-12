@@ -3,6 +3,8 @@ import { PlacesList } from "@/components/places-list"
 import { FilterSidebar } from "@/components/filter-sidebar"
 import { fetchPlaces, HOTELES, searchPlaces } from "@/api/place"
 import { SearchBar } from "@/components/search-bar"
+import PlacesClient from "@/components/places-client"
+import PlacesPageClient from "@/components/places-page-client"
 
 export default async function HotelesPage({ searchParams }: { searchParams: Promise<{ q?: string }> }) {
   const { q } = await searchParams
@@ -21,15 +23,9 @@ export default async function HotelesPage({ searchParams }: { searchParams: Prom
           </div>
         </div>
 
-        <div className="container mx-auto px-4 py-8 w-full">
-          <SearchBar defaultValue={q || ""} />
-          <div className="flex flex-col lg:flex-row gap-8">
-            <aside className="lg:w-64 flex-shrink-0">
-              <FilterSidebar category="hotel" />
-            </aside>
-            <div className="flex-1">
-              <PlacesList places={hotels} />
-            </div>
+        <div className="container mx-auto px-4 py-8">
+          <div>
+            <PlacesPageClient initialPlaces={hotels} category="hotel" collection={HOTELES} initialQuery={q || ""} />
           </div>
         </div>
       </main>
