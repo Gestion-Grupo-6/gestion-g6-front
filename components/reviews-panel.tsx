@@ -6,10 +6,12 @@ import { useEffect, useMemo, useState } from "react"
 import { fetchReviewsByPost } from "@/api/review"
 import type { CommentResponse } from "@/types/review"
 import { fetchUser } from "@/api/user"
+import { fetchPlace } from "@/api/place"
 import { Card, CardContent } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Progress } from "@/components/ui/progress"
 import { useAuth } from "@/contexts/AuthContext"
+import type { Place } from "@/types/place"
 
 type ReviewsPanelProps = {
   open: boolean
@@ -21,11 +23,13 @@ export function ReviewsPanel({ open, onOpenChange, placeId }: ReviewsPanelProps)
   const { user, isAuthenticated } = useAuth()
   const [reviews, setReviews] = useState<CommentResponse[]>([])
   const [authorById, setAuthorById] = useState<Record<string, string>>({})
+  const [place, setPlace] = useState<Place | null>(null)
 
   useEffect(() => {
     if (!open) return
     const load = async () => {
       try {
+        // Cargar reviews
         const data = await fetchReviewsByPost(placeId)
         const uniqueIds = Array.from(new Set(data.map((r) => r.ownerId).filter(Boolean)))
         const entries = await Promise.all(
@@ -41,6 +45,22 @@ export function ReviewsPanel({ open, onOpenChange, placeId }: ReviewsPanelProps)
         )
         setAuthorById(Object.fromEntries(entries))
         setReviews(data)
+
+        // Intentar cargar el lugar para obtener ratingAverage
+        // Intentamos los tres tipos hasta encontrar uno
+        const collections = ["hotel", "restaurant", "activity"]
+        for (const collection of collections) {
+          try {
+            const fetchedPlace = await fetchPlace(collection, placeId)
+            if (fetchedPlace) {
+              setPlace(fetchedPlace)
+              break
+            }
+          } catch {
+            // Continuar con el siguiente tipo
+            continue
+          }
+        }
       } catch (e) {
         // eslint-disable-next-line no-console
         console.error("No se pudieron cargar reseñas", e)
@@ -50,7 +70,12 @@ export function ReviewsPanel({ open, onOpenChange, placeId }: ReviewsPanelProps)
   }, [open, placeId])
 
   const totalReviews = reviews.length
-  const averageRating = 0
+  const averageRating = useMemo(() => {
+    if (place) {
+      return ((place as any).ratingAverage ?? place.rating ?? 0).toFixed(1)
+    }
+    return "0.0"
+  }, [place])
 
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
