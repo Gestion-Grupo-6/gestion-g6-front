@@ -8,7 +8,6 @@ import Image from "next/image"
 import { useAuth } from "@/contexts/AuthContext"
 import { Chatbot } from "@/app/milongia/chatbot"
 import type { UIMessage } from "ai"
-import {fetchMessages} from "@/api/messages";
 
 export default function MilongiIA() {
   const { user, isAuthenticated } = useAuth()
