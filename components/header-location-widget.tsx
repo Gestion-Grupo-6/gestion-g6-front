@@ -3,18 +3,10 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ManualLocationForm, ManualLocationSelection } from "@/components/manual-location-form";
-import {
-  addLocationChangeListener,
-  clearStoredLocation,
-  getLocationStatus,
-  getStoredLocation,
-  setLocationStatus,
-  setStoredLocation,
-  StoredLocation,
-  LocationStatus,
-} from "@/lib/location-storage";
+import { StoredLocation } from "@/lib/location-storage";
 import { reverseGeocodeLocation } from "@/lib/reverse-geocode";
 import { Loader2, MapPin, RefreshCw, XCircle } from "lucide-react";
+import { useLocationContext } from "@/contexts/LocationContext";
 
 const GEOLOCATION_OPTIONS: PositionOptions = {
   enableHighAccuracy: true,
@@ -23,32 +15,16 @@ const GEOLOCATION_OPTIONS: PositionOptions = {
 };
 
 export function HeaderLocationWidget() {
-  const [storedLocation, setStoredLocationState] = useState<StoredLocation | null>(null);
-  const [locationStatus, setLocationStatusState] = useState<LocationStatus | null>(null);
+  const {
+    location: storedLocation,
+    status: locationStatus,
+    setLocation,
+    setStatus,
+    clearLocation,
+  } = useLocationContext();
   const [manualOpen, setManualOpen] = useState(false);
   const [requesting, setRequesting] = useState(false);
   const [resolvingLabel, setResolvingLabel] = useState(false);
-
-  const refreshStoredLocation = useCallback(() => {
-    setStoredLocationState(getStoredLocation());
-    setLocationStatusState(getLocationStatus());
-  }, []);
-
-  useEffect(() => {
-    refreshStoredLocation();
-  }, [refreshStoredLocation]);
-
-  useEffect(() => {
-    const handleStorage = () => {
-      refreshStoredLocation();
-    };
-    window.addEventListener("storage", handleStorage);
-    const removeCustomListener = addLocationChangeListener(handleStorage);
-    return () => {
-      window.removeEventListener("storage", handleStorage);
-      removeCustomListener();
-    };
-  }, [refreshStoredLocation]);
 
   useEffect(() => {
     if (!storedLocation) {
@@ -72,8 +48,7 @@ export function HeaderLocationWidget() {
             ...storedLocation,
             ...result,
           };
-          setStoredLocation(enriched);
-          setStoredLocationState(enriched);
+          setLocation(enriched);
         }
       })
       .finally(() => {
@@ -85,7 +60,7 @@ export function HeaderLocationWidget() {
     return () => {
       isActive = false;
     };
-  }, [storedLocation]);
+  }, [storedLocation, setLocation]);
 
   const requestLocation = useCallback(() => {
     if (typeof navigator === "undefined" || !navigator.geolocation) {
@@ -101,28 +76,23 @@ export function HeaderLocationWidget() {
           lng: position.coords.longitude,
           timestamp: Date.now(),
         };
-        setStoredLocation(nextLocation);
-        setStoredLocationState(nextLocation);
-        setLocationStatus("granted");
-        setLocationStatusState("granted");
+        setLocation(nextLocation);
+        setStatus("granted");
         setRequesting(false);
       },
       (error) => {
         const nextStatus = error.code === error.PERMISSION_DENIED ? "denied" : "unavailable";
-        setLocationStatus(nextStatus);
-        setLocationStatusState(nextStatus);
+        setStatus(nextStatus);
         setRequesting(false);
       },
       GEOLOCATION_OPTIONS,
     );
-  }, []);
+  }, [setLocation, setStatus]);
 
   const disableLocation = useCallback(() => {
-    clearStoredLocation();
-    setStoredLocationState(null);
-    setLocationStatusState(null);
+    clearLocation();
     setManualOpen(false);
-  }, []);
+  }, [clearLocation]);
 
   const handleManualSelect = useCallback(
     (selection: ManualLocationSelection) => {
@@ -134,13 +104,11 @@ export function HeaderLocationWidget() {
         city: selection.city,
         country: selection.country,
       };
-      setStoredLocation(nextLocation);
-      setStoredLocationState(nextLocation);
-      setLocationStatus("granted");
-      setLocationStatusState("granted");
+      setLocation(nextLocation);
+      setStatus("granted");
       setManualOpen(false);
     },
-    [],
+    [setLocation, setStatus],
   );
 
   const locationLabel = useMemo(() => {
