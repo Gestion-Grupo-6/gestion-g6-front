@@ -66,12 +66,23 @@ export function Chatbot({
     return `${storedLocation.lat.toFixed(3)}, ${storedLocation.lng.toFixed(3)}`
   })()
 
-  const suggestedQuestions = [
-    "¿Qué restaurantes de comida argentina me recomiendas?",
-    "Busco un hotel boutique en Buenos Aires",
-    "¿Qué actividades puedo hacer en Mendoza?",
-    "Recomiéndame lugares románticos para cenar",
-  ]
+  const hasLocation = Boolean(locationLabel)
+  const citySuggestion = storedLocation?.city
+  const countrySuggestion = storedLocation?.country
+
+  const suggestedQuestions = hasLocation
+    ? [
+        `¿Qué restaurantes de comida típica de ${countrySuggestion} me recomiendas?`,
+        `Estoy buscando un hotel boutique en ${citySuggestion}`,
+        `¿Qué actividades puedo hacer cerca de ${citySuggestion}?`,
+        "Recomiéndame lugares románticos para cenar",
+      ]
+    : [
+        "¿Qué restaurantes de comida típica me recomiendas?",
+        "Estoy buscando un hotel boutique para descansar",
+        "¿Qué actividades puedo hacer durante el día?",
+        "Recomiéndame lugares románticos para cenar",
+      ]
 
   return (
     <div className="w-full">
