@@ -1,17 +1,55 @@
 import { google } from '@ai-sdk/google';
-import {streamText, convertToModelMessages, UIMessage} from "ai"
-import {upsertMessages} from "@/api/messages";
-import {MessagesPayload} from "@/types/messages";
+import { streamText, convertToModelMessages, UIMessage } from "ai";
+import { upsertMessages } from "@/api/messages";
+import { MessagesPayload } from "@/types/messages";
 
 // Hardcoded system prompt for the assistant
 const SYSTEM_PROMPT = `
-Eres MilongIA, un asistente conversacional especializado en turismo local en Argentina.
+Eres MilongIA, un asistente conversacional especializado en turismo local.
 Responde con recomendaciones útiles, concisas y amigables.
 Cuando el usuario pida sugerencias, pregunta por sus preferencias (presupuesto, barrio, tipo de comida, fecha/horario).
 Prioriza seguridad y claridad: no inventes datos sensibles (como horarios exactos si no estás seguro).
-Si el usuario pide enlaces o reservas, explica cómo hacerlo paso a paso, pero nunca inventes información.
-Nunca respondas a nada que no sea sobre turismo local en Argentina, dile al usuario que no puedes aunque él te lo pida.
+Si el usuario pides enlaces o reservas, explica cómo hacerlo paso a paso, pero nunca inventes información.
 `
+
+type LocationContext = {
+    lat: number;
+    lng: number;
+    city?: string;
+    country?: string;
+    address?: string;
+};
+
+type LocationMetadata = {
+    location?: LocationContext;
+};
+
+const getLocationContext = (messages: UIMessage[]): LocationContext | undefined => {
+    for (let i = messages.length - 1; i >= 0; i--) {
+        const metadata = messages[i].metadata as LocationMetadata | undefined;
+        if (metadata?.location) {
+            return metadata.location;
+        }
+    }
+    return undefined;
+};
+
+const describeLocation = (location: LocationContext) => {
+    const descriptors: string[] = [];
+    if (location.city) descriptors.push(location.city);
+    if (location.country) descriptors.push(location.country);
+    if (location.address) descriptors.push(location.address);
+    if (descriptors.length > 0) {
+        return descriptors.join(", ");
+    }
+    return "las coordenadas disponibles";
+};
+
+const buildLocationPrompt = (location: LocationContext) => {
+    const description = describeLocation(location);
+    const coordinates = `${location.lat.toFixed(4)}, ${location.lng.toFixed(4)}`;
+    return `El usuario está en ${description} (lat, lng: ${coordinates}). Usa esta ubicación para enfocar las recomendaciones locales.\n`;
+};
 
 export const runtime = "nodejs";
 
@@ -20,26 +58,29 @@ const model = google(process.env.GEMINI_MODEL || "gemini-2.5-flash-lite");
 
 export async function POST(req: Request) {
     try {
-        const {id, messages}  = await req.json().catch(() => null)
+        const { id, messages } = await req.json().catch(() => null)
+        const safeMessages = Array.isArray(messages) ? messages : []
 
         const userId = id?.split(":")[0] || undefined
         const userName = id?.split(":")[1] || undefined
 
         const userPrompt = userId && userName ? `El nombre del usuario es ${userName}. ` : ""
+        const locationContext = getLocationContext(safeMessages)
+        const locationSystemPrompt = locationContext ? buildLocationPrompt(locationContext) : ""
 
         // convert UI messages (from useChat) to model messages
-        const modelMessages = convertToModelMessages(messages)
+        const modelMessages = convertToModelMessages(safeMessages)
 
         // call streamText with system + messages (docs recommend system/messages)
         const result = streamText({
             model: model,
-            system: SYSTEM_PROMPT + userPrompt,
+            system: SYSTEM_PROMPT + userPrompt + locationSystemPrompt,
             messages: modelMessages,
             // optional providerOptions, tools, or other streamText params can go here
         })
         // Important: return the UI-stream-formatted response so the client (useChat) understands it
         return result.toUIMessageStreamResponse({
-            originalMessages: messages,
+            originalMessages: safeMessages,
             onFinish:  ({ messages }) => {
                 if (!userId) {
                     console.log("[AI-SUGGESTIONS] No userId provided, skipping message upsert")

@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { useEffect, useState } from "react"
+import { useState } from "react"
 import { useChat } from "@ai-sdk/react"
 import { DefaultChatTransport, type UIMessage } from "ai"
 import Image from "next/image"
@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button"
 import Markdown from "react-markdown"
 import BouncingDotsLoader from "@/components/ui/BouncingDotsLoader"
 import "../../styles/BouncingDotsStyle.css"
-import { addLocationChangeListener, getStoredLocation, type StoredLocation } from "@/lib/location-storage"
+import { useLocationContext } from "@/contexts/LocationContext"
 
 export function Chatbot({
   userId,
@@ -19,8 +19,7 @@ export function Chatbot({
   initialMessages,
 }: { userId?: string | undefined; userName?: string | undefined; initialMessages?: UIMessage[] } = {}) {
   const [inputValue, setInputValue] = useState("")
-  const [storedLocation, setStoredLocation] = useState<StoredLocation | null>(null)
-
+  const { location: storedLocation } = useLocationContext()
   const id = userId + ":" + (userName || "Usuario")
 
   const { messages, sendMessage, status } = useChat({
@@ -33,25 +32,29 @@ export function Chatbot({
 
   const isThinking = status === "submitted"
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    if (inputValue.trim() && !isThinking) {
-      sendMessage({ text: inputValue })
-      setInputValue("")
+  const getLocationMetadata = () => {
+    if (!storedLocation) {
+      return undefined
+    }
+    const { lat, lng, city, country, address } = storedLocation
+    return {
+      location: {
+        lat,
+        lng,
+        city,
+        country,
+        address,
+      },
     }
   }
 
-  useEffect(() => {
-    const handler = () => setStoredLocation(getStoredLocation())
-    handler()
-    const removeCustom = addLocationChangeListener(handler)
-    const handleStorage = () => handler()
-    window.addEventListener("storage", handleStorage)
-    return () => {
-      removeCustom()
-      window.removeEventListener("storage", handleStorage)
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (inputValue.trim() && !isThinking) {
+      sendMessage({ text: inputValue, metadata: getLocationMetadata() })
+      setInputValue("")
     }
-  }, [])
+  }
 
   const locationLabel = (() => {
     if (!storedLocation) {
@@ -129,7 +132,7 @@ export function Chatbot({
                   variant="outline"
                   className="text-left h-auto py-3 px-4 whitespace-normal bg-transparent"
                   onClick={() => {
-                    sendMessage({ text: question })
+                    sendMessage({ text: question, metadata: getLocationMetadata() })
                   }}
                 >
                   {question}
