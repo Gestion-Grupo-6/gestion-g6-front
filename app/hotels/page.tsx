@@ -10,7 +10,7 @@ export default async function HotelesPage({ searchParams }: { searchParams: Prom
   const { q } = await searchParams
   const hotels = q
     ? await searchPlaces(HOTELES, { name: q, sort: null, page: null, pageSize: null })
-    : await fetchPlaces(HOTELES)
+    : await searchPlaces(HOTELES, { name: undefined, sort: null, page: null, pageSize: null })
 
   return (
     <div className="min-h-screen w-full flex flex-col">
