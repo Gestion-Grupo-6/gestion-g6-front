@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useChat } from "@ai-sdk/react"
 import { DefaultChatTransport, type UIMessage } from "ai"
 import Image from "next/image"
@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button"
 import Markdown from "react-markdown"
 import BouncingDotsLoader from "@/components/ui/BouncingDotsLoader"
 import "../../styles/BouncingDotsStyle.css"
+import { addLocationChangeListener, getStoredLocation, type StoredLocation } from "@/lib/location-storage"
 
 export function Chatbot({
   userId,
@@ -18,6 +19,7 @@ export function Chatbot({
   initialMessages,
 }: { userId?: string | undefined; userName?: string | undefined; initialMessages?: UIMessage[] } = {}) {
   const [inputValue, setInputValue] = useState("")
+  const [storedLocation, setStoredLocation] = useState<StoredLocation | null>(null)
 
   const id = userId + ":" + (userName || "Usuario")
 
@@ -38,6 +40,31 @@ export function Chatbot({
       setInputValue("")
     }
   }
+
+  useEffect(() => {
+    const handler = () => setStoredLocation(getStoredLocation())
+    handler()
+    const removeCustom = addLocationChangeListener(handler)
+    const handleStorage = () => handler()
+    window.addEventListener("storage", handleStorage)
+    return () => {
+      removeCustom()
+      window.removeEventListener("storage", handleStorage)
+    }
+  }, [])
+
+  const locationLabel = (() => {
+    if (!storedLocation) {
+      return null
+    }
+    if (storedLocation.city && storedLocation.country) {
+      return `${storedLocation.city}, ${storedLocation.country}`
+    }
+    if (storedLocation.address) {
+      return storedLocation.address
+    }
+    return `${storedLocation.lat.toFixed(3)}, ${storedLocation.lng.toFixed(3)}`
+  })()
 
   const suggestedQuestions = [
     "¿Qué restaurantes de comida argentina me recomiendas?",
@@ -73,6 +100,16 @@ export function Chatbot({
             <p className="text-muted-foreground mb-6">
               Cuéntame qué tipo de experiencia buscas y te ayudaré a encontrar los mejores lugares
             </p>
+
+            {locationLabel ? (
+              <p className="text-xs text-muted-foreground mb-4">
+                Ubicación actual: {locationLabel}
+              </p>
+            ) : (
+              <p className="text-xs text-muted-foreground mb-4">
+                Activa la ubicación desde el header para obtener recomendaciones cerca tuyo.
+              </p>
+            )}
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3 w-full">
               {suggestedQuestions.map((question, index) => (
