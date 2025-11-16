@@ -80,11 +80,6 @@ export function setLocationStatus(status: LocationStatus) {
   window.localStorage.setItem(USER_LOCATION_STATUS_KEY, status);
 }
 
-export function markLocationStatus(status: "denied" | "unavailable") {
-  setLocationStatus(status);
-  dispatchLocationEvent();
-}
-
 export function addLocationChangeListener(handler: EventListenerOrEventListenerObject) {
   if (!isBrowser()) return () => {}
   window.addEventListener(LOCATION_UPDATED_EVENT, handler)
