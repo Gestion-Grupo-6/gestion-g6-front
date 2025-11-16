@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ManualLocationForm, ManualLocationSelection } from "@/components/manual-location-form";
 import {
+  addLocationChangeListener,
   clearStoredLocation,
   getLocationStatus,
   getStoredLocation,
@@ -42,7 +43,11 @@ export function HeaderLocationWidget() {
       refreshStoredLocation();
     };
     window.addEventListener("storage", handleStorage);
-    return () => window.removeEventListener("storage", handleStorage);
+    const removeCustomListener = addLocationChangeListener(handleStorage);
+    return () => {
+      window.removeEventListener("storage", handleStorage);
+      removeCustomListener();
+    };
   }, [refreshStoredLocation]);
 
   useEffect(() => {

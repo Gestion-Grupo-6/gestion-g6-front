@@ -16,6 +16,13 @@ export type StoredLocation = {
 
 const isBrowser = () => typeof window !== "undefined";
 
+const LOCATION_UPDATED_EVENT = "user-location-updated";
+
+function dispatchLocationEvent() {
+  if (!isBrowser()) return;
+  window.dispatchEvent(new CustomEvent(LOCATION_UPDATED_EVENT));
+}
+
 export function getStoredLocation(): StoredLocation | null {
   if (!isBrowser()) return null;
   const raw = window.localStorage.getItem(USER_LOCATION_STORAGE_KEY);
@@ -48,12 +55,14 @@ export function setStoredLocation(value: StoredLocation) {
   if (!isBrowser()) return;
   window.localStorage.setItem(USER_LOCATION_STORAGE_KEY, JSON.stringify(value));
   window.localStorage.setItem(USER_LOCATION_STATUS_KEY, "granted");
+  dispatchLocationEvent();
 }
 
 export function clearStoredLocation() {
   if (!isBrowser()) return;
   window.localStorage.removeItem(USER_LOCATION_STORAGE_KEY);
   window.localStorage.removeItem(USER_LOCATION_STATUS_KEY);
+  dispatchLocationEvent();
 }
 
 export function getLocationStatus(): LocationStatus | null {
@@ -73,4 +82,11 @@ export function setLocationStatus(status: LocationStatus) {
 
 export function markLocationStatus(status: "denied" | "unavailable") {
   setLocationStatus(status);
+  dispatchLocationEvent();
+}
+
+export function addLocationChangeListener(handler: EventListenerOrEventListenerObject) {
+  if (!isBrowser()) return () => {}
+  window.addEventListener(LOCATION_UPDATED_EVENT, handler)
+  return () => window.removeEventListener(LOCATION_UPDATED_EVENT, handler)
 }
