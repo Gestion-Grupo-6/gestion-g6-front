@@ -556,7 +556,7 @@ export function ReviewsSection({ placeId, averageRating, totalReviews, ratingsBy
             >
               <div className="flex items-center gap-2">
                 <Lightbulb className="h-4 w-4" />
-                Sugerencias
+                Mis Sugerencias
               </div>
             </button>
           </div>
