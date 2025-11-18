@@ -76,15 +76,15 @@ export function Chatbot({
   const suggestedQuestions = hasLocation
     ? [
         `¿Qué restaurantes de comida típica de ${countrySuggestion} me recomiendas?`,
-        `Estoy buscando un hotel boutique en ${citySuggestion}`,
+        `Estoy buscando un hotel en ${citySuggestion}`,
         `¿Qué actividades puedo hacer cerca de ${citySuggestion}?`,
-        "Recomiéndame lugares románticos para cenar",
+        "Recomiéndame lugares con buenas calificaciones y cercanos",
       ]
     : [
-        "¿Qué restaurantes de comida típica me recomiendas?",
-        "Estoy buscando un hotel boutique para descansar",
+        "¿Qué restaurantes de comida me recomiendas?",
+        "Estoy buscando un hotel para descansar",
         "¿Qué actividades puedo hacer durante el día?",
-        "Recomiéndame lugares románticos para cenar",
+        "Recomiéndame lugares con buenas calificaciones",
       ]
 
   return (
