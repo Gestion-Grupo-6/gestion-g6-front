@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button"
 import Markdown from "react-markdown"
 import BouncingDotsLoader from "@/components/ui/BouncingDotsLoader"
 import "../../styles/BouncingDotsStyle.css"
+import { useLocationContext } from "@/contexts/LocationContext"
 
 export function Chatbot({
   userId,
@@ -18,7 +19,7 @@ export function Chatbot({
   initialMessages,
 }: { userId?: string | undefined; userName?: string | undefined; initialMessages?: UIMessage[] } = {}) {
   const [inputValue, setInputValue] = useState("")
-
+  const { location: storedLocation } = useLocationContext()
   const id = userId + ":" + (userName || "Usuario")
 
   const { messages, sendMessage, status } = useChat({
@@ -31,20 +32,60 @@ export function Chatbot({
 
   const isThinking = status === "submitted"
 
+  const getLocationMetadata = () => {
+    if (!storedLocation) {
+      return undefined
+    }
+    const { lat, lng, city, country, address } = storedLocation
+    return {
+      location: {
+        lat,
+        lng,
+        city,
+        country,
+        address,
+      },
+    }
+  }
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (inputValue.trim() && !isThinking) {
-      sendMessage({ text: inputValue })
+      sendMessage({ text: inputValue, metadata: getLocationMetadata() })
       setInputValue("")
     }
   }
 
-  const suggestedQuestions = [
-    "¿Qué restaurantes de comida argentina me recomiendas?",
-    "Busco un hotel boutique en Buenos Aires",
-    "¿Qué actividades puedo hacer en Mendoza?",
-    "Recomiéndame lugares románticos para cenar",
-  ]
+  const locationLabel = (() => {
+    if (!storedLocation) {
+      return null
+    }
+    if (storedLocation.city && storedLocation.country) {
+      return `${storedLocation.city}, ${storedLocation.country}`
+    }
+    if (storedLocation.address) {
+      return storedLocation.address
+    }
+    return `${storedLocation.lat.toFixed(3)}, ${storedLocation.lng.toFixed(3)}`
+  })()
+
+  const hasLocation = Boolean(locationLabel)
+  const citySuggestion = storedLocation?.city
+  const countrySuggestion = storedLocation?.country
+
+  const suggestedQuestions = hasLocation
+    ? [
+        `¿Qué restaurantes de comida típica de ${countrySuggestion} me recomiendas?`,
+        `Estoy buscando un hotel boutique en ${citySuggestion}`,
+        `¿Qué actividades puedo hacer cerca de ${citySuggestion}?`,
+        "Recomiéndame lugares románticos para cenar",
+      ]
+    : [
+        "¿Qué restaurantes de comida típica me recomiendas?",
+        "Estoy buscando un hotel boutique para descansar",
+        "¿Qué actividades puedo hacer durante el día?",
+        "Recomiéndame lugares románticos para cenar",
+      ]
 
   return (
     <div className="w-full">
@@ -74,6 +115,16 @@ export function Chatbot({
               Cuéntame qué tipo de experiencia buscas y te ayudaré a encontrar los mejores lugares
             </p>
 
+            {locationLabel ? (
+              <p className="text-xs text-muted-foreground mb-4">
+                Ubicación actual: {locationLabel}
+              </p>
+            ) : (
+              <p className="text-xs text-muted-foreground mb-4">
+                Activa la ubicación desde el header para obtener recomendaciones cerca tuyo.
+              </p>
+            )}
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3 w-full">
               {suggestedQuestions.map((question, index) => (
                 <Button
@@ -81,7 +132,7 @@ export function Chatbot({
                   variant="outline"
                   className="text-left h-auto py-3 px-4 whitespace-normal bg-transparent"
                   onClick={() => {
-                    sendMessage({ text: question })
+                    sendMessage({ text: question, metadata: getLocationMetadata() })
                   }}
                 >
                   {question}

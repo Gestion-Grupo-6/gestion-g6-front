@@ -6,7 +6,6 @@ import { PlacesList } from "@/components/places-list"
 import type { Place } from "@/types/place"
 import { Footer } from "@/components/footer"
 import { ACTIVIDADES, fetchPlaces, HOTELES, RESTAURANTES, searchPlaces } from "@/api/place"
-import { LocationConsentRequester } from "@/components/location-consent-requester"
 
 export default async function HomePage({ searchParams }: { searchParams: Promise<{ q?: string }> }) {
   const { q } = await searchParams
@@ -24,7 +23,6 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
 
   return (
     <div className="min-h-screen w-full flex flex-col">
-      <LocationConsentRequester />
       <Header />
       <main className="flex-1">
         <HeroSection />
