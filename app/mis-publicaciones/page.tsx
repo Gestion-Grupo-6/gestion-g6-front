@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useMemo, useState } from "react"
+import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import { Header } from "@/components/header"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -11,7 +12,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Separator } from "@/components/ui/separator"
 import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
-import { MapPin, Phone, Mail, Globe, Loader2, Plus, Building2, MoreVertical, Star, Edit, Trash2, X, Upload } from "lucide-react"
+import { MapPin, Phone, Mail, Globe, Loader2, Plus, Building2, MoreVertical, Star, Edit, Trash2, X, Upload, Lightbulb } from "lucide-react"
 import { useAuth } from "@/contexts/AuthContext"
 import type { Place } from "@/types/place"
 import { ACTIVIDADES, createPlace, fetchPlace, fetchPlacesByOwner, HOTELES, RESTAURANTES, updatePlace, uploadPlaceImage } from "@/api/place"
@@ -92,6 +93,7 @@ const INITIAL_FORM = {
 }
 
 export default function MisPublicacionesPage() {
+  const router = useRouter()
   const { isAuthenticated, user } = useAuth()
   // Filtro: 'all' muestra todas; o por categoría específica
   const [selectedFilter, setSelectedFilter] = useState<'all' | CategoryValue>('all')
@@ -1002,15 +1004,25 @@ export default function MisPublicacionesPage() {
 
                           <Separator />
 
-                          {/* Botón de consultar reseñas y rating */}
-                          <Button
-                            variant="outline"
-                            className="w-full"
-                            onClick={() => setShowReviewsForId(place.id)}
-                          >
-                            <Star className="h-4 w-4 mr-2 fill-yellow-400 text-yellow-400" />
-                            Consultar Reseñas y Rating
-                          </Button>
+                          {/* Botones de acciones */}
+                          <div className="space-y-2">
+                            <Button
+                              variant="outline"
+                              className="w-full"
+                              onClick={() => setShowReviewsForId(place.id)}
+                            >
+                              <Star className="h-4 w-4 mr-2 fill-yellow-400 text-yellow-400" />
+                              Consultar Reseñas y Rating
+                            </Button>
+                            <Button
+                              variant="outline"
+                              className="w-full"
+                              onClick={() => router.push(`/sugerencias/${place.id}`)}
+                            >
+                              <Lightbulb className="h-4 w-4 mr-2" />
+                              Ver Sugerencias
+                            </Button>
+                          </div>
                         </CardContent>
                       </Card>
                     ))}
