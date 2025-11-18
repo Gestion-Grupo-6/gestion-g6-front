@@ -30,7 +30,7 @@ export default function RootLayout({
           <AuthProvider>
             {children}
             <MilongiaButton />
-            <Toaster richColors position="top-right" />
+            <Toaster richColors position="top-right" duration={2000} />
             <Analytics />
           </AuthProvider>
         </ThemeProvider>
