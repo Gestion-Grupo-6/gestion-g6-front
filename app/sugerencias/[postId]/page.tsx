@@ -13,6 +13,7 @@ import { fetchPlace } from "@/api/place"
 import type { SuggestionResponse } from "@/types/suggestion"
 import type { Place } from "@/types/place"
 import { useAuth } from "@/contexts/AuthContext"
+import { fetchUser } from "@/api/user"
 
 export default function SugerenciasPage() {
   const params = useParams()
@@ -24,6 +25,8 @@ export default function SugerenciasPage() {
   const [place, setPlace] = useState<Place | null>(null)
   const [loading, setLoading] = useState(true)
   const [processingId, setProcessingId] = useState<string | null>(null)
+  const [suggestionAuthorById, setSuggestionAuthorById] = useState<Record<string, string>>({})
+  const [placeOwnerId, setPlaceOwnerId] = useState<string | null>(null)
 
   useEffect(() => {
     if (!postId) return
@@ -43,7 +46,7 @@ export default function SugerenciasPage() {
       setLoading(true)
       try {
         // Cargar el lugar primero para obtener el ownerId
-        let placeOwnerId: string | null = null
+        let currentPlaceOwnerId: string | null = null
         const collections = ["hotel", "restaurant", "activity"]
         for (const collection of collections) {
           try {
@@ -51,7 +54,8 @@ export default function SugerenciasPage() {
             if (fetchedPlace) {
               setPlace(fetchedPlace)
               // El Place puede tener ownerId, verificar si está disponible
-              placeOwnerId = (fetchedPlace as any).ownerId || null
+              currentPlaceOwnerId = (fetchedPlace as any).ownerId || null
+              setPlaceOwnerId(currentPlaceOwnerId)
               break
             }
           } catch {
@@ -66,12 +70,27 @@ export default function SugerenciasPage() {
         const userSuggestions = suggestionsData.filter(
           (suggestion) => {
             const isCreator = String(suggestion.ownerId) === String(user.id)
-            const isPostOwner = placeOwnerId && String(placeOwnerId) === String(user.id)
+            const isPostOwner = currentPlaceOwnerId && String(currentPlaceOwnerId) === String(user.id)
             return isCreator || isPostOwner
           }
         )
         
         setSuggestions(userSuggestions)
+
+        // Cargar nombres de los usuarios que crearon las sugerencias
+        const uniqueOwnerIds = Array.from(new Set(userSuggestions.map((s) => s.ownerId).filter(Boolean)))
+        const authorEntries = await Promise.all(
+          uniqueOwnerIds.map(async (id) => {
+            try {
+              const u = await fetchUser(id)
+              const full = u ? `${u.name ?? ""} ${u.lastname ?? ""}`.trim() : ""
+              return [id, full || id] as const
+            } catch {
+              return [id, id] as const
+            }
+          })
+        )
+        setSuggestionAuthorById(Object.fromEntries(authorEntries))
       } catch (error) {
         console.error("Error al cargar sugerencias:", error)
         toast.error("No se pudieron cargar las sugerencias")
@@ -193,24 +212,30 @@ export default function SugerenciasPage() {
             </Card>
           ) : (
             <div className="space-y-4">
-              {suggestions.map((suggestion) => (
-                <Card key={suggestion.id}>
-                  <CardHeader>
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="flex-1">
-                        <CardTitle className="text-lg mb-2">Sugerencia</CardTitle>
-                        <CardDescription>
-                          {new Date(suggestion.timestamp).toLocaleString("es-AR", {
-                            dateStyle: "long",
-                            timeStyle: "short",
-                          })}
-                        </CardDescription>
+              {suggestions.map((suggestion) => {
+                const isPostOwner = placeOwnerId && String(placeOwnerId) === String(user?.id)
+                const isCreator = String(suggestion.ownerId) === String(user?.id)
+                const showAuthorName = isPostOwner && !isCreator
+                const authorName = suggestionAuthorById[suggestion.ownerId] || suggestion.ownerId
+
+                return (
+                  <Card key={suggestion.id}>
+                    <CardHeader>
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex-1">
+                          <CardTitle className="text-lg mb-2">{authorName} sugiere:</CardTitle>
+                          <CardDescription>
+                            {new Date(suggestion.timestamp).toLocaleString("es-AR", {
+                              dateStyle: "long",
+                              timeStyle: "short",
+                            })}
+                          </CardDescription>
+                        </div>
+                        {getStatusBadge(suggestion.status)}
                       </div>
-                      {getStatusBadge(suggestion.status)}
-                    </div>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <p className="text-foreground whitespace-pre-wrap">{suggestion.content}</p>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <p className="text-foreground whitespace-pre-wrap">{suggestion.content}</p>
                     {suggestion.status === "PENDING" && (
                       <div className="flex gap-2 pt-2 border-t">
                         <Button
@@ -255,7 +280,8 @@ export default function SugerenciasPage() {
                     )}
                   </CardContent>
                 </Card>
-              ))}
+                )
+              })}
             </div>
           )}
         </div>

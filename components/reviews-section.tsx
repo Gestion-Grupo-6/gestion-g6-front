@@ -19,6 +19,7 @@ import { createSuggestion, fetchSuggestionsByPost } from "@/api/suggestion"
 import type { SuggestionResponse } from "@/types/suggestion"
 import { Badge } from "@/components/ui/badge"
 import { Check } from "lucide-react"
+import { fetchPlace } from "@/api/place"
 
 interface ReviewsSectionProps {
   placeId: string
@@ -55,6 +56,8 @@ export function ReviewsSection({ placeId, averageRating, totalReviews, ratingsBy
   const [activeTab, setActiveTab] = useState<"reviews" | "suggestions">("reviews")
   const [mySuggestions, setMySuggestions] = useState<any[]>([])
   const [loadingSuggestions, setLoadingSuggestions] = useState(false)
+  const [suggestionAuthorById, setSuggestionAuthorById] = useState<Record<string, string>>({})
+  const [placeOwnerId, setPlaceOwnerId] = useState<string | null>(null)
 
 
   useEffect(() => {
@@ -96,25 +99,66 @@ export function ReviewsSection({ placeId, averageRating, totalReviews, ratingsBy
     void load()
   }, [placeId])
 
-  // Cargar sugerencias del usuario
+  // Cargar sugerencias del usuario y del owner
   useEffect(() => {
     if (!isAuthenticated || !user?.id || activeTab !== "suggestions") {
       setMySuggestions([])
+      setSuggestionAuthorById({})
+      setPlaceOwnerId(null)
       return
     }
 
     const loadSuggestions = async () => {
       setLoadingSuggestions(true)
       try {
+        // Cargar el lugar primero para obtener el ownerId
+        let currentPlaceOwnerId: string | null = null
+        const collections = ["hotel", "restaurant", "activity"]
+        for (const collection of collections) {
+          try {
+            const fetchedPlace = await fetchPlace(collection, placeId)
+            if (fetchedPlace) {
+              currentPlaceOwnerId = (fetchedPlace as any).ownerId || null
+              setPlaceOwnerId(currentPlaceOwnerId)
+              break
+            }
+          } catch {
+            continue
+          }
+        }
+
+        // Cargar todas las sugerencias
         const allSuggestions = await fetchSuggestionsByPost(placeId)
-        // Filtrar solo las sugerencias del usuario actual
+        
+        // Filtrar sugerencias: mostrar si el usuario es el creador O el owner del post
         const userSuggestions = allSuggestions.filter(
-          (suggestion) => String(suggestion.ownerId) === String(user.id)
+          (suggestion) => {
+            const isCreator = String(suggestion.ownerId) === String(user.id)
+            const isPostOwner = currentPlaceOwnerId && String(currentPlaceOwnerId) === String(user.id)
+            return isCreator || isPostOwner
+          }
         )
+        
         setMySuggestions(userSuggestions)
+
+        // Cargar nombres de los usuarios que crearon las sugerencias
+        const uniqueOwnerIds = Array.from(new Set(userSuggestions.map((s) => s.ownerId).filter(Boolean)))
+        const authorEntries = await Promise.all(
+          uniqueOwnerIds.map(async (id) => {
+            try {
+              const u = await fetchUser(id)
+              const full = u ? `${u.name ?? ""} ${u.lastname ?? ""}`.trim() : ""
+              return [id, full || id] as const
+            } catch {
+              return [id, id] as const
+            }
+          })
+        )
+        setSuggestionAuthorById(Object.fromEntries(authorEntries))
       } catch (error) {
         console.error("Error al cargar sugerencias:", error)
         setMySuggestions([])
+        setSuggestionAuthorById({})
       } finally {
         setLoadingSuggestions(false)
       }
@@ -976,38 +1020,50 @@ export function ReviewsSection({ placeId, averageRating, totalReviews, ratingsBy
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {mySuggestions.map((suggestion) => (
-                    <Card key={suggestion.id}>
-                      <CardContent className="p-6">
-                        <div className="flex items-start justify-between mb-4">
-                          <div className="flex-1">
-                            <p className="text-sm text-muted-foreground mb-2">
-                              {new Date(suggestion.timestamp).toLocaleString("es-AR", {
-                                dateStyle: "long",
-                                timeStyle: "short",
-                              })}
-                            </p>
-                            <p className="text-foreground whitespace-pre-wrap">{suggestion.content}</p>
+                  {mySuggestions.map((suggestion) => {
+                    const isPostOwner = placeOwnerId && String(placeOwnerId) === String(user?.id)
+                    const isCreator = String(suggestion.ownerId) === String(user?.id)
+                    const showAuthorName = isPostOwner && !isCreator
+                    const authorName = suggestionAuthorById[suggestion.ownerId] || suggestion.ownerId
+
+                    return (
+                      <Card key={suggestion.id}>
+                        <CardContent className="p-6">
+                          <div className="flex items-start justify-between mb-4">
+                            <div className="flex-1">
+                              {showAuthorName && (
+                                <p className="text-sm font-semibold text-foreground mb-2">
+                                  {authorName}
+                                </p>
+                              )}
+                              <p className="text-sm text-muted-foreground mb-2">
+                                {new Date(suggestion.timestamp).toLocaleString("es-AR", {
+                                  dateStyle: "long",
+                                  timeStyle: "short",
+                                })}
+                              </p>
+                              <p className="text-foreground whitespace-pre-wrap">{suggestion.content}</p>
+                            </div>
+                            <Badge 
+                              variant={
+                                suggestion.status === "ACCEPTED" 
+                                  ? "default" 
+                                  : suggestion.status === "REJECTED" 
+                                  ? "destructive" 
+                                  : "secondary"
+                              }
+                              className="ml-2"
+                            >
+                              {suggestion.status === "ACCEPTED" && <Check className="h-3 w-3 mr-1" />}
+                              {suggestion.status === "REJECTED" && <X className="h-3 w-3 mr-1" />}
+                              {suggestion.status === "PENDING" ? "Pendiente" : 
+                               suggestion.status === "ACCEPTED" ? "Aceptada" : "Rechazada"}
+                            </Badge>
                           </div>
-                          <Badge 
-                            variant={
-                              suggestion.status === "ACCEPTED" 
-                                ? "default" 
-                                : suggestion.status === "REJECTED" 
-                                ? "destructive" 
-                                : "secondary"
-                            }
-                            className="ml-2"
-                          >
-                            {suggestion.status === "ACCEPTED" && <Check className="h-3 w-3 mr-1" />}
-                            {suggestion.status === "REJECTED" && <X className="h-3 w-3 mr-1" />}
-                            {suggestion.status === "PENDING" ? "Pendiente" : 
-                             suggestion.status === "ACCEPTED" ? "Aceptada" : "Rechazada"}
-                          </Badge>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
+                        </CardContent>
+                      </Card>
+                    )
+                  })}
                 </div>
               )}
             </>
