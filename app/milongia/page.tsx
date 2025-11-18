@@ -26,6 +26,7 @@ export default function MilongiIA() {
       return
     }
     setConversation(user!.chatHistory)
+    setReloadKey(prev => prev + 1)
   }, [user?.id, isAuthenticated])
 
   const handleDeleteConversation = async () => {
@@ -40,8 +41,7 @@ export default function MilongiIA() {
     await upsertMessages(emptyMessagesPayload);
     console.log("Conversación eliminada. ID: ", user!.id);
     // Aquí podrías actualizar el estado local si es necesario
-    user!.chatHistory = new Array<UIMessage>();
-    setConversation(user!.chatHistory);
+    setConversation(new Array<UIMessage>());
     setReloadKey(prev => prev + 1);
   }
 
@@ -62,10 +62,8 @@ export default function MilongiIA() {
             {/* Chat Section */}
             <Button
               variant="ghost"
-              className="justify-start px-4 py-2 text-sm text-destructive hover:text-destructive hover:bg-destructive/10"
-              onClick={() => {
-                handleDeleteConversation();
-              }}
+              className="justify-start px-4 py-2 text-sm text-destructive hover:text-destructive hover:bg-destructive/10 "
+              onClick={handleDeleteConversation}
             >
               <Trash2 className="h-4 w-4 mr-2" />
               Eliminar Conversación
