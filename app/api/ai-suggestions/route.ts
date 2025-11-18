@@ -2,12 +2,13 @@ import { google } from '@ai-sdk/google';
 import { streamText, convertToModelMessages, UIMessage } from "ai";
 import { upsertMessages } from "@/api/messages";
 import { MessagesPayload } from "@/types/messages";
+import {fetchAllPlaces} from "@/api/place";
 
 // Hardcoded system prompt for the assistant
-const SYSTEM_PROMPT = `
+const IDENTITY_PROMPT = `
 Eres MilongIA, un asistente conversacional especializado en turismo local.
 Responde con recomendaciones útiles, concisas y amigables.
-Cuando el usuario pida sugerencias, pregunta por sus preferencias (presupuesto, barrio, tipo de comida, fecha/horario).
+Cuando el usuario pida sugerencias, da primero una respuesta concisa y luego pregunta por sus preferencias (presupuesto, barrio, tipo de comida, fecha/horario).
 Prioriza seguridad y claridad: no inventes datos sensibles (como horarios exactos si no estás seguro).
 Si el usuario pides enlaces o reservas, explica cómo hacerlo paso a paso, pero nunca inventes información.
 `
@@ -48,8 +49,32 @@ const describeLocation = (location: LocationContext) => {
 const buildLocationPrompt = (location: LocationContext) => {
     const description = describeLocation(location);
     const coordinates = `${location.lat.toFixed(4)}, ${location.lng.toFixed(4)}`;
-    return `El usuario está en ${description} (lat, lng: ${coordinates}). Usa esta ubicación para enfocar las recomendaciones locales.\n`;
+    return `El usuario está en ${description} (lat, lng: ${coordinates}). Usa esta ubicación para enfocar las recomendaciones locales y cercanas a su posición.\n`;
 };
+
+const buildInformationPrompt = async () => {
+
+    const places = await fetchAllPlaces()
+
+     // Convert each place object to a JSON string
+    const informationStrings: string[] = Array.isArray(places)
+      ? places.map((p) => JSON.stringify(p))
+      : [JSON.stringify(places)];
+
+    // Return the base instruction plus the array of JSON strings
+    return (
+      "Solo cuentas con la siguiente información de lugares, no puedes brindar otra información, si te piden algo por fuera de esto, constesta amablemente que no tienes información para responder: " +
+      JSON.stringify(informationStrings)
+    );
+}
+
+const getSystemPrompt = async (userId?: string, userName?: string, locationContext?: LocationContext) => {
+    const userPrompt = userId && userName ? `El nombre del usuario es ${userName}. ` : ""
+    const locationSystemPrompt = locationContext ? buildLocationPrompt(locationContext) : ""
+    const appInformationPrompt = await buildInformationPrompt()
+
+    return IDENTITY_PROMPT + userPrompt + locationSystemPrompt + appInformationPrompt
+}
 
 export const runtime = "nodejs";
 
@@ -64,17 +89,15 @@ export async function POST(req: Request) {
         const userId = id?.split(":")[0] || undefined
         const userName = id?.split(":")[1] || undefined
 
-        const userPrompt = userId && userName ? `El nombre del usuario es ${userName}. ` : ""
-        const locationContext = getLocationContext(safeMessages)
-        const locationSystemPrompt = locationContext ? buildLocationPrompt(locationContext) : ""
-
         // convert UI messages (from useChat) to model messages
         const modelMessages = convertToModelMessages(safeMessages)
+
+        const systemPrompt = await getSystemPrompt(userId, userName, getLocationContext(safeMessages));
 
         // call streamText with system + messages (docs recommend system/messages)
         const result = streamText({
             model: model,
-            system: SYSTEM_PROMPT + userPrompt + locationSystemPrompt,
+            system: systemPrompt,
             messages: modelMessages,
             // optional providerOptions, tools, or other streamText params can go here
         })
