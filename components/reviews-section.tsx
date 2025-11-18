@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Star, ThumbsUp, X, Upload, Loader2, Edit, ChevronLeft, ChevronRight } from "lucide-react"
+import { Star, ThumbsUp, X, Upload, Loader2, Edit, ChevronLeft, ChevronRight, Lightbulb } from "lucide-react"
 import { Progress } from "@/components/ui/progress"
 import { fetchReviewsByPost, createReview, updateReview, likeComment, uploadReviewImage } from "@/api/review"
 import { fetchUser } from "@/api/user"
@@ -15,6 +15,10 @@ import type { CommentResponse } from "@/types/review"
 import { useAuth } from "@/contexts/AuthContext"
 import { toast } from "sonner"
 import { getImage } from "@/contexts/SupabaseContext"
+import { createSuggestion, fetchSuggestionsByPost } from "@/api/suggestion"
+import type { SuggestionResponse } from "@/types/suggestion"
+import { Badge } from "@/components/ui/badge"
+import { Check } from "lucide-react"
 
 interface ReviewsSectionProps {
   placeId: string
@@ -45,6 +49,12 @@ export function ReviewsSection({ placeId, averageRating, totalReviews, ratingsBy
   const [selectedReviewImages, setSelectedReviewImages] = useState<string[]>([])
   const [editingReviewId, setEditingReviewId] = useState<string | null>(null)
   const [existingImagePaths, setExistingImagePaths] = useState<string[]>([])
+  const [showSuggestionModal, setShowSuggestionModal] = useState(false)
+  const [newSuggestion, setNewSuggestion] = useState("")
+  const [submittingSuggestion, setSubmittingSuggestion] = useState(false)
+  const [activeTab, setActiveTab] = useState<"reviews" | "suggestions">("reviews")
+  const [mySuggestions, setMySuggestions] = useState<any[]>([])
+  const [loadingSuggestions, setLoadingSuggestions] = useState(false)
 
 
   useEffect(() => {
@@ -85,6 +95,33 @@ export function ReviewsSection({ placeId, averageRating, totalReviews, ratingsBy
     }
     void load()
   }, [placeId])
+
+  // Cargar sugerencias del usuario
+  useEffect(() => {
+    if (!isAuthenticated || !user?.id || activeTab !== "suggestions") {
+      setMySuggestions([])
+      return
+    }
+
+    const loadSuggestions = async () => {
+      setLoadingSuggestions(true)
+      try {
+        const allSuggestions = await fetchSuggestionsByPost(placeId)
+        // Filtrar solo las sugerencias del usuario actual
+        const userSuggestions = allSuggestions.filter(
+          (suggestion) => String(suggestion.ownerId) === String(user.id)
+        )
+        setMySuggestions(userSuggestions)
+      } catch (error) {
+        console.error("Error al cargar sugerencias:", error)
+        setMySuggestions([])
+      } finally {
+        setLoadingSuggestions(false)
+      }
+    }
+
+    void loadSuggestions()
+  }, [placeId, user?.id, isAuthenticated, activeTab])
 
   const derivedAverage = useMemo(() => {
     return averageRating || 0
@@ -450,7 +487,39 @@ export function ReviewsSection({ placeId, averageRating, totalReviews, ratingsBy
     <div className="space-y-6">
       <Card>
         <CardContent className="p-6">
-          <h2 className="text-2xl font-bold text-foreground mb-6">Valoraciones y reseñas</h2>
+          {/* Tabs */}
+          <div className="flex items-center gap-2 mb-6 border-b border-border">
+            <button
+              onClick={() => setActiveTab("reviews")}
+              className={`px-4 py-2 font-medium transition-colors border-b-2 ${
+                activeTab === "reviews"
+                  ? "border-primary text-primary"
+                  : "border-transparent text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <div className="flex items-center gap-2">
+                <Star className="h-4 w-4" />
+                Reseñas
+              </div>
+            </button>
+            <button
+              onClick={() => setActiveTab("suggestions")}
+              className={`px-4 py-2 font-medium transition-colors border-b-2 ${
+                activeTab === "suggestions"
+                  ? "border-primary text-primary"
+                  : "border-transparent text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <div className="flex items-center gap-2">
+                <Lightbulb className="h-4 w-4" />
+                Sugerencias
+              </div>
+            </button>
+          </div>
+
+          {activeTab === "reviews" && (
+            <>
+              <h2 className="text-2xl font-bold text-foreground mb-6">Valoraciones y reseñas</h2>
 
           {/* Rating Overview */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
@@ -517,34 +586,170 @@ export function ReviewsSection({ placeId, averageRating, totalReviews, ratingsBy
             </div>
           )}
 
-          {/* Write Review Button */}
-          <div className="border-t border-border pt-6 space-y-3">
-            {isAuthenticated ? (
-              <>
-                {userHasReview ? (
-                  <p className="text-sm text-muted-foreground">Ya has dejado una reseña para este lugar</p>
-                ) : (
+              {/* Write Review Button */}
+              <div className="border-t border-border pt-6 space-y-3">
+                {isAuthenticated ? (
                   <>
                     <p className="text-base font-medium text-foreground">
                       ¿Visitaste este lugar?
                     </p>
-                    <Button 
-                      onClick={() => {
-                        setShowReviewModal(true)
-                      }} 
-                      className="w-full sm:w-auto"
-                    >
-                      Dejar una reseña
-                    </Button>
+                    <div className="flex flex-wrap gap-3">
+                      <Button 
+                        onClick={() => {
+                          setShowReviewModal(true)
+                        }} 
+                        disabled={userHasReview}
+                        className="w-full sm:w-auto"
+                      >
+                        Dejar una reseña
+                      </Button>
+                      <Button 
+                        onClick={() => {
+                          setShowSuggestionModal(true)
+                        }} 
+                        variant="outline"
+                        className="w-full sm:w-auto"
+                      >
+                        <Lightbulb className="h-4 w-4 mr-2" />
+                        Dejar sugerencia
+                      </Button>
+                    </div>
                   </>
+                ) : (
+                  <p className="text-sm text-muted-foreground">Inicia sesión para escribir una reseña o sugerencia</p>
                 )}
-              </>
-            ) : (
-              <p className="text-sm text-muted-foreground">Inicia sesión para escribir una reseña</p>
-            )}
-          </div>
-        </CardContent>
-      </Card>
+              </div>
+
+              {/* Reviews List */}
+              <div className="space-y-4 mt-6">
+                <h3 className="text-xl font-bold text-foreground">Reseñas de usuarios</h3>
+
+                {reviews.map((review) => {
+                  // Usar el rating "general" directamente (obligatorio)
+                  const avgRating = (() => {
+                    if (!review.ratings) return 0
+                    
+                    let generalScore: number | null = null
+                    
+                    // Manejar formato array (formato actual del backend)
+                    if (Array.isArray(review.ratings)) {
+                      const generalRating = review.ratings.find(r => r != null && typeof r === 'object' && 'type' in r && r.type === 'general')
+                      if (generalRating && 'score' in generalRating && typeof generalRating.score === 'number') {
+                        generalScore = generalRating.score
+                      }
+                    } 
+                    // Manejar formato objeto plano (compatibilidad)
+                    else if (typeof review.ratings === 'object') {
+                      generalScore = (review.ratings as any).general
+                    }
+                    
+                    return generalScore || 0
+                  })()
+
+                  return (
+                    <Card key={review.id}>
+                      <CardContent className="p-6">
+                        <div className="flex items-start gap-4">
+                          <Avatar className="h-12 w-12">
+                            <AvatarImage 
+                              src={profilePhotoById[review.ownerId] ? getImage(profilePhotoById[review.ownerId]) : "/placeholder-user.jpg"} 
+                              alt={authorById[review.ownerId] || review.ownerId} 
+                            />
+                            <AvatarFallback className="bg-primary text-primary-foreground">
+                              {(authorById[review.ownerId] || review.ownerId)
+                                .split(" ")
+                                .filter(Boolean)
+                                .map((n) => n[0])
+                                .join("")
+                                .slice(0, 2)
+                                .toUpperCase() || "US"}
+                            </AvatarFallback>
+                          </Avatar>
+
+                          <div className="flex-1">
+                            <div className="flex items-start justify-between mb-2">
+                              <div>
+                                <h4 className="font-semibold text-foreground">{authorById[review.ownerId] || "Usuario"}</h4>
+                                <p className="text-sm text-muted-foreground">{new Date(review.timestamp).toLocaleDateString()}</p>
+                              </div>
+                              <div className="flex items-center gap-1">
+                                {[1, 2, 3, 4, 5].map((star) => (
+                                  <Star
+                                    key={star}
+                                    className={`h-4 w-4 ${
+                                      star <= Math.round(avgRating)
+                                        ? "fill-yellow-400 text-yellow-400"
+                                        : "text-muted-foreground"
+                                    }`}
+                                  />
+                                ))}
+                              </div>
+                            </div>
+
+                            <p className="text-foreground leading-relaxed mb-4">{review.comment}</p>
+
+                            {/* Display Images */}
+                            {Array.isArray(review.images) && review.images.length > 0 && (
+                              <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mb-4">
+                                {review.images.map((imagePath, idx) => (
+                                  <img
+                                    key={idx}
+                                    src={getImage(imagePath)}
+                                    alt={`Imagen de reseña ${idx + 1}`}
+                                    className="w-full h-32 object-cover rounded-md border border-border cursor-pointer hover:opacity-90 transition-opacity"
+                                    onClick={() => {
+                                      if (Array.isArray(review.images)) {
+                                        const imageUrls = review.images.map(path => getImage(path))
+                                        const clickedIndex = imageUrls.findIndex(url => url === getImage(imagePath))
+                                        setSelectedReviewImages(imageUrls)
+                                        setSelectedImageIndex(clickedIndex >= 0 ? clickedIndex : 0)
+                                        setSelectedImage(getImage(imagePath))
+                                      } else {
+                                        setSelectedImage(getImage(imagePath))
+                                        setSelectedReviewImages([getImage(imagePath)])
+                                        setSelectedImageIndex(0)
+                                      }
+                                    }}
+                                  />
+                                ))}
+                              </div>
+                            )}
+
+                            <div className="flex items-center gap-4">
+                              {user?.id === review.ownerId && (
+                                <button
+                                  className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors"
+                                  onClick={() => handleEditReview(review)}
+                                >
+                                  <Edit className="h-4 w-4" />
+                                  <span>Editar</span>
+                                </button>
+                              )}
+                              <button
+                                className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors"
+                                onClick={async () => {
+                                  try {
+                                    const updated = await likeComment(review.id, user?.id || "")
+                                    setReviews((prev) => prev.map((r) => (r.id === updated.id ? updated : r)))
+                                  } catch (e) {
+                                    // eslint-disable-next-line no-console
+                                    console.error("No se pudo marcar útil", e)
+                                  }
+                                }}
+                              >
+                                <ThumbsUp className="h-4 w-4" />
+                                <span>Útil ({review.likes})</span>
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )
+                })}
+              </div>
+            </>
+          )}
 
       {/* Review Modal */}
       <Dialog.Root 
@@ -731,134 +936,198 @@ export function ReviewsSection({ placeId, averageRating, totalReviews, ratingsBy
         </Dialog.Portal>
       </Dialog.Root>
 
-      {/* Reviews List */}
-      <div className="space-y-4">
-        <h3 className="text-xl font-bold text-foreground">Reseñas de usuarios</h3>
+          {activeTab === "suggestions" && (
+            <>
+              <h2 className="text-2xl font-bold text-foreground mb-6">Sugerencias</h2>
+              
+              {/* Botón para crear sugerencia */}
+              <div className="mb-6 border-b border-border pb-6">
+                {isAuthenticated ? (
+                  <Button 
+                    onClick={() => {
+                      setShowSuggestionModal(true)
+                    }} 
+                    variant="outline"
+                    className="w-full sm:w-auto"
+                  >
+                    <Lightbulb className="h-4 w-4 mr-2" />
+                    Dejar sugerencia
+                  </Button>
+                ) : (
+                  <p className="text-sm text-muted-foreground">Inicia sesión para dejar una sugerencia</p>
+                )}
+              </div>
 
-        {reviews.map((review) => {
-          // Usar el rating "general" directamente (obligatorio)
-          const avgRating = (() => {
-            if (!review.ratings) return 0
-            
-            let generalScore: number | null = null
-            
-            // Manejar formato array (formato actual del backend)
-            if (Array.isArray(review.ratings)) {
-              const generalRating = review.ratings.find(r => r != null && typeof r === 'object' && 'type' in r && r.type === 'general')
-              if (generalRating && 'score' in generalRating && typeof generalRating.score === 'number') {
-                generalScore = generalRating.score
-              }
-            } 
-            // Manejar formato objeto plano (compatibilidad)
-            else if (typeof review.ratings === 'object') {
-              generalScore = (review.ratings as any).general
-            }
-            
-            return generalScore || 0
-          })()
-
-          return (
-            <Card key={review.id}>
-              <CardContent className="p-6">
-                <div className="flex items-start gap-4">
-                  <Avatar className="h-12 w-12">
-                    <AvatarImage 
-                      src={profilePhotoById[review.ownerId] ? getImage(profilePhotoById[review.ownerId]) : "/placeholder-user.jpg"} 
-                      alt={authorById[review.ownerId] || review.ownerId} 
-                    />
-                    <AvatarFallback className="bg-primary text-primary-foreground">
-                      {(authorById[review.ownerId] || review.ownerId)
-                        .split(" ")
-                        .filter(Boolean)
-                        .map((n) => n[0])
-                        .join("")
-                        .slice(0, 2)
-                        .toUpperCase() || "US"}
-                    </AvatarFallback>
-                  </Avatar>
-
-                  <div className="flex-1">
-                    <div className="flex items-start justify-between mb-2">
-                      <div>
-                        <h4 className="font-semibold text-foreground">{authorById[review.ownerId] || "Usuario"}</h4>
-                        <p className="text-sm text-muted-foreground">{new Date(review.timestamp).toLocaleDateString()}</p>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        {[1, 2, 3, 4, 5].map((star) => (
-                          <Star
-                            key={star}
-                            className={`h-4 w-4 ${
-                              star <= Math.round(avgRating)
-                                ? "fill-yellow-400 text-yellow-400"
-                                : "text-muted-foreground"
-                            }`}
-                          />
-                        ))}
-                      </div>
-                    </div>
-
-                    <p className="text-foreground leading-relaxed mb-4">{review.comment}</p>
-
-                    {/* Display Images */}
-                    {Array.isArray(review.images) && review.images.length > 0 && (
-                      <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mb-4">
-                        {review.images.map((imagePath, idx) => (
-                          <img
-                            key={idx}
-                            src={getImage(imagePath)}
-                            alt={`Imagen de reseña ${idx + 1}`}
-                            className="w-full h-32 object-cover rounded-md border border-border cursor-pointer hover:opacity-90 transition-opacity"
-                            onClick={() => {
-                              if (Array.isArray(review.images)) {
-                                const imageUrls = review.images.map(path => getImage(path))
-                                const clickedIndex = imageUrls.findIndex(url => url === getImage(imagePath))
-                                setSelectedReviewImages(imageUrls)
-                                setSelectedImageIndex(clickedIndex >= 0 ? clickedIndex : 0)
-                                setSelectedImage(getImage(imagePath))
-                              } else {
-                                setSelectedImage(getImage(imagePath))
-                                setSelectedReviewImages([getImage(imagePath)])
-                                setSelectedImageIndex(0)
-                              }
-                            }}
-                          />
-                        ))}
-                      </div>
-                    )}
-
-                    <div className="flex items-center gap-4">
-                      {user?.id === review.ownerId && (
-                        <button
-                          className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors"
-                          onClick={() => handleEditReview(review)}
-                        >
-                          <Edit className="h-4 w-4" />
-                          <span>Editar</span>
-                        </button>
-                      )}
-                      <button
-                        className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors"
-                        onClick={async () => {
-                          try {
-                            const updated = await likeComment(review.id, user?.id || "")
-                            setReviews((prev) => prev.map((r) => (r.id === updated.id ? updated : r)))
-                          } catch (e) {
-                            // eslint-disable-next-line no-console
-                            console.error("No se pudo marcar útil", e)
-                          }
-                        }}
-                      >
-                        <ThumbsUp className="h-4 w-4" />
-                        <span>Útil ({review.likes})</span>
-                      </button>
-                    </div>
-                  </div>
+              {/* Lista de sugerencias del usuario */}
+              {loadingSuggestions ? (
+                <div className="flex items-center justify-center py-12">
+                  <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                  <span className="ml-2 text-muted-foreground">Cargando sugerencias...</span>
                 </div>
-              </CardContent>
-            </Card>
-          )
-        })}
-      </div>
+              ) : mySuggestions.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-12 text-center">
+                  <Lightbulb className="h-12 w-12 text-muted-foreground mb-4" />
+                  <p className="text-lg font-medium text-foreground mb-2">
+                    No has enviado sugerencias aún
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    Puedes dejar una sugerencia usando el botón de arriba.
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {mySuggestions.map((suggestion) => (
+                    <Card key={suggestion.id}>
+                      <CardContent className="p-6">
+                        <div className="flex items-start justify-between mb-4">
+                          <div className="flex-1">
+                            <p className="text-sm text-muted-foreground mb-2">
+                              {new Date(suggestion.timestamp).toLocaleString("es-AR", {
+                                dateStyle: "long",
+                                timeStyle: "short",
+                              })}
+                            </p>
+                            <p className="text-foreground whitespace-pre-wrap">{suggestion.content}</p>
+                          </div>
+                          <Badge 
+                            variant={
+                              suggestion.status === "ACCEPTED" 
+                                ? "default" 
+                                : suggestion.status === "REJECTED" 
+                                ? "destructive" 
+                                : "secondary"
+                            }
+                            className="ml-2"
+                          >
+                            {suggestion.status === "ACCEPTED" && <Check className="h-3 w-3 mr-1" />}
+                            {suggestion.status === "REJECTED" && <X className="h-3 w-3 mr-1" />}
+                            {suggestion.status === "PENDING" ? "Pendiente" : 
+                             suggestion.status === "ACCEPTED" ? "Aceptada" : "Rechazada"}
+                          </Badge>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
+            </>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Suggestion Modal */}
+      <Dialog.Root 
+        open={showSuggestionModal} 
+        onOpenChange={(open) => {
+          if (!open) {
+            setNewSuggestion("")
+          }
+          setShowSuggestionModal(open)
+        }}
+      >
+        <Dialog.Portal>
+          <Dialog.Overlay className="fixed inset-0 bg-black/50 z-50" />
+          <Dialog.Content className="fixed left-1/2 -translate-x-1/2 top-1/2 -translate-y-1/2 z-[60] w-full max-w-2xl max-h-[90vh] bg-background rounded-xl shadow-2xl flex flex-col">
+            <div className="flex items-center justify-between p-6 border-b">
+              <Dialog.Title className="text-2xl font-bold text-foreground">
+                Dejar una sugerencia
+              </Dialog.Title>
+              <Dialog.Close asChild>
+                <button
+                  aria-label="Close"
+                  className="p-2 rounded-md hover:bg-muted"
+                  onClick={() => {
+                    setNewSuggestion("")
+                    setShowSuggestionModal(false)
+                  }}
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </Dialog.Close>
+            </div>
+
+            <div className="p-6 overflow-y-auto space-y-6">
+              {/* Suggestion Content */}
+              <div className="space-y-2">
+                <Label htmlFor="suggestion-content" className="text-sm font-medium text-foreground">
+                  Tu sugerencia *
+                </Label>
+                <Textarea
+                  id="suggestion-content"
+                  placeholder="Comparte tu sugerencia para mejorar este lugar..."
+                  value={newSuggestion}
+                  onChange={(e) => setNewSuggestion(e.target.value)}
+                  rows={6}
+                  className="resize-none"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Tu sugerencia será visible solo para ti hasta que sea aceptada o rechazada.
+                </p>
+              </div>
+
+              {/* Submit Button */}
+              <div className="flex gap-3 pt-4">
+                <Button
+                  type="button"
+                  onClick={async (e) => {
+                    e.preventDefault()
+                    e.stopPropagation()
+                    
+                    if (!isAuthenticated || !user?.id) {
+                      toast.error("Debes iniciar sesión para publicar una sugerencia")
+                      return
+                    }
+
+                    if (!newSuggestion.trim()) {
+                      toast.error("Debes escribir una sugerencia")
+                      return
+                    }
+
+                    try {
+                      setSubmittingSuggestion(true)
+                      await createSuggestion({
+                        ownerId: user.id,
+                        postId: placeId,
+                        content: newSuggestion.trim(),
+                      })
+                      setNewSuggestion("")
+                      setShowSuggestionModal(false)
+                      toast.success("Sugerencia enviada correctamente")
+                    } catch (e: any) {
+                      console.error("No se pudo crear la sugerencia", e)
+                      const raw = String(e?.message || e || "")
+                      const match = raw.match(/\{[^}]*\}/)
+                      let backendMsg: string | null = null
+                      try {
+                        backendMsg = match ? JSON.parse(match[0])?.mensaje || null : null
+                      } catch {}
+                      toast.error(backendMsg || "No se pudo crear la sugerencia. Intenta nuevamente.")
+                    } finally {
+                      setSubmittingSuggestion(false)
+                    }
+                  }}
+                  disabled={submittingSuggestion || !newSuggestion.trim()}
+                  className="flex-1 cursor-pointer"
+                >
+                  {submittingSuggestion && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  {submittingSuggestion ? "Enviando..." : "Enviar sugerencia"}
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setNewSuggestion("")
+                    setShowSuggestionModal(false)
+                  }}
+                  disabled={submittingSuggestion}
+                >
+                  Cancelar
+                </Button>
+              </div>
+            </div>
+          </Dialog.Content>
+        </Dialog.Portal>
+      </Dialog.Root>
 
       {/* Image Modal */}
       <Dialog.Root 

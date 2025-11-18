@@ -74,6 +74,7 @@ export function PlaceDetail({ place }: PlaceDetailProps) {
     checkIsFavorite()
   }, [place.id, place.category, user?.id, isAuthenticated])
 
+
   const handleToggleFavorite = async () => {
     if (!isAuthenticated || !user?.id) {
       toast.error("Debes iniciar sesión para marcar favoritos")

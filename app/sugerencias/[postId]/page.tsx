@@ -12,11 +12,13 @@ import { fetchSuggestionsByPost, acceptSuggestion, rejectSuggestion } from "@/ap
 import { fetchPlace } from "@/api/place"
 import type { SuggestionResponse } from "@/types/suggestion"
 import type { Place } from "@/types/place"
+import { useAuth } from "@/contexts/AuthContext"
 
 export default function SugerenciasPage() {
   const params = useParams()
   const router = useRouter()
   const postId = params.postId as string
+  const { user, isAuthenticated, isLoading: authLoading } = useAuth()
 
   const [suggestions, setSuggestions] = useState<SuggestionResponse[]>([])
   const [place, setPlace] = useState<Place | null>(null)
@@ -25,27 +27,51 @@ export default function SugerenciasPage() {
 
   useEffect(() => {
     if (!postId) return
-
+    
+    // Esperar a que la autenticación termine de cargar
+    if (authLoading) {
+      return
+    }
+    
     const loadData = async () => {
+      // Si no está autenticado, no cargar sugerencias
+      if (!isAuthenticated || !user?.id) {
+        setLoading(false)
+        return
+      }
+
       setLoading(true)
       try {
-        // Cargar sugerencias
-        const suggestionsData = await fetchSuggestionsByPost(postId)
-        setSuggestions(suggestionsData)
-
-        // Intentar cargar el lugar para mostrar su nombre
+        // Cargar el lugar primero para obtener el ownerId
+        let placeOwnerId: string | null = null
         const collections = ["hotel", "restaurant", "activity"]
         for (const collection of collections) {
           try {
             const fetchedPlace = await fetchPlace(collection, postId)
             if (fetchedPlace) {
               setPlace(fetchedPlace)
+              // El Place puede tener ownerId, verificar si está disponible
+              placeOwnerId = (fetchedPlace as any).ownerId || null
               break
             }
           } catch {
             continue
           }
         }
+
+        // Cargar sugerencias
+        const suggestionsData = await fetchSuggestionsByPost(postId)
+        
+        // Filtrar sugerencias: mostrar si el usuario es el creador O el owner del post
+        const userSuggestions = suggestionsData.filter(
+          (suggestion) => {
+            const isCreator = String(suggestion.ownerId) === String(user.id)
+            const isPostOwner = placeOwnerId && String(placeOwnerId) === String(user.id)
+            return isCreator || isPostOwner
+          }
+        )
+        
+        setSuggestions(userSuggestions)
       } catch (error) {
         console.error("Error al cargar sugerencias:", error)
         toast.error("No se pudieron cargar las sugerencias")
@@ -55,7 +81,7 @@ export default function SugerenciasPage() {
     }
 
     void loadData()
-  }, [postId])
+  }, [postId, isAuthenticated, user?.id, authLoading])
 
   const handleAccept = async (suggestionId: string) => {
     setProcessingId(suggestionId)
@@ -127,7 +153,26 @@ export default function SugerenciasPage() {
           </div>
 
           {/* Contenido */}
-          {loading ? (
+          {authLoading ? (
+            <Card>
+              <CardContent className="flex items-center justify-center py-12">
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                <span className="ml-2 text-muted-foreground">Cargando...</span>
+              </CardContent>
+            </Card>
+          ) : !isAuthenticated || !user?.id ? (
+            <Card>
+              <CardContent className="flex flex-col items-center justify-center py-12 text-center">
+                <Lightbulb className="h-12 w-12 text-muted-foreground mb-4" />
+                <p className="text-lg font-medium text-foreground mb-2">
+                  Inicia sesión para ver tus sugerencias
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  Debes estar autenticado para ver las sugerencias que has enviado.
+                </p>
+              </CardContent>
+            </Card>
+          ) : loading ? (
             <Card>
               <CardContent className="flex items-center justify-center py-12">
                 <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
@@ -139,10 +184,10 @@ export default function SugerenciasPage() {
               <CardContent className="flex flex-col items-center justify-center py-12 text-center">
                 <Lightbulb className="h-12 w-12 text-muted-foreground mb-4" />
                 <p className="text-lg font-medium text-foreground mb-2">
-                  No hay sugerencias aún
+                  No has enviado sugerencias aún
                 </p>
                 <p className="text-sm text-muted-foreground">
-                  Los usuarios aún no han enviado sugerencias para esta publicación.
+                  Puedes dejar una sugerencia desde la página del lugar.
                 </p>
               </CardContent>
             </Card>
