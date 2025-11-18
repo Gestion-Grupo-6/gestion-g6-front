@@ -12,6 +12,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Progress } from "@/components/ui/progress"
 import { useAuth } from "@/contexts/AuthContext"
+import { getImage } from "@/contexts/SupabaseContext"
 import type { Place } from "@/types/place"
 
 type ReviewsPanelProps = {
@@ -217,7 +218,16 @@ export function ReviewsPanel({ open, onOpenChange, placeId }: ReviewsPanelProps)
                         {Array.isArray(review.images) && review.images.length > 0 && (
                           <div className="grid grid-cols-3 gap-2">
                             {review.images.map((src, idx) => (
-                              <img key={idx} src={src} alt="review" className="w-full h-24 object-cover rounded-md border" />
+                              <img 
+                                key={idx} 
+                                src={getImage(src)} 
+                                alt="review" 
+                                className="w-full h-24 object-cover rounded-md border"
+                                onError={(e) => {
+                                  // Si falla la carga, mostrar placeholder
+                                  e.currentTarget.src = "/placeholder.svg"
+                                }}
+                              />
                             ))}
                           </div>
                         )}
