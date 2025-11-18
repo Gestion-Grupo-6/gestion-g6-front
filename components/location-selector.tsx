@@ -11,7 +11,7 @@ import {
 import usePlacesAutocomplete, { getGeocode, getLatLng } from "use-places-autocomplete";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { getStoredLocation } from "@/lib/location-storage";
+import { useLocationContext } from "@/contexts/LocationContext";
 import { useTheme } from "next-themes";
 
 type LatLngLiteral = { lat: number; lng: number };
@@ -91,16 +91,9 @@ function LocationSelectorContent({ value, onChange, inputId, placeholder }: Loca
   const [confirmedLocation, setConfirmedLocation] = useState<LatLngLiteral | null>(null);
   const [mapCenter, setMapCenter] = useState<LatLngLiteral>(value.location ?? DEFAULT_CENTER);
   const [mapZoom, setMapZoom] = useState(value.location ? 16 : 11);
-  const [userLocation, setUserLocation] = useState<LatLngLiteral | null>(null);
+  const { location: sharedLocation } = useLocationContext();
   const { resolvedTheme, theme } = useTheme();
   const activeTheme = resolvedTheme === "dark" || theme === "dark" ? "dark" : "light";
-
-  useEffect(() => {
-    const stored = getStoredLocation();
-    if (stored) {
-      setUserLocation({ lat: stored.lat, lng: stored.lng });
-    }
-  }, []);
 
   useEffect(() => {
     if (value.location) {
@@ -111,13 +104,13 @@ function LocationSelectorContent({ value, onChange, inputId, placeholder }: Loca
   }, [value.location]);
 
   const requestOptions = useMemo(() => {
-    if (!userLocation) return undefined;
-    const { lat, lng } = userLocation;
+    if (!sharedLocation) return undefined;
+    const { lat, lng } = sharedLocation;
     return {
       location: new google.maps.LatLng(lat, lng),
       radius: 20000,
     };
-  }, [userLocation]);
+  }, [sharedLocation]);
 
   const {
     ready,
