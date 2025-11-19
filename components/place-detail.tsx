@@ -302,27 +302,6 @@ export function PlaceDetail({ place }: PlaceDetailProps) {
                       )}
                     </div>
                   </div>
-
-                  <Separator />
-
-                  <div className="flex items-center gap-3">
-                    <Globe className="h-5 w-5 text-muted-foreground flex-shrink-0" />
-                    <div>
-                      <p className="text-sm font-medium text-foreground">Sitio web</p>
-                      {websiteUrl ? (
-                        <a
-                          href={websiteUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-sm text-primary hover:underline"
-                        >
-                          {website}
-                        </a>
-                      ) : (
-                        <span className="text-sm text-muted-foreground">No disponible</span>
-                      )}
-                    </div>
-                  </div>
                 </div>
 
                 {place.openingHours && (
@@ -374,16 +353,28 @@ export function PlaceDetail({ place }: PlaceDetailProps) {
                 <Separator />
 
                 <div className="space-y-2 pt-2">
-                  <Button 
-                    variant={isFavorite ? "default" : "outline"} 
-                    className={`w-full flex items-center gap-2 ${isFavorite ? "" : "bg-transparent"}`}
-                    size="lg"
-                    onClick={handleToggleFavorite}
-                    disabled={isLoadingFavorite || !isAuthenticated}
-                  >
-                    <Heart className={`h-4 w-4 ${isFavorite ? "fill-red-500 text-red-500" : ""}`} />
-                    {isFavorite ? "Eliminar de favoritos" : "Guardar en favoritos"}
-                  </Button>
+                  <div className="flex flex-col gap-2">
+                    <Button
+                      variant="outline"
+                      className="w-full flex items-center justify-center gap-2"
+                      onClick={() => { if (websiteUrl) window.open(websiteUrl, "_blank", "noopener,noreferrer") }}
+                      disabled={!websiteUrl}
+                    >
+                      <Globe className="h-4 w-4" />
+                      Visitar página
+                    </Button>
+
+                    <Button 
+                      variant={isFavorite ? "default" : "outline"} 
+                      className={`w-full flex items-center gap-2 ${isFavorite ? "" : "bg-transparent"}`}
+                      size="lg"
+                      onClick={handleToggleFavorite}
+                      disabled={isLoadingFavorite || !isAuthenticated}
+                    >
+                      <Heart className={`h-4 w-4 ${isFavorite ? "fill-red-500 text-red-500" : ""}`} />
+                      {isFavorite ? "Eliminar de favoritos" : "Guardar en favoritos"}
+                    </Button>
+                  </div>
                 </div>
               </CardContent>
             </Card>
