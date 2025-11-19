@@ -8,6 +8,7 @@ import { MilongiaButton } from "@/components/milongia-button"
 import { AuthProvider } from "@/contexts/AuthContext"
 import { ThemeProvider } from "@/components/theme-provider"
 import { Toaster } from "sonner"
+import { LocationProvider } from "@/contexts/LocationContext"
 
 const _geist = Geist({ subsets: ["latin"] })
 const _geistMono = Geist_Mono({ subsets: ["latin"] })
@@ -28,10 +29,12 @@ export default function RootLayout({
       <body className="font-sans antialiased">
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
           <AuthProvider>
-            {children}
-            <MilongiaButton />
-            <Toaster richColors position="top-right" />
-            <Analytics />
+            <LocationProvider>
+              {children}
+              <MilongiaButton />
+              <Toaster richColors position="top-right" />
+              <Analytics />
+            </LocationProvider>
           </AuthProvider>
         </ThemeProvider>
       </body>

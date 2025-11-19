@@ -9,6 +9,7 @@ import Image from "next/image"
 import { useAuth } from "@/contexts/AuthContext"
 import {FavoritesPanel} from "@/components/favorites-panel";
 import {HeaderIcon} from "@/components/header-icon";
+import { HeaderLocationWidget } from "@/components/header-location-widget";
 
 export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
@@ -157,6 +158,7 @@ export function Header() {
           </nav>
         )}
       </div>
+      <HeaderLocationWidget />
       <FavoritesPanel open={favoritesOpen} onOpenChange={setFavoritesOpen} />
     </header>
   )

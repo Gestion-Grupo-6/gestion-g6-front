@@ -7,6 +7,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Button } from "@/components/ui/button"
 import { useState, useEffect } from "react"
 import { useRouter, usePathname } from "next/navigation"
+import { useLocationContext } from "@/contexts/LocationContext"
 
 interface FilterSidebarProps {
   category: string
@@ -26,7 +27,8 @@ export function FilterSidebar({ category, onApply, onClear }: FilterSidebarProps
   const [bathroomsCount, setBathroomsCount] = useState<number | null>(null)
   // openNow filter for restaurants
   const [openNow, setOpenNow] = useState<boolean>(false)
-  
+  const { location: storedLocation } = useLocationContext()
+  const [position, setPosition] = useState<{ distance: number | null } | null>(null)
 
   const router = useRouter()
   const pathname = usePathname()
@@ -197,6 +199,21 @@ export function FilterSidebar({ category, onApply, onClear }: FilterSidebarProps
           </div>
         </div>
 
+        <div className="space-y-3">
+          <Label className="text-sm font-semibold">Distancia</Label>
+          <Slider
+            value={position?.distance ? [position.distance] : [0]}
+            onValueChange={setPosition ? (v) => setPosition({ distance: v[0] }) : undefined}
+            max={20}
+            step={0.5}
+            className="w-full"
+            aria-label="Maximum distance in kilometers"
+          />
+          <div className="text-sm text-muted-foreground">
+            {position?.distance ? `Máximo ${position.distance} km` : "Cualquier distancia"}
+          </div>
+        </div>
+
         <div className="pt-4 space-y-2">
             <Button
               className="w-full"
@@ -216,6 +233,9 @@ export function FilterSidebar({ category, onApply, onClear }: FilterSidebarProps
                   sort: null,
                   page: null,
                   pageSize: null,
+                  lat: null,
+                  lng: null,
+                  distance: null,
                 }
 
                 if (category === "restaurant") {
@@ -263,6 +283,9 @@ export function FilterSidebar({ category, onApply, onClear }: FilterSidebarProps
                   if (body.minimumPriceCategory) params.set("minimumPriceCategory", body.minimumPriceCategory)
                   if (body.maximumPriceCategory) params.set("maximumPriceCategory", body.maximumPriceCategory)
                   if (body.minimumRating) params.set("minimumRating", String(body.minimumRating))
+                  if (body.lat) params.set("lat", String(body.lat))
+                  if (body.lng) params.set("lng", String(body.lng))
+                  if (body.distance) params.set("distance", String(body.distance))
                   const search = params.toString()
                   const url = search ? `${pathname}?${search}` : pathname
                   router.push(url)
