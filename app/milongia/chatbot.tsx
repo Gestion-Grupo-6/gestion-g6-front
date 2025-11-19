@@ -1,6 +1,6 @@
 "use client"
 
-import type React from "react"
+import React, {useEffect} from "react"
 import { useState } from "react"
 import { useChat } from "@ai-sdk/react"
 import { DefaultChatTransport, type UIMessage } from "ai"
@@ -12,15 +12,16 @@ import Markdown from "react-markdown"
 import BouncingDotsLoader from "@/components/ui/BouncingDotsLoader"
 import "../../styles/BouncingDotsStyle.css"
 import { useLocationContext } from "@/contexts/LocationContext"
+import {useAuth} from "@/contexts/AuthContext";
 
 export function Chatbot({
-  userId,
-  userName,
   initialMessages,
-}: { userId?: string | undefined; userName?: string | undefined; initialMessages?: UIMessage[] } = {}) {
+  onChangeMessagesAction,
+}: { initialMessages?: UIMessage[], onChangeMessagesAction?: (messages: UIMessage[]) => void } = {}) {
+  const { user } = useAuth()
   const [inputValue, setInputValue] = useState("")
   const { location: storedLocation } = useLocationContext()
-  const id = userId + ":" + (userName || "Usuario")
+  const id = user?.id + ":" + user?.name
 
   const { messages, sendMessage, status } = useChat({
     id,
@@ -29,6 +30,13 @@ export function Chatbot({
       api: "/api/ai-suggestions",
     }),
   })
+
+  useEffect(() => {
+    if (user && onChangeMessagesAction) {
+      onChangeMessagesAction(messages)
+      console.log("[CHATBOT] Messages updated for userId:", user.id)
+   }
+  }, [messages])
 
   const isThinking = status === "submitted"
 
@@ -76,15 +84,15 @@ export function Chatbot({
   const suggestedQuestions = hasLocation
     ? [
         `¿Qué restaurantes de comida típica de ${countrySuggestion} me recomiendas?`,
-        `Estoy buscando un hotel boutique en ${citySuggestion}`,
+        `Estoy buscando un hotel en ${citySuggestion}`,
         `¿Qué actividades puedo hacer cerca de ${citySuggestion}?`,
-        "Recomiéndame lugares románticos para cenar",
+        "Recomiéndame lugares con buenas calificaciones y cercanos",
       ]
     : [
-        "¿Qué restaurantes de comida típica me recomiendas?",
-        "Estoy buscando un hotel boutique para descansar",
+        "¿Qué restaurantes de comida me recomiendas?",
+        "Estoy buscando un hotel para descansar",
         "¿Qué actividades puedo hacer durante el día?",
-        "Recomiéndame lugares románticos para cenar",
+        "Recomiéndame lugares con buenas calificaciones",
       ]
 
   return (

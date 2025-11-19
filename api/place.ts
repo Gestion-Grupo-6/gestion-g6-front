@@ -1,6 +1,6 @@
-import type { Place, PlaceCreatePayload } from "@/types/place"
-import { sanitizedBaseUrl } from "./config"
-import { uploadImage, getImage } from "@/contexts/SupabaseContext"
+import type {Place, PlaceCreatePayload} from "@/types/place"
+import {sanitizedBaseUrl} from "./config"
+import {uploadImage} from "@/contexts/SupabaseContext"
 
 export const ACTIVIDADES = "activities"
 export const ACTIVIDAD = "activity"
@@ -68,6 +68,38 @@ export async function fetchPlaces(
   }
 
   return (await response.json()) as Place[]
+}
+
+export async function fetchAllPlaces(): Promise<Place[]> {
+    const hotelResponse = await fetch(`${sanitizedBaseUrl}/hotels`, {
+        cache: "no-store",
+    })
+
+    if (!hotelResponse.ok) {
+        throw new Error(`Error al consultar posts: ${hotelResponse.status} ${hotelResponse.statusText}`)
+    }
+
+    const restaurantResponse = await fetch(`${sanitizedBaseUrl}/restaurants`, {
+        cache: "no-store",
+    })
+
+    if (!restaurantResponse.ok) {
+        throw new Error(`Error al consultar posts: ${restaurantResponse.status} ${restaurantResponse.statusText}`)
+    }
+
+    const activityResponse = await fetch(`${sanitizedBaseUrl}/activities`, {
+        cache: "no-store",
+    })
+
+    if (!activityResponse.ok) {
+        throw new Error(`Error al consultar posts: ${activityResponse.status} ${activityResponse.statusText}`)
+    }
+
+    return [
+        ...(await hotelResponse.json()) as Place[],
+        ...(await restaurantResponse.json()) as Place[],
+        ...(await activityResponse.json()) as Place[],
+    ]
 }
 
 // Place - SEARCH (MVP: by name). Send null for unused fields

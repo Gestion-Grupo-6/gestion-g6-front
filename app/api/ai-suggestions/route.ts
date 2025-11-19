@@ -1,55 +1,9 @@
 import { google } from '@ai-sdk/google';
-import { streamText, convertToModelMessages, UIMessage } from "ai";
+import { streamText, convertToModelMessages } from "ai";
 import { upsertMessages } from "@/api/messages";
 import { MessagesPayload } from "@/types/messages";
+import {getLocationContext, getSystemPrompt} from "@/app/api/ai-suggestions/prompt";
 
-// Hardcoded system prompt for the assistant
-const SYSTEM_PROMPT = `
-Eres MilongIA, un asistente conversacional especializado en turismo local.
-Responde con recomendaciones útiles, concisas y amigables.
-Cuando el usuario pida sugerencias, pregunta por sus preferencias (presupuesto, barrio, tipo de comida, fecha/horario).
-Prioriza seguridad y claridad: no inventes datos sensibles (como horarios exactos si no estás seguro).
-Si el usuario pides enlaces o reservas, explica cómo hacerlo paso a paso, pero nunca inventes información.
-`
-
-type LocationContext = {
-    lat: number;
-    lng: number;
-    city?: string;
-    country?: string;
-    address?: string;
-};
-
-type LocationMetadata = {
-    location?: LocationContext;
-};
-
-const getLocationContext = (messages: UIMessage[]): LocationContext | undefined => {
-    for (let i = messages.length - 1; i >= 0; i--) {
-        const metadata = messages[i].metadata as LocationMetadata | undefined;
-        if (metadata?.location) {
-            return metadata.location;
-        }
-    }
-    return undefined;
-};
-
-const describeLocation = (location: LocationContext) => {
-    const descriptors: string[] = [];
-    if (location.city) descriptors.push(location.city);
-    if (location.country) descriptors.push(location.country);
-    if (location.address) descriptors.push(location.address);
-    if (descriptors.length > 0) {
-        return descriptors.join(", ");
-    }
-    return "las coordenadas disponibles";
-};
-
-const buildLocationPrompt = (location: LocationContext) => {
-    const description = describeLocation(location);
-    const coordinates = `${location.lat.toFixed(4)}, ${location.lng.toFixed(4)}`;
-    return `El usuario está en ${description} (lat, lng: ${coordinates}). Usa esta ubicación para enfocar las recomendaciones locales.\n`;
-};
 
 export const runtime = "nodejs";
 
@@ -64,17 +18,15 @@ export async function POST(req: Request) {
         const userId = id?.split(":")[0] || undefined
         const userName = id?.split(":")[1] || undefined
 
-        const userPrompt = userId && userName ? `El nombre del usuario es ${userName}. ` : ""
-        const locationContext = getLocationContext(safeMessages)
-        const locationSystemPrompt = locationContext ? buildLocationPrompt(locationContext) : ""
-
         // convert UI messages (from useChat) to model messages
         const modelMessages = convertToModelMessages(safeMessages)
+
+        const systemPrompt = await getSystemPrompt(userId, userName, getLocationContext(safeMessages));
 
         // call streamText with system + messages (docs recommend system/messages)
         const result = streamText({
             model: model,
-            system: SYSTEM_PROMPT + userPrompt + locationSystemPrompt,
+            system: systemPrompt,
             messages: modelMessages,
             // optional providerOptions, tools, or other streamText params can go here
         })

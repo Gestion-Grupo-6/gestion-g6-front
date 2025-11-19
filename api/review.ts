@@ -11,6 +11,15 @@ export async function fetchReviewsByPost(postId: string): Promise<CommentRespons
   return (await res.json()) as CommentResponse[]
 }
 
+// GET - reviews/comments by user id
+export async function fetchReviewsByUser(userId: string): Promise<CommentResponse[]> {
+  const res = await fetch(`${sanitizedBaseUrl}/api/comments/owner/${userId}`, { cache: "no-store" })
+  if (!res.ok) {
+    throw new Error(`Error al obtener reseñas: ${res.status} ${res.statusText}`)
+  }
+  return (await res.json()) as CommentResponse[]
+}
+
 // POST - create review
 export async function createReview(payload: ReviewCreatePayload): Promise<CommentResponse> {
   const res = await fetch(`${sanitizedBaseUrl}/api/comments/reviews`, {
