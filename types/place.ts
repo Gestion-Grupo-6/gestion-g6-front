@@ -32,6 +32,11 @@ export interface Place {
     saturday?: { start?: number; end?: number }
     sunday?: { start?: number; end?: number }
   } | null
+  quantities?: {
+    rooms?: number
+    bathrooms?: number
+    guests?: number
+  } | null
 }
 
 
@@ -62,5 +67,10 @@ export interface PlaceCreatePayload {
     friday?: { start?: number; end?: number }
     saturday?: { start?: number; end?: number }
     sunday?: { start?: number; end?: number }
+  }
+  quantities?: {
+    rooms?: number
+    bathrooms?: number
+    guests?: number
   }
 }

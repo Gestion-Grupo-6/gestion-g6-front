@@ -196,6 +196,35 @@ export function PlaceDetail({ place }: PlaceDetailProps) {
               </CardContent>
             </Card>
 
+            {/* Cantidades solo para hoteles */}
+            {place.category === "hotel" && (place as any).quantities && (
+              <Card>
+                <CardContent className="p-6">
+                  <h2 className="text-xl font-bold text-foreground mb-4">Cantidades</h2>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {(place as any).quantities.rooms && (
+                      <div className="flex flex-col">
+                        <span className="text-sm text-muted-foreground mb-1">Habitaciones</span>
+                        <span className="text-lg font-semibold text-foreground">{(place as any).quantities.rooms}</span>
+                      </div>
+                    )}
+                    {(place as any).quantities.bathrooms && (
+                      <div className="flex flex-col">
+                        <span className="text-sm text-muted-foreground mb-1">Baños</span>
+                        <span className="text-lg font-semibold text-foreground">{(place as any).quantities.bathrooms}</span>
+                      </div>
+                    )}
+                    {(place as any).quantities.guests && (
+                      <div className="flex flex-col">
+                        <span className="text-sm text-muted-foreground mb-1">Huéspedes</span>
+                        <span className="text-lg font-semibold text-foreground">{(place as any).quantities.guests}</span>
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
             {amenities.length > 0 && (
               <Card>
                 <CardContent className="p-6">

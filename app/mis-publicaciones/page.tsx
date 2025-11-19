@@ -90,6 +90,11 @@ const INITIAL_FORM = {
     saturday: { start: undefined, end: undefined },
     sunday: { start: undefined, end: undefined },
   },
+  quantities: {
+    rooms: "",
+    bathrooms: "",
+    guests: "",
+  },
 }
 
 export default function MisPublicacionesPage() {
@@ -274,6 +279,16 @@ export default function MisPublicacionesPage() {
     })
   }
 
+  const handleQuantitiesChange = (field: 'rooms' | 'bathrooms' | 'guests', value: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      quantities: {
+        ...prev.quantities,
+        [field]: value,
+      },
+    }))
+  }
+
   const resetForm = () => {
     // Limpiar URLs de preview para evitar memory leaks
     imagePreviews.forEach(url => URL.revokeObjectURL(url))
@@ -442,6 +457,22 @@ export default function MisPublicacionesPage() {
         }
       }
 
+      // Agregar quantities solo para hoteles
+      if (formData.category === "hotel" && formData.quantities) {
+        const quantities: any = {}
+        const rooms = Number(formData.quantities.rooms)
+        const bathrooms = Number(formData.quantities.bathrooms)
+        const guests = Number(formData.quantities.guests)
+        
+        if (!Number.isNaN(rooms) && rooms > 0) quantities.rooms = rooms
+        if (!Number.isNaN(bathrooms) && bathrooms > 0) quantities.bathrooms = bathrooms
+        if (!Number.isNaN(guests) && guests > 0) quantities.guests = guests
+        
+        if (Object.keys(quantities).length > 0) {
+          payload.quantities = quantities
+        }
+      }
+
       if (editingId) {
         await updatePlace(collectionForPost, editingId, payload)
       } else {
@@ -492,7 +523,7 @@ export default function MisPublicacionesPage() {
       <Header />
 
       <main className="flex-1 w-full py-12 px-4">
-        <div className="container mx-auto max-w-7xl space-y-8">
+        <div className="container mx-auto max-w-6xl space-y-8">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h1 className="text-3xl font-bold mb-1">Mis publicaciones</h1>
@@ -635,6 +666,57 @@ export default function MisPublicacionesPage() {
 
                     {/* Eliminado: etiqueta de precio, usamos solo categoría ($, $$, $$$, $$$$) */}
                   </div>
+
+                  {/* Sección de Cantidades solo para hoteles */}
+                  {formData.category === "hotel" && (
+                    <div className="space-y-4">
+                      <Separator />
+                      <div className="space-y-2">
+                        <Label className="text-base font-semibold">Cantidades</Label>
+                        <p className="text-xs text-muted-foreground">
+                          Especifica las cantidades disponibles en tu alojamiento
+                        </p>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-10 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="quantities-rooms">Habitaciones</Label>
+                          <Input
+                            id="quantities-rooms"
+                            name="quantities-rooms"
+                            type="number"
+                            min="1"
+                            value={formData.quantities.rooms}
+                            onChange={(e) => handleQuantitiesChange('rooms', e.target.value)}
+                            placeholder="Ej: 2"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="quantities-bathrooms">Baños</Label>
+                          <Input
+                            id="quantities-bathrooms"
+                            name="quantities-bathrooms"
+                            type="number"
+                            min="1"
+                            value={formData.quantities.bathrooms}
+                            onChange={(e) => handleQuantitiesChange('bathrooms', e.target.value)}
+                            placeholder="Ej: 1"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="quantities-guests">Huéspedes</Label>
+                          <Input
+                            id="quantities-guests"
+                            name="quantities-guests"
+                            type="number"
+                            min="1"
+                            value={formData.quantities.guests}
+                            onChange={(e) => handleQuantitiesChange('guests', e.target.value)}
+                            placeholder="Ej: 4"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  )}
 
                   <div className="space-y-2">
                     <Label htmlFor="description">Descripción</Label>
@@ -936,6 +1018,7 @@ export default function MisPublicacionesPage() {
                                           if (!full) return
                                           const categoryForForm = collection === HOTELES ? 'hotel' : collection === RESTAURANTES ? 'restaurant' : 'activity'
                                           const fullLocation = (full as any).location as { lat?: number; lng?: number } | undefined
+                                          const fullQuantities = (full as any).quantities as { rooms?: number; bathrooms?: number; guests?: number } | undefined
                                           setFormData({
                                             name: full.name || "",
                                             description: full.description || "",
@@ -970,6 +1053,15 @@ export default function MisPublicacionesPage() {
                                               friday: { start: undefined, end: undefined },
                                               saturday: { start: undefined, end: undefined },
                                               sunday: { start: undefined, end: undefined },
+                                            },
+                                            quantities: fullQuantities ? {
+                                              rooms: fullQuantities.rooms ? String(fullQuantities.rooms) : "",
+                                              bathrooms: fullQuantities.bathrooms ? String(fullQuantities.bathrooms) : "",
+                                              guests: fullQuantities.guests ? String(fullQuantities.guests) : "",
+                                            } : {
+                                              rooms: "",
+                                              bathrooms: "",
+                                              guests: "",
                                             },
                                           })
                                           setLocationConfirmed(Boolean(full.address && fullLocation))
