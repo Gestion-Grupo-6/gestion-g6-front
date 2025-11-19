@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import Link from "next/link"
 import { ReviewsSection } from "@/components/reviews-section"
+import QuestionsSection from "@/components/questions-section"
 import type { Place } from "@/types/place"
 import { getImage } from "@/contexts/SupabaseContext"
 import { useAuth } from "@/contexts/AuthContext"
@@ -249,6 +250,10 @@ export function PlaceDetail({ place }: PlaceDetailProps) {
               totalReviews={reviewCount}
               ratingsByCategory={(place as any).ratings}
             />
+
+            <Separator className="my-6" />
+
+            <QuestionsSection postId={String(place.id)} ownerId={user?.id ?? null} />
           </div>
 
           {/* Sidebar */}
