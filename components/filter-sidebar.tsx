@@ -16,7 +16,7 @@ interface FilterSidebarProps {
 }
 
 export function FilterSidebar({ category, onApply, onClear }: FilterSidebarProps) {
-  const [priceRange, setPriceRange] = useState([0, 200])
+  const [priceRange, setPriceRange] = useState([0, 200000])
   // priceCategoryRange: [min, max] where values are 1..4 corresponding to $, $$, $$$, $$$$
   const [priceCategoryRange, setPriceCategoryRange] = useState<number[]>([1, 4])
   const [rating, setRating] = useState([0])
@@ -58,6 +58,7 @@ export function FilterSidebar({ category, onApply, onClear }: FilterSidebarProps
   <CardContent className="space-y-4">
         {category === "hotel" && (
           <div className="space-y-2 -mt-2">
+            <div className="text-sm font-semibold text-foreground -mt-4">Cantidad mínima</div>
             <div className="grid grid-cols-3 gap-6 items-start">
                 <div className="flex flex-col items-center gap-1 min-w-0">
                   <Label className="text-xs text-center font-semibold">Personas</Label>
@@ -70,9 +71,6 @@ export function FilterSidebar({ category, onApply, onClear }: FilterSidebarProps
                   <option value={1}>1</option>
                   <option value={2}>2</option>
                   <option value={3}>3</option>
-                  <option value={4}>4</option>
-                  <option value={5}>5</option>
-                  <option value={6}>6+</option>
                 </select>
               </div>
               <div className="flex flex-col items-center gap-1 min-w-0">
@@ -86,9 +84,6 @@ export function FilterSidebar({ category, onApply, onClear }: FilterSidebarProps
                   <option value={1}>1</option>
                   <option value={2}>2</option>
                   <option value={3}>3</option>
-                  <option value={4}>4</option>
-                  <option value={5}>5</option>
-                  <option value={6}>6+</option>
                 </select>
               </div>
               <div className="flex flex-col items-center gap-1 min-w-0">
@@ -102,9 +97,6 @@ export function FilterSidebar({ category, onApply, onClear }: FilterSidebarProps
                   <option value={1}>1</option>
                   <option value={2}>2</option>
                   <option value={3}>3</option>
-                  <option value={4}>4</option>
-                  <option value={5}>5</option>
-                  <option value={6}>6+</option>
                 </select>
               </div>
             </div>
@@ -113,7 +105,7 @@ export function FilterSidebar({ category, onApply, onClear }: FilterSidebarProps
 
         {category !== "destino" && (
           <div className="space-y-3">
-            {/* Open now checkbox for restaurants (now shown before price range) */}
+            {/* Open now checkbox for restaurants */}
             {category === "restaurant" && (
               <div className="mb-6 -mt-3">
                 <div className="flex items-center space-x-2">
@@ -131,7 +123,7 @@ export function FilterSidebar({ category, onApply, onClear }: FilterSidebarProps
             )}
             <Label className="text-sm font-semibold">Rango de precio</Label>
             {category === "restaurant" ? (
-              <div className="space-y-3">
+              <div className="space-y-4">
                 <Slider
                   value={priceCategoryRange}
                   onValueChange={(v) => setPriceCategoryRange(v as number[])}
@@ -155,7 +147,7 @@ export function FilterSidebar({ category, onApply, onClear }: FilterSidebarProps
                 <Slider
                   value={priceRange}
                   onValueChange={setPriceRange}
-                  max={200}
+                  max={200000}
                   step={10}
                   className="w-full"
                   aria-label="Price range"
@@ -226,7 +218,7 @@ export function FilterSidebar({ category, onApply, onClear }: FilterSidebarProps
             <Button
               className="w-full"
               onClick={async () => {
-                // Build the advanced search body expected by backend
+                // advanced search 
                 const body: Record<string, any> = {
                   name: null,
                   city: null,
@@ -234,7 +226,7 @@ export function FilterSidebar({ category, onApply, onClear }: FilterSidebarProps
                   minimumPriceCategory: null,
                   maximumPriceCategory: null,
                   minimumRating: null,
-                  maximumRating: 5,
+                  maximumRating: null,
                   attributes: selectedAmenities,
                   quantities: null,
                   openNow: false,
@@ -250,50 +242,41 @@ export function FilterSidebar({ category, onApply, onClear }: FilterSidebarProps
                   body.minimumPriceCategory = priceCategoryOptions[(priceCategoryRange[0] || 1) - 1]
                   body.maximumPriceCategory = priceCategoryOptions[(priceCategoryRange[1] || 4) - 1]
                 } else {
-                  // keep numeric range for other categories as priceRange
+  
                   body.minimumPrice = priceRange[0]
                   body.maximumPrice = priceRange[1]
                 }
 
-                // quantities: for hotels include selected counts (null if not selected)
+               
                 if (category === "hotel") {
                   const quantities: Record<string, number> = {}
-                  if (roomsCount) quantities.rooms = roomsCount
-                  if (guestsCount) quantities.guests = guestsCount
-                  if (bathroomsCount) quantities.bathrooms = bathroomsCount
-
+                  if (roomsCount != null) quantities.rooms = roomsCount
+                  if (guestsCount != null) quantities.guests = guestsCount
+                  if (bathroomsCount != null) quantities.bathrooms = bathroomsCount
                   if (Object.keys(quantities).length > 0) {
                     body.quantities = quantities
                   }
                 }
 
-                // include restaurant openNow flag
+                
                 body.openNow = openNow
 
-                if (rating && rating[0] > 0) body.minimumRating = rating[0]
-
-                if (position?.distance) {
-                  if(!storedLocation) {
-                    alert("Por favor, establece tu ubicación para usar el filtro de distancia.")
-                    return
-                  }
-                  body.lat = storedLocation.lat
-                  body.lng = storedLocation.lng
-                  body.distance = position.distance
+                
+                if (rating && rating[0] > 0) {
+                  body.minimumRating = rating[0]
+                  body.maximumRating = 5
                 }
 
-                // remove null or empty-array fields so the backend only receives set filters
                 Object.keys(body).forEach((k) => {
                   const v = (body as any)[k]
                   if (v === null) delete (body as any)[k]
-                  // also drop empty arrays
                   if (Array.isArray(v) && v.length === 0) delete (body as any)[k]
                 })
 
                 if (onApply) {
                   await onApply(body)
                 } else {
-                  // fallback: navigate using query params (existing behavior)
+                  // fallback: navigate using query params 
                   if (!pathname) return
                   const params = new URLSearchParams()
                   if (selectedAmenities.length > 0) params.set("attributes", selectedAmenities.join(","))
@@ -316,7 +299,7 @@ export function FilterSidebar({ category, onApply, onClear }: FilterSidebarProps
             className="w-full bg-transparent"
             onClick={() => {
               // Reset local filter state
-              setPriceRange([0, 200])
+              setPriceRange([0, 200000])
               setRating([0])
               setSelectedAmenities([])
               if (category === "restaurant") {
@@ -334,8 +317,6 @@ export function FilterSidebar({ category, onApply, onClear }: FilterSidebarProps
               if (onClear) {
                 onClear()
               } else {
-                // Remove query params by navigating to the current pathname
-                // This will cause the server component page to fetch the default list again
                 if (pathname) router.replace(pathname)
               }
             }}

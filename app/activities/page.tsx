@@ -10,7 +10,7 @@ export default async function ActividadesPage({ searchParams }: { searchParams: 
   const { q } = await searchParams
   const activities = q
     ? await searchPlaces(ACTIVIDADES, { name: q, sort: null, page: null, pageSize: null })
-    : await fetchPlaces(ACTIVIDADES)
+    : await searchPlaces(ACTIVIDADES, { name: undefined, sort: null, page: null, pageSize: null })
 
   return (
     <div className="min-h-screen w-full flex flex-col">

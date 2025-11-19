@@ -119,7 +119,29 @@ export function PlacesList({ places }: PlacesListProps) {
             place.attributes && place.attributes.length > 3 ? place.attributes.length - 3 : 0
           const rating = ((place as any).ratingAverage ?? place.rating ?? 0).toFixed(1)
           const reviewCount = (place as any).numberOfReviews ?? place.reviews ?? 0
-          const priceLabel = place.priceCategory != null ? place.priceCategory : "-"
+          const isHotelOrActivity = ["hotel", "hotels", "activity", "activities"].includes(
+            String(place.category).toLowerCase(),
+          )
+
+          // Normalize/coerce price to number if possible (some backends may send it as string)
+          const rawPrice = (place as any).price
+          const numericPrice = typeof rawPrice === "number" ? rawPrice : rawPrice ? Number(rawPrice) : null
+
+          // Use numeric price only when the category is hotel/activity and a numeric
+          // price is available. Otherwise fall back to the categorical price label.
+          let priceLabel: string
+          if (isHotelOrActivity && Number.isFinite(numericPrice)) {
+            try {
+              const formatted = new Intl.NumberFormat(undefined, { maximumFractionDigits: 0 }).format(numericPrice as number)
+              priceLabel = `$${formatted}`
+            } catch (e) {
+              priceLabel = `$${numericPrice}`
+            }
+          } else if (place.priceCategory != null) {
+            priceLabel = place.priceCategory
+          } else {
+            priceLabel = "-"
+          }
           const location = [ (place as any).city, (place as any).country ].filter(Boolean).join(", ")
 
           return (
