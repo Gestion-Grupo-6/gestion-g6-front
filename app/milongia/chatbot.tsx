@@ -1,6 +1,6 @@
 "use client"
 
-import type React from "react"
+import React, {useEffect} from "react"
 import { useState } from "react"
 import { useChat } from "@ai-sdk/react"
 import { DefaultChatTransport, type UIMessage } from "ai"
@@ -12,15 +12,16 @@ import Markdown from "react-markdown"
 import BouncingDotsLoader from "@/components/ui/BouncingDotsLoader"
 import "../../styles/BouncingDotsStyle.css"
 import { useLocationContext } from "@/contexts/LocationContext"
+import {useAuth} from "@/contexts/AuthContext";
 
 export function Chatbot({
-  userId,
-  userName,
   initialMessages,
-}: { userId?: string | undefined; userName?: string | undefined; initialMessages?: UIMessage[] } = {}) {
+  onChangeMessagesAction,
+}: { initialMessages?: UIMessage[], onChangeMessagesAction?: (messages: UIMessage[]) => void } = {}) {
+  const { user } = useAuth()
   const [inputValue, setInputValue] = useState("")
   const { location: storedLocation } = useLocationContext()
-  const id = userId + ":" + (userName || "Usuario")
+  const id = user?.id + ":" + user?.name
 
   const { messages, sendMessage, status } = useChat({
     id,
@@ -29,6 +30,13 @@ export function Chatbot({
       api: "/api/ai-suggestions",
     }),
   })
+
+  useEffect(() => {
+    if (user && onChangeMessagesAction) {
+      onChangeMessagesAction(messages)
+      console.log("[CHATBOT] Messages updated for userId:", user.id)
+   }
+  }, [messages])
 
   const isThinking = status === "submitted"
 

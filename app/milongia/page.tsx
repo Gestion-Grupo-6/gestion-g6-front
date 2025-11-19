@@ -29,6 +29,10 @@ export default function MilongiIA() {
     setReloadKey(prev => prev + 1)
   }, [user?.id, isAuthenticated])
 
+  const handleMessageChange = (messages: UIMessage[]) => {
+    setConversation(messages);
+  }
+
   const handleDeleteConversation = async () => {
     if (!user?.id || !isAuthenticated) {
         console.log("El usuario no está autenticado o no tiene ID.")
@@ -37,7 +41,6 @@ export default function MilongiIA() {
         userId: user!.id,
         messages: new Array<UIMessage>()
     };
-    console.log(emptyMessagesPayload);
     await upsertMessages(emptyMessagesPayload);
     console.log("Conversación eliminada. ID: ", user!.id);
     // Aquí podrías actualizar el estado local si es necesario
@@ -68,7 +71,7 @@ export default function MilongiIA() {
               <Trash2 className="h-4 w-4 mr-2" />
               Eliminar Conversación
             </Button>
-            <Chatbot key={reloadKey} userId={user?.id} userName={user?.name} initialMessages={conversation}></Chatbot>
+            <Chatbot key={reloadKey} initialMessages={conversation} onChangeMessagesAction={handleMessageChange} ></Chatbot>
           </div>
         </div>
       </main>
