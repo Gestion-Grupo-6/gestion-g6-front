@@ -15,7 +15,7 @@ interface FilterSidebarProps {
 }
 
 export function FilterSidebar({ category, onApply, onClear }: FilterSidebarProps) {
-  const [priceRange, setPriceRange] = useState([0, 200])
+  const [priceRange, setPriceRange] = useState([0, 200000])
   // priceCategoryRange: [min, max] where values are 1..4 corresponding to $, $$, $$$, $$$$
   const [priceCategoryRange, setPriceCategoryRange] = useState<number[]>([1, 4])
   const [rating, setRating] = useState([0])
@@ -56,6 +56,7 @@ export function FilterSidebar({ category, onApply, onClear }: FilterSidebarProps
   <CardContent className="space-y-4">
         {category === "hotel" && (
           <div className="space-y-2 -mt-2">
+            <div className="text-sm font-semibold text-foreground -mt-4">Cantidad mínima</div>
             <div className="grid grid-cols-3 gap-6 items-start">
                 <div className="flex flex-col items-center gap-1 min-w-0">
                   <Label className="text-xs text-center font-semibold">Personas</Label>
@@ -67,7 +68,7 @@ export function FilterSidebar({ category, onApply, onClear }: FilterSidebarProps
                   <option value="">-</option>
                   <option value={1}>1</option>
                   <option value={2}>2</option>
-                  <option value={3}>+3</option>
+                  <option value={3}>3</option>
                 </select>
               </div>
               <div className="flex flex-col items-center gap-1 min-w-0">
@@ -80,7 +81,7 @@ export function FilterSidebar({ category, onApply, onClear }: FilterSidebarProps
                   <option value="">-</option>
                   <option value={1}>1</option>
                   <option value={2}>2</option>
-                  <option value={3}>+3</option>
+                  <option value={3}>3</option>
                 </select>
               </div>
               <div className="flex flex-col items-center gap-1 min-w-0">
@@ -93,7 +94,7 @@ export function FilterSidebar({ category, onApply, onClear }: FilterSidebarProps
                   <option value="">-</option>
                   <option value={1}>1</option>
                   <option value={2}>2</option>
-                  <option value={3}>3+</option>
+                  <option value={3}>3</option>
                 </select>
               </div>
             </div>
@@ -120,7 +121,7 @@ export function FilterSidebar({ category, onApply, onClear }: FilterSidebarProps
             )}
             <Label className="text-sm font-semibold">Rango de precio</Label>
             {category === "restaurant" ? (
-              <div className="space-y-3">
+              <div className="space-y-4">
                 <Slider
                   value={priceCategoryRange}
                   onValueChange={(v) => setPriceCategoryRange(v as number[])}
@@ -144,7 +145,7 @@ export function FilterSidebar({ category, onApply, onClear }: FilterSidebarProps
                 <Slider
                   value={priceRange}
                   onValueChange={setPriceRange}
-                  max={200}
+                  max={200000}
                   step={10}
                   className="w-full"
                   aria-label="Price range"
@@ -275,7 +276,7 @@ export function FilterSidebar({ category, onApply, onClear }: FilterSidebarProps
             className="w-full bg-transparent"
             onClick={() => {
               // Reset local filter state
-              setPriceRange([0, 200])
+              setPriceRange([0, 200000])
               setRating([0])
               setSelectedAmenities([])
               if (category === "restaurant") {
