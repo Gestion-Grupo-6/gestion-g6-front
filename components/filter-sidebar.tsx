@@ -102,7 +102,7 @@ export function FilterSidebar({ category, onApply, onClear }: FilterSidebarProps
 
         {category !== "destino" && (
           <div className="space-y-3">
-            {/* Open now checkbox for restaurants (now shown before price range) */}
+            {/* Open now checkbox for restaurants */}
             {category === "restaurant" && (
               <div className="mb-6 -mt-3">
                 <div className="flex items-center space-x-2">
@@ -200,7 +200,7 @@ export function FilterSidebar({ category, onApply, onClear }: FilterSidebarProps
             <Button
               className="w-full"
               onClick={async () => {
-                // Build the advanced search body expected by backend
+                // advanced search 
                 const body: Record<string, any> = {
                   name: null,
                   city: null,
@@ -208,7 +208,7 @@ export function FilterSidebar({ category, onApply, onClear }: FilterSidebarProps
                   minimumPriceCategory: null,
                   maximumPriceCategory: null,
                   minimumRating: null,
-                  maximumRating: 5,
+                  maximumRating: null,
                   attributes: selectedAmenities,
                   quantities: null,
                   openNow: false,
@@ -221,37 +221,41 @@ export function FilterSidebar({ category, onApply, onClear }: FilterSidebarProps
                   body.minimumPriceCategory = priceCategoryOptions[(priceCategoryRange[0] || 1) - 1]
                   body.maximumPriceCategory = priceCategoryOptions[(priceCategoryRange[1] || 4) - 1]
                 } else {
-                  // keep numeric range for other categories as priceRange
+  
                   body.minimumPrice = priceRange[0]
                   body.maximumPrice = priceRange[1]
                 }
 
-                // quantities: for hotels include selected counts (null if not selected)
+               
                 if (category === "hotel") {
-                  body.quantities = {
-                    rooms: roomsCount ?? null,
-                    guests: guestsCount ?? null,
-                    bathrooms: bathroomsCount ?? null,
+                  const quantities: Record<string, number> = {}
+                  if (roomsCount != null) quantities.rooms = roomsCount
+                  if (guestsCount != null) quantities.guests = guestsCount
+                  if (bathroomsCount != null) quantities.bathrooms = bathroomsCount
+                  if (Object.keys(quantities).length > 0) {
+                    body.quantities = quantities
                   }
                 }
 
-                // include restaurant openNow flag
+                
                 body.openNow = openNow
 
-                if (rating && rating[0] > 0) body.minimumRating = rating[0]
+                
+                if (rating && rating[0] > 0) {
+                  body.minimumRating = rating[0]
+                  body.maximumRating = 5
+                }
 
-                // remove null or empty-array fields so the backend only receives set filters
                 Object.keys(body).forEach((k) => {
                   const v = (body as any)[k]
                   if (v === null) delete (body as any)[k]
-                  // also drop empty arrays
                   if (Array.isArray(v) && v.length === 0) delete (body as any)[k]
                 })
 
                 if (onApply) {
                   await onApply(body)
                 } else {
-                  // fallback: navigate using query params (existing behavior)
+                  // fallback: navigate using query params 
                   if (!pathname) return
                   const params = new URLSearchParams()
                   if (selectedAmenities.length > 0) params.set("attributes", selectedAmenities.join(","))
@@ -289,8 +293,6 @@ export function FilterSidebar({ category, onApply, onClear }: FilterSidebarProps
               if (onClear) {
                 onClear()
               } else {
-                // Remove query params by navigating to the current pathname
-                // This will cause the server component page to fetch the default list again
                 if (pathname) router.replace(pathname)
               }
             }}
