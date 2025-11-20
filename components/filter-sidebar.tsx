@@ -267,6 +267,16 @@ export function FilterSidebar({ category, onApply, onClear }: FilterSidebarProps
                   body.maximumRating = 5
                 }
 
+                if (position?.distance) {
+                  if(!storedLocation) {
+                    alert("Por favor, establece tu ubicación para usar el filtro de distancia.")
+                    return
+                  }
+                  body.lat = storedLocation.lat
+                  body.lng = storedLocation.lng
+                  body.distance = position.distance
+                }
+
                 Object.keys(body).forEach((k) => {
                   const v = (body as any)[k]
                   if (v === null) delete (body as any)[k]
