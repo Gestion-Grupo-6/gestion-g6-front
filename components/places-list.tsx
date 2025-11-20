@@ -105,12 +105,6 @@ export function PlacesList({ places }: PlacesListProps) {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <p className="text-sm text-muted-foreground">
-          Mostrando {places.length} {places.length === 1 ? "resultado" : "resultados"}
-        </p>
-      </div>
-
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {places.map((place) => {
           const mainImage = getImage(place.images?.[0])

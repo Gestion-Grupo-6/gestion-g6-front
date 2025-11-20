@@ -13,9 +13,11 @@ interface FilterSidebarProps {
   category: string
   onApply?: (body: Record<string, any>) => Promise<void> | void
   onClear?: () => void
+  onShowMap?: () => void
+  isMapActive?: boolean
 }
 
-export function FilterSidebar({ category, onApply, onClear }: FilterSidebarProps) {
+export function FilterSidebar({ category, onApply, onClear, onShowMap, isMapActive }: FilterSidebarProps) {
   const [priceRange, setPriceRange] = useState([0, 200000])
   // priceCategoryRange: [min, max] where values are 1..4 corresponding to $, $$, $$$, $$$$
   const [priceCategoryRange, setPriceCategoryRange] = useState<number[]>([1, 4])
