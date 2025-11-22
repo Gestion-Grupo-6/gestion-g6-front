@@ -4,11 +4,14 @@ import * as Dialog from "@radix-ui/react-dialog"
 import * as Popover from "@radix-ui/react-popover"
 import { X, Star, ChevronDown } from "lucide-react"
 import { useEffect, useMemo, useState } from "react"
-import { fetchReviewsByPost } from "@/api/review"
+import { fetchReviewsByPost, addReply } from "@/api/review"
 import type { CommentResponse } from "@/types/review"
 import { fetchUser } from "@/api/user"
 import { fetchPlace } from "@/api/place"
 import { Card, CardContent } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { Textarea } from "@/components/ui/textarea"
+import { toast } from "sonner"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Progress } from "@/components/ui/progress"
 import { useAuth } from "@/contexts/AuthContext"
@@ -38,50 +41,80 @@ export function ReviewsPanel({ open, onOpenChange, placeId }: ReviewsPanelProps)
   const [authorById, setAuthorById] = useState<Record<string, string>>({})
   const [place, setPlace] = useState<Place | null>(null)
   const [ratingsPopoverOpen, setRatingsPopoverOpen] = useState(false)
+  const [replyText, setReplyText] = useState<Record<string, string>>({})
+  const [showReplies, setShowReplies] = useState<Record<string, boolean>>({})
+
+  async function loadReviews() {
+    try {
+      const data = await fetchReviewsByPost(placeId)
+      const uniqueIds = Array.from(new Set(
+        data.flatMap((r) => [r.ownerId, ...(Array.isArray(r.replies) ? r.replies.map((rep) => rep.ownerId) : [])]).filter(Boolean)
+      ))
+      const entries = await Promise.all(
+        uniqueIds.map(async (id) => {
+          try {
+            const u = await fetchUser(id)
+            const full = u ? `${u.name ?? ""} ${u.lastname ?? ""}`.trim() : ""
+            return [id, full || id] as const
+          } catch {
+            return [id, id] as const
+          }
+        })
+      )
+      setAuthorById(Object.fromEntries(entries))
+      setReviews(data)
+
+      // set default showReplies false for each review
+      const repliesState: Record<string, boolean> = {}
+      data.forEach((r) => { repliesState[r.id] = false })
+      setShowReplies(repliesState)
+
+      // Intentar cargar el lugar para obtener ratingAverage
+      const collections = ["hotel", "restaurant", "activity"]
+      for (const collection of collections) {
+        try {
+          const fetchedPlace = await fetchPlace(collection, placeId)
+          if (fetchedPlace) {
+            setPlace(fetchedPlace)
+            break
+          }
+        } catch {
+          continue
+        }
+      }
+    } catch (e) {
+      // eslint-disable-next-line no-console
+      console.error("No se pudieron cargar reseñas", e)
+    }
+  }
 
   useEffect(() => {
     if (!open) return
-    const load = async () => {
-      try {
-        // Cargar reviews
-        const data = await fetchReviewsByPost(placeId)
-        const uniqueIds = Array.from(new Set(data.map((r) => r.ownerId).filter(Boolean)))
-        const entries = await Promise.all(
-          uniqueIds.map(async (id) => {
-            try {
-              const u = await fetchUser(id)
-              const full = u ? `${u.name ?? ""} ${u.lastname ?? ""}`.trim() : ""
-              return [id, full || id] as const
-            } catch {
-              return [id, id] as const
-            }
-          })
-        )
-        setAuthorById(Object.fromEntries(entries))
-        setReviews(data)
-
-        // Intentar cargar el lugar para obtener ratingAverage
-        // Intentamos los tres tipos hasta encontrar uno
-        const collections = ["hotel", "restaurant", "activity"]
-        for (const collection of collections) {
-          try {
-            const fetchedPlace = await fetchPlace(collection, placeId)
-            if (fetchedPlace) {
-              setPlace(fetchedPlace)
-              break
-            }
-          } catch {
-            // Continuar con el siguiente tipo
-            continue
-          }
-        }
-      } catch (e) {
-        // eslint-disable-next-line no-console
-        console.error("No se pudieron cargar reseñas", e)
-      }
-    }
-    void load()
+    void loadReviews()
   }, [open, placeId])
+
+  async function handleReply(commentId: string) {
+    const text = (replyText[commentId] || "").trim()
+    if (!text) {
+      toast.error("Escribe una respuesta antes de enviar")
+      return
+    }
+    if (!isAuthenticated || !user?.id) {
+      toast.error("Debes iniciar sesión para responder")
+      return
+    }
+    try {
+      await addReply(commentId, { ownerId: user.id, comment: text })
+      // clear and refresh
+      setReplyText((s) => ({ ...s, [commentId]: "" }))
+      await loadReviews()
+      setShowReplies((s) => ({ ...s, [commentId]: true }))
+      toast.success("Respuesta publicada")
+    } catch (err: any) {
+      console.error("Failed to post reply", err)
+      toast.error(err?.message || "No se pudo publicar la respuesta")
+    }
+  }
 
   const totalReviews = reviews.length
   const averageRating = useMemo(() => {
@@ -232,12 +265,40 @@ export function ReviewsPanel({ open, onOpenChange, placeId }: ReviewsPanelProps)
                           </div>
                         )}
                         {Array.isArray(review.replies) && review.replies.length > 0 && (
-                          <div className="mt-2 space-y-2 border-t pt-2">
-                            {review.replies.map((rep) => (
-                              <div key={rep.id} className="text-sm">
-                                 <span className="font-medium">{authorById[rep.ownerId] || "Usuario"}:</span> {rep.comment}
+                          <div className="mt-2">
+                            <button
+                              type="button"
+                              className="text-sm text-primary hover:underline"
+                              onClick={() => setShowReplies((s) => ({ ...s, [review.id]: !s[review.id] }))}
+                            >
+                              {showReplies[review.id] ? "Ocultar respuesta" : `Ver mi respuesta (${review.replies.length})`}
+                            </button>
+
+                            {showReplies[review.id] && (
+                              <div className="mt-2 space-y-2 border-t pt-2">
+                                {review.replies.map((rep) => (
+                                  <div key={rep.id} className="text-sm">
+                                     <span className="font-medium">{authorById[rep.ownerId] || "Usuario"}:</span> {rep.comment}
+                                  </div>
+                                ))}
                               </div>
-                            ))}
+                            )}
+                          </div>
+                        )}
+
+                        {(!Array.isArray(review.replies) || review.replies.length === 0) && (
+                          <div className="mt-3">
+                            <Textarea
+                              value={replyText[review.id] || ""}
+                              onChange={(e) => setReplyText((s) => ({ ...s, [review.id]: e.target.value }))}
+                              placeholder="Responder"
+                              rows={2}
+                            />
+                            <div className="flex justify-end mt-1">
+                              <Button size="sm" onClick={() => handleReply(review.id)} disabled={!isAuthenticated || !(replyText[review.id] || "").trim()}>
+                                Responder
+                              </Button>
+                            </div>
                           </div>
                         )}
                       </CardContent>
