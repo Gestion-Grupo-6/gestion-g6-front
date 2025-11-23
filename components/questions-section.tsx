@@ -7,6 +7,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
+import { getImage } from "@/contexts/SupabaseContext"
 import { useAuth } from "@/contexts/AuthContext"
 import { toast } from "sonner"
 
@@ -123,45 +124,67 @@ export default function QuestionsSection({ postId, ownerId: ownerIdProp }: { pos
 
         <div className="rounded-xl p-0.5 bg-gray-100/70 ring-2 ring-gray-300/60">
           <div className="space-y-4 p-4 bg-transparent">
-            <h3 className="text-lg font-semibold mt-4">Preguntas y respuestas</h3>
+            <h3 className="text-lg font-semibold mt-4">La comunidad te responde</h3>
 
             <div className="max-h-72 overflow-y-auto space-y-4 pr-2">
           {questions.length === 0 && <p className="text-sm text-muted-foreground">No hay preguntas aún.</p>}
           {questions.map((q: CommentAny) => (
             <div key={q.id} className="rounded-2xl border border-gray-200 bg-white/70 p-3 shadow-sm">
-              <div className="mb-2 flex items-start gap-3">
-                <Avatar className="h-8 w-8">
-                  {photoById[q.ownerId] ? (
-                    <AvatarImage src={photoById[q.ownerId]} alt={authorById[q.ownerId] || q.ownerId} />
-                  ) : (
-                    <AvatarFallback>{(authorById[q.ownerId] || q.ownerId || "U").slice(0, 2)}</AvatarFallback>
-                  )}
+              <div className="flex items-start gap-3">
+                <Avatar className="h-8 w-8 self-start">
+                  <AvatarImage src={photoById[q.ownerId] ? getImage(photoById[q.ownerId]) : "/placeholder-user.jpg"} alt={authorById[q.ownerId] || q.ownerId} />
+                  <AvatarFallback className="bg-primary text-primary-foreground">
+                    {(((authorById[q.ownerId] || q.ownerId) as string) + "")
+                      .split(" ")
+                      .filter(Boolean)
+                      .map((n: string) => n[0])
+                      .join("")
+                      .slice(0, 2)
+                      .toUpperCase() || "US"}
+                  </AvatarFallback>
                 </Avatar>
                 <div className="flex-1">
-                  <div className="flex items-start justify-between mb-1">
-                    <div>
-                      <h4 className="font-semibold text-foreground">{authorById[q.ownerId] || q.ownerId || "Usuario"}</h4>
+                  <div className="flex items-center justify-between mb-3 ">
+                        <div className="flex items-center gap-2 mt-2">
+                        <h4 className="font-semibold text-foreground leading-none">{authorById[q.ownerId] || q.ownerId || "Usuario"}</h4>
                       {q.timestamp && (
-                        <p className="text-sm text-muted-foreground">{new Date(q.timestamp).toLocaleDateString()}</p>
+                        <p className="text-sm text-muted-foreground leading-none">{new Date(q.timestamp).toLocaleString()}</p>
                       )}
                     </div>
                   </div>
-                    <p className="text-foreground leading-relaxed mt-2 mb-4">{q.comment}</p>
+                    <p className="text-foreground leading-relaxed mt-3 mb-3">{q.comment}</p>
                 </div>
               </div>
 
-              <div className="ml-10 space-y-2">
+              <div className="ml-11 space-y-2">
                 {(q.replies || []).map((r: any) => (
-                    <div key={r.id} className="rounded-lg bg-white/40 border border-gray-200 p-2">
-                    <div className="flex items-start justify-between mb-1">
-                      <div>
-                        <div className="font-medium text-foreground">{authorById[r.ownerId] || r.ownerId || "Usuario"}</div>
-                        {r.timestamp && (
-                          <div className="text-sm text-muted-foreground">{new Date(r.timestamp).toLocaleDateString()}</div>
-                        )}
+                  <div key={r.id} className="rounded-lg bg-white/40 border border-gray-200 p-2">
+                    <div className="flex items-start gap-2">
+                      <Avatar className="h-8 w-8 self-start">
+                        <AvatarImage src={photoById[r.ownerId] ? getImage(photoById[r.ownerId]) : "/placeholder-user.jpg"} alt={authorById[r.ownerId] || r.ownerId} />
+                        <AvatarFallback className="bg-primary text-primary-foreground">
+                          {(((authorById[r.ownerId] || r.ownerId) as string) + "")
+                            .split(" ")
+                            .filter(Boolean)
+                            .map((n: string) => n[0])
+                            .join("")
+                            .slice(0, 2)
+                            .toUpperCase() || "US"}
+                        </AvatarFallback>
+                      </Avatar>
+
+                      <div className="flex-1">
+                        <div className="flex items-center justify-between mb-3">
+                          <div className="flex items-center gap-2 mt-2">
+                            <div className="font-medium text-foreground leading-none">{authorById[r.ownerId] || r.ownerId || "Usuario"}</div>
+                            {r.timestamp && (
+                              <div className="text-sm text-muted-foreground leading-none">{new Date(r.timestamp).toLocaleString()}</div>
+                            )}
+                          </div>
+                        </div>
+                        <p className="text-foreground leading-relaxed mt-2 mb-2">{r.comment}</p>
                       </div>
                     </div>
-                      <p className="text-foreground leading-relaxed">{r.comment}</p>
                   </div>
                 ))}
 
