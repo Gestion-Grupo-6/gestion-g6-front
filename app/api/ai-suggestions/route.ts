@@ -31,18 +31,7 @@ export async function POST(req: Request) {
             // optional providerOptions, tools, or other streamText params can go here
         })
         // Important: return the UI-stream-formatted response so the client (useChat) understands it
-        return result.toUIMessageStreamResponse({
-            originalMessages: safeMessages,
-            onFinish:  ({ messages }) => {
-                if (!userId) {
-                    console.log("[AI-SUGGESTIONS] No userId provided, skipping message upsert")
-                    return
-                }
-                const payload = {userId: userId!, messages: messages} as unknown as MessagesPayload
-                upsertMessages(payload)
-                console.log("[AI-SUGGESTIONS] Response stored for userId:", userId)
-            }
-        })
+        return result.toUIMessageStreamResponse({originalMessages: safeMessages})
     } catch (err) {
         console.error("[AI-SUGGESTIONS] Error:", err)
         return new Response("Internal Server Error", { status: 500 })

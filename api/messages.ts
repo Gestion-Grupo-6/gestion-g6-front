@@ -1,8 +1,8 @@
 import { sanitizedBaseUrl } from "./config"
-import {Messages, MessagesPayload} from "@/types/messages";
+import {MessagesPayload} from "@/types/messages";
 
 // Messages - GET (id)
-export async function fetchMessages(userId: string | undefined): Promise<Messages | null> {
+export async function fetchMessages(userId: string | undefined): Promise<Array<MessagesPayload> | null> {
 
   if (!userId) {
     return null
@@ -20,14 +20,14 @@ export async function fetchMessages(userId: string | undefined): Promise<Message
     throw new Error(`Error al consultar messages/${userId}: ${response.status} ${response.statusText}`)
   }
 
-  return (await response.json()) as Messages
+  return (await response.json()) as Array<MessagesPayload>
 }
 
 // Messages - PUT (upsert - insert if not exists)
 export async function upsertMessages(
   payload: MessagesPayload,
-): Promise<Messages> {
-  const response = await fetch(`${sanitizedBaseUrl}/messages/${payload.userId}`, {
+): Promise<MessagesPayload> {
+  const response = await fetch(`${sanitizedBaseUrl}/messages/${payload.userId}/${payload.conversationId}`, {
     method: "PUT",
     headers: {
       "Content-Type": "application/json",
@@ -40,5 +40,5 @@ export async function upsertMessages(
     throw new Error(`No se pudo actualizar el registro: ${response.status} ${response.statusText}. ${fallback}`)
   }
 
-  return (await response.json()) as Messages
+  return (await response.json()) as MessagesPayload
 }

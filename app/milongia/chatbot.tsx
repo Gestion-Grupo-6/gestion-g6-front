@@ -15,9 +15,10 @@ import { useLocationContext } from "@/contexts/LocationContext"
 import {useAuth} from "@/contexts/AuthContext";
 
 export function Chatbot({
+  chatId,
   initialMessages,
   onChangeMessagesAction,
-}: { initialMessages?: UIMessage[], onChangeMessagesAction?: (messages: UIMessage[]) => void } = {}) {
+}: { chatId?: string, initialMessages?: UIMessage[], onChangeMessagesAction?: (chatId: string, messages: UIMessage[]) => void } = {}) {
   const { user } = useAuth()
   const [inputValue, setInputValue] = useState("")
   const { location: storedLocation } = useLocationContext()
@@ -33,7 +34,7 @@ export function Chatbot({
 
   useEffect(() => {
     if (user && onChangeMessagesAction) {
-      onChangeMessagesAction(messages)
+      onChangeMessagesAction(chatId!, messages)
       console.log("[CHATBOT] Messages updated for userId:", user.id)
    }
   }, [messages])
