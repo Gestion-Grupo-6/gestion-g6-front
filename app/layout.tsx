@@ -6,6 +6,7 @@ import { Analytics } from "@vercel/analytics/next"
 import "./globals.css"
 import { MilongiaButton } from "@/components/milongia-button"
 import { AuthProvider } from "@/contexts/AuthContext"
+import { NotificationProvider } from "@/contexts/NotificationContext"
 import { ThemeProvider } from "@/components/theme-provider"
 import { Toaster } from "sonner"
 import { LocationProvider } from "@/contexts/LocationContext"
@@ -29,12 +30,14 @@ export default function RootLayout({
       <body className="font-sans antialiased">
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
           <AuthProvider>
-            <LocationProvider>
-              {children}
-              <MilongiaButton />
-              <Toaster richColors position="top-right" />
-              <Analytics />
-            </LocationProvider>
+            <NotificationProvider>
+              <LocationProvider>
+                {children}
+                <MilongiaButton />
+                <Toaster richColors position="top-right" />
+                <Analytics />
+              </LocationProvider>
+            </NotificationProvider>
           </AuthProvider>
         </ThemeProvider>
       </body>
