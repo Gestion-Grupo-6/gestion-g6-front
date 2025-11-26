@@ -1,7 +1,7 @@
 "use client"
 
 import * as Dialog from "@radix-ui/react-dialog"
-import { X, Bell, CheckCircle2, XCircle, ExternalLink, Circle } from "lucide-react"
+import { X, Bell, CheckCircle2, XCircle, ExternalLink, Circle, RefreshCw } from "lucide-react"
 import { useNotifications } from "@/contexts/NotificationContext"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -71,7 +71,7 @@ function PostLink({ postId, children }: { postId: string; children: React.ReactN
 }
 
 export function NotificationsPanel({ open, onOpenChange }: NotificationsPanelProps) {
-  const { notifications, unreadCount, isLoading, error, readIds, markAsRead, clearAll } = useNotifications()
+  const { notifications, unreadCount, isLoading, error, readIds, markAsRead, clearAll, refreshNotifications } = useNotifications()
 
   const handleNotificationClick = (notification: any) => {
     if (!readIds.has(notification.id)) {
@@ -121,6 +121,15 @@ export function NotificationsPanel({ open, onOpenChange }: NotificationsPanelPro
               )}
             </div>
             <div className="flex items-center gap-2">
+              <button
+                onClick={() => refreshNotifications()}
+                disabled={isLoading}
+                className="p-2 rounded-md hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                aria-label="Actualizar notificaciones"
+                title="Actualizar notificaciones"
+              >
+                <RefreshCw className={`h-4 w-4 ${isLoading ? "animate-spin" : ""}`} />
+              </button>
               {notifications.length > 0 && (
                 <button
                   onClick={clearAll}
