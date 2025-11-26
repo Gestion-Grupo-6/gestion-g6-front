@@ -6,6 +6,10 @@ import { PlacesList } from "@/components/places-list"
 import { FilterSidebar } from "@/components/filter-sidebar"
 import { SearchBar } from "@/components/search-bar"
 import { searchPlacesAdvanced } from "@/api/place"
+import { PlacesLocationMap } from "./places-location-map"
+import { useLocationContext } from "@/contexts/LocationContext"
+
+import { Button } from "./ui/button"
 
 interface Props {
   initialPlaces: Place[]
@@ -18,7 +22,9 @@ export default function PlacesPageClient({ initialPlaces, category, collection, 
   const [places, setPlaces] = useState<Place[]>(initialPlaces || [])
   const [loading, setLoading] = useState(false)
   const [sortOrder, setSortOrder] = useState<string | null>(null)
-    const [currentFilters, setCurrentFilters] = useState<Record<string, any> | null>(null)
+  const [currentFilters, setCurrentFilters] = useState<Record<string, any> | null>(null)
+  const [viewMode, setViewMode] = useState<"list" | "map">("list")
+  const { location } = useLocationContext()
 
   async function applyFilters(body: Record<string, any>) {
     try {
@@ -40,12 +46,21 @@ export default function PlacesPageClient({ initialPlaces, category, collection, 
 
   function clearFilters() {
     setPlaces(initialPlaces || [])
+    setViewMode("list")
+  }
+
+  function toggleViewMode() {
+    setViewMode(prev => prev === "list" ? "map" : "list")
   }
 
   return (
     <div className="flex flex-col lg:flex-row gap-8">
       <aside className="lg:w-64 flex-shrink-0">
-        <FilterSidebar category={category} onApply={applyFilters} onClear={clearFilters} />
+        <FilterSidebar 
+          category={category} 
+          onApply={applyFilters} 
+          onClear={clearFilters}
+        />
       </aside>
 
       <div className="flex-1">
@@ -84,7 +99,24 @@ export default function PlacesPageClient({ initialPlaces, category, collection, 
         {loading ? (
           <p className="text-sm text-muted-foreground">Cargando resultados...</p>
         ) : (
-          <PlacesList places={places} />
+          <>
+            <div className="flex items-center justify-between mb-6">
+              <p className="text-sm text-muted-foreground">
+                Mostrando {places.length} {places.length === 1 ? "resultado" : "resultados"}
+              </p>
+              <Button
+                variant={viewMode === "map" ? "secondary" : "default"}
+                onClick={toggleViewMode}
+              >
+                {viewMode === "map" ? "Ver resultados en lista" : "Ver resultados en mapa"}
+              </Button>
+            </div>
+            {viewMode === 'list' ? (
+              <PlacesList places={places} />
+            ) : (
+              <PlacesLocationMap places={places} userLocation={location} />
+            )}
+          </>
         )}
       </div>
     </div>
