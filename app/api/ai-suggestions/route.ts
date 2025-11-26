@@ -17,6 +17,7 @@ export async function POST(req: Request) {
 
         const userId = id?.split(":")[0] || undefined
         const userName = id?.split(":")[1] || undefined
+        const conversationId = id?.split(":")[2] || undefined
 
         // convert UI messages (from useChat) to model messages
         const modelMessages = convertToModelMessages(safeMessages)
@@ -33,14 +34,22 @@ export async function POST(req: Request) {
         // Important: return the UI-stream-formatted response so the client (useChat) understands it
         return result.toUIMessageStreamResponse({
             originalMessages: safeMessages,
-            onFinish:  ({ messages }) => {
-                if (!userId) {
-                    console.log("[AI-SUGGESTIONS] No userId provided, skipping message upsert")
+            onFinish: ({messages}) => {
+                
+                if (!userId || !conversationId) {
+                    console.error("[AI-SUGGESTIONS] onFinish: userId o conversationId no definidos")
                     return
                 }
-                const payload = {userId: userId!, messages: messages} as unknown as MessagesPayload
+
+                const payload: MessagesPayload = {
+                    userId,
+                    conversationId,
+                    messages,
+                }
+
                 upsertMessages(payload)
-                console.log("[AI-SUGGESTIONS] Response stored for userId:", userId)
+
+                console.log("[AI-SUGGESTIONS] onFinish: Mensajes guardados exitosamente")
             }
         })
     } catch (err) {

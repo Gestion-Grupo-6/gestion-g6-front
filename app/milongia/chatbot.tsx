@@ -15,13 +15,14 @@ import { useLocationContext } from "@/contexts/LocationContext"
 import {useAuth} from "@/contexts/AuthContext";
 
 export function Chatbot({
+  chatId,
   initialMessages,
   onChangeMessagesAction,
-}: { initialMessages?: UIMessage[], onChangeMessagesAction?: (messages: UIMessage[]) => void } = {}) {
+}: { chatId?: string, initialMessages?: UIMessage[], onChangeMessagesAction?: (chatId: string, messages: UIMessage[]) => void } = {}) {
   const { user } = useAuth()
   const [inputValue, setInputValue] = useState("")
   const { location: storedLocation } = useLocationContext()
-  const id = user?.id + ":" + user?.name
+  const id = user?.id + ":" + user?.name + ":" + chatId
 
   const { messages, sendMessage, status } = useChat({
     id,
@@ -32,11 +33,11 @@ export function Chatbot({
   })
 
   useEffect(() => {
-    if (user && onChangeMessagesAction) {
-      onChangeMessagesAction(messages)
-      console.log("[CHATBOT] Messages updated for userId:", user.id)
-   }
-  }, [messages])
+    if (user && chatId && messages.length > 0 && onChangeMessagesAction) {
+      console.log("[CHATBOT] Updating messages for chatId:", chatId, messages);
+      onChangeMessagesAction(chatId, messages);
+    }
+  }, [messages, user, chatId, onChangeMessagesAction])
 
   const isThinking = status === "submitted"
 
