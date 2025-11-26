@@ -2,26 +2,43 @@
 
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { X } from "lucide-react"
-import {useState} from "react"
+import {useEffect, useState} from "react"
 import {Conversation, MessagesPayload} from "@/types/messages";
 import {useAuth} from "@/contexts/AuthContext";
 import {UIMessage} from "ai";
 import {upsertMessages} from "@/api/messages";
 import {Chatbot} from "@/app/milongia/chatbot";
 import { Button } from "@/components/ui/button"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 
 export default function ChatTabs() {
     const [reloadKey, setReloadKey] = useState(Date.now())
     const { user, isAuthenticated } = useAuth()
-    const [ chatHistory, setChatHistory ] = useState< Conversation[] | undefined>(
+    const [chatToClose, setChatToClose] = useState<string | null>(null)
+    const [showCloseDialog, setShowCloseDialog] = useState(false)
+    const [ chatHistory, setChatHistory ] = useState<Conversation[] | undefined>(
         user?.chatHistory || new Array<Conversation>({
             id: 1,
             messages: []
         } as unknown as Conversation));
 
-    const [ currentTab, setCurrentTab ] = useState<string>(
-        chatHistory && chatHistory.length > 0 ? chatHistory[0].id : "1"
+    const [currentTab, setCurrentTab] = useState<string>(
+        chatHistory && chatHistory.length > 0 ? chatHistory[0].id.toString() : "1"
     );
+
+    // Update currentTab when chatHistory changes (e.g., on initial load)
+    useEffect(() => {
+        if (chatHistory && chatHistory.length > 0 && !chatHistory.some(chat => chat.id.toString() === currentTab)) {
+            setCurrentTab(chatHistory[chatHistory.length - 1].id.toString());
+        }
+    }, [chatHistory]);
 
     const handleMessageChange = async (chatId: string, messages: UIMessage[]) => {
         if (!user?.id) {
@@ -76,7 +93,6 @@ export default function ChatTabs() {
             .filter(n => !isNaN(n) && n > 0) ?? [];
 
         const lastId = numericIds.length > 0 ? Math.max(...numericIds) : 0;
-
         const newId = (lastId + 1).toString();
 
         const newConversation: Conversation = {
@@ -84,51 +100,89 @@ export default function ChatTabs() {
             messages: []
         };
 
-        const newChatHistory = chatHistory ? [...chatHistory, newConversation] : [newConversation];
+        // Create the new chat history with the new conversation
+        const updatedChatHistory = chatHistory ? [...chatHistory, newConversation] : [newConversation];
 
-        if (!user?.id || !isAuthenticated) {
-            console.log("El usuario no está autenticado o no tiene ID.")
-        }else{
-            const newMessagesPayload: MessagesPayload = {
-                userId: user.id,
-                conversationId: newId,
-                messages: new Array<UIMessage>()
-            };
-            await upsertMessages(newMessagesPayload);
+        // Update the state with the new chat history
+        setChatHistory(updatedChatHistory);
+        
+        // Set the new tab as active and ensure it's a string
+        setCurrentTab(newId.toString());
+        
+        // Force a re-render to ensure the tab is properly focused
+        setReloadKey(prev => prev + 1);
+
+        // Save to backend if user is authenticated
+        if (user?.id && isAuthenticated) {
+            try {
+                const newMessagesPayload: MessagesPayload = {
+                    userId: user.id,
+                    conversationId: newId,
+                    messages: []
+                };
+                await upsertMessages(newMessagesPayload);
+            } catch (error) {
+                console.error("Error creating new conversation:", error);
+                // Revert the UI if there's an error
+                setChatHistory(prev => prev?.filter(c => c.id !== newId) || []);
+                setCurrentTab(prev => prev === newId ? '' : prev);
+            }
+        } else {
+            console.log("El usuario no está autenticado o no tiene ID.");
         }
-
-        setChatHistory(newChatHistory);
-        setCurrentTab(newId);
-        setReloadKey(Date.now());
     };
 
     const handleCloseTab = async (chatId: string) => {
-        if (!user?.id || !isAuthenticated) {
-            console.log("El usuario no está autenticado o no tiene ID.")
+        setChatToClose(chatId);
+        setShowCloseDialog(true);
+    }
+
+    const confirmCloseTab = async () => {
+        if (!chatToClose || !user?.id || !isAuthenticated) {
+            setShowCloseDialog(false);
+            return;
         }
-        const emptyMessagesPayload: MessagesPayload = {
-            userId: user!.id,
-            conversationId: chatId,
-            messages: new Array<UIMessage>()
-        };
-        await upsertMessages(emptyMessagesPayload);
-        console.log("Conversación eliminada. ID: ", user!.id);
-        // Aquí podrías actualizar el estado local si es necesario
-        const aux = chatHistory?.filter((c) => c.id !== chatId);
-        setChatHistory(aux);
-        setChatHistory((prev) => prev?.filter((c) => c.id !== chatId))
-        setCurrentTab((prev: string) => {
-            if (prev === chatId && chatHistory) {
-                const remainingChats = chatHistory.filter(c => c.id !== chatId);
-                return remainingChats.length > 0 ? remainingChats[0].id : "";
-            }
-            return prev;
-        });
-        setReloadKey(prev => prev + 1);
+
+        try {
+            const emptyMessagesPayload: MessagesPayload = {
+                userId: user.id,
+                conversationId: chatToClose,
+                messages: new Array<UIMessage>()
+            };
+            
+            await upsertMessages(emptyMessagesPayload);
+            
+            // Update local state
+            setChatHistory(prev => {
+                const updated = prev?.filter((c) => c.id !== chatToClose) || [];
+                return updated;
+            });
+
+            // Update current tab if needed
+            setCurrentTab(prev => {
+                if (prev === chatToClose && chatHistory) {
+                    const remainingChats = chatHistory.filter(c => c.id !== chatToClose);
+                    return remainingChats.length > 0 ? remainingChats[0].id : "";
+                }
+                return prev;
+            });
+
+            setReloadKey(prev => prev + 1);
+        } catch (error) {
+            console.error("Error closing tab:", error);
+        } finally {
+            setShowCloseDialog(false);
+            setChatToClose(null);
+        }
     }
 
     return (
-        <Tabs defaultValue={currentTab} className="w-full">
+        <>
+        <Tabs 
+            value={currentTab} 
+            onValueChange={setCurrentTab}
+            className="w-full"
+        >
 
             {/* --- TAB HEADERS --- */}
             <div className="flex w-full">
@@ -164,7 +218,7 @@ export default function ChatTabs() {
             </div>
             {/* --- TAB CONTENTS --- */}
             {chatHistory?.map((chat) => (
-                <TabsContent key={chat.id} value={chat.id} className="mt-4">
+                <TabsContent key={chat.id} value={chat.id.toString()} className="mt-4">
                     {/* Your Chatbot */}
                     <Chatbot
                         key={reloadKey + chat.id}
@@ -176,5 +230,31 @@ export default function ChatTabs() {
             ))}
 
         </Tabs>
+        <Dialog open={showCloseDialog} onOpenChange={setShowCloseDialog}>
+            <DialogContent className="sm:max-w-[425px]">
+                <DialogHeader>
+                    <DialogTitle>¿Cerrar conversación?</DialogTitle>
+                    <DialogDescription>
+                        ¿Quieres terminar tu conversación en "Chat {chatToClose}"?
+                    </DialogDescription>
+                </DialogHeader>
+                <DialogFooter className="mt-4">
+                    <Button 
+                        variant="outline" 
+                        onClick={() => setShowCloseDialog(false)}
+                        className="mr-2"
+                    >
+                        Cancelar
+                    </Button>
+                    <Button 
+                        variant="destructive"
+                        onClick={confirmCloseTab}
+                    >
+                        Terminar conversación
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+        </>
     )
 }
