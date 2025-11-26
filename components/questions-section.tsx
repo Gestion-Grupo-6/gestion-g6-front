@@ -10,6 +10,8 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
 import { getImage } from "@/contexts/SupabaseContext"
 import { useAuth } from "@/contexts/AuthContext"
 import { toast } from "sonner"
+import { fetchPlace } from "@/api/place"
+import { Badge } from "@/components/ui/badge"
 
 type CommentAny = any
 
@@ -22,9 +24,29 @@ export default function QuestionsSection({ postId, ownerId: ownerIdProp }: { pos
   const [replyText, setReplyText] = useState<Record<string, string>>({})
   const [authorById, setAuthorById] = useState<Record<string, string>>({})
   const [photoById, setPhotoById] = useState<Record<string, string>>({})
+  const [postOwnerId, setPostOwnerId] = useState<string | null>(null)
 
   useEffect(() => {
     if (!postId) return
+    
+    // Cargar el ownerId del post
+    const loadPostOwner = async () => {
+      const collections = ["hotel", "restaurant", "activity"]
+      for (const collection of collections) {
+        try {
+          const place = await fetchPlace(collection, postId)
+          if (place) {
+            const ownerId = (place as any).ownerId || null
+            setPostOwnerId(ownerId)
+            break
+          }
+        } catch {
+          continue
+        }
+      }
+    }
+    
+    void loadPostOwner()
     void loadQuestions()
   }, [postId])
 
@@ -177,6 +199,11 @@ export default function QuestionsSection({ postId, ownerId: ownerIdProp }: { pos
                         <div className="flex items-center justify-between mb-3">
                           <div className="flex items-center gap-2 mt-2">
                             <div className="font-medium text-foreground leading-none">{authorById[r.ownerId] || r.ownerId || "Usuario"}</div>
+                            {postOwnerId && String(r.ownerId) === String(postOwnerId) && (
+                              <Badge variant="default" className="text-xs">
+                                Dueño
+                              </Badge>
+                            )}
                             {r.timestamp && (
                               <div className="text-sm text-muted-foreground leading-none">{new Date(r.timestamp).toLocaleString()}</div>
                             )}
