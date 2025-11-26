@@ -113,8 +113,15 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
         return updated
       })
     } catch (e: any) {
-      console.error("Error al cargar notificaciones:", e)
-      setError(e?.message || "Error al cargar notificaciones")
+      // Solo loguear errores de red, no romper el polling
+      if (e?.message?.includes("Failed to fetch") || e?.message?.includes("NetworkError")) {
+        // Error de red - probablemente el backend no está disponible
+        // No establecer error para no mostrar mensaje al usuario
+        console.debug("Backend no disponible para notificaciones")
+      } else {
+        console.error("Error al cargar notificaciones:", e)
+        setError(e?.message || "Error al cargar notificaciones")
+      }
     } finally {
       setIsLoading(false)
     }

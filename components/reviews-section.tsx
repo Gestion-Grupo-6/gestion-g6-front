@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Star, ThumbsUp, X, Upload, Loader2, Edit, ChevronLeft, ChevronRight, Lightbulb, MessageSquare } from "lucide-react"
+import { Star, ThumbsUp, X, Upload, Loader2, Edit, ChevronLeft, ChevronRight, Lightbulb, MessageSquare, Flag, AlertTriangle } from "lucide-react"
 import { Progress } from "@/components/ui/progress"
 import { fetchReviewsByPost, createReview, updateReview, likeComment, uploadReviewImage } from "@/api/review"
 import { fetchUser } from "@/api/user"
@@ -20,6 +20,9 @@ import type { SuggestionResponse } from "@/types/suggestion"
 import { Badge } from "@/components/ui/badge"
 import { Check } from "lucide-react"
 import { fetchPlace } from "@/api/place"
+import { ReportDialog } from "@/components/report-dialog"
+import { getReportsByComment, getReportsByReporter } from "@/api/report"
+import type { ReportResponse } from "@/types/report"
 
 interface ReviewsSectionProps {
   placeId: string
@@ -59,6 +62,10 @@ export function ReviewsSection({ placeId, averageRating, totalReviews, ratingsBy
   const [loadingSuggestions, setLoadingSuggestions] = useState(false)
   const [suggestionAuthorById, setSuggestionAuthorById] = useState<Record<string, string>>({})
   const [placeOwnerId, setPlaceOwnerId] = useState<string | null>(null)
+  const [reportDialogOpen, setReportDialogOpen] = useState(false)
+  const [reportingCommentId, setReportingCommentId] = useState<string | null>(null)
+  const [reportsByCommentId, setReportsByCommentId] = useState<Record<string, ReportResponse[]>>({})
+  const [userReports, setUserReports] = useState<ReportResponse[]>([])
 
 
   useEffect(() => {
@@ -92,6 +99,27 @@ export function ReviewsSection({ placeId, averageRating, totalReviews, ratingsBy
         const validPhotos = photoEntries.filter((entry): entry is [string, string] => entry !== null)
         setProfilePhotoById(Object.fromEntries(validPhotos))
         setReviews(data)
+
+        // Cargar reportes para todas las reviews y replies
+        const allCommentIds = [
+          ...data.map((r) => r.id),
+          ...data.flatMap((r) => (r.replies || []).map((rep: any) => rep.id)),
+        ]
+        
+        const reportsMap: Record<string, ReportResponse[]> = {}
+        await Promise.all(
+          allCommentIds.map(async (commentId) => {
+            try {
+              const reports = await getReportsByComment(commentId)
+              if (reports.length > 0) {
+                reportsMap[commentId] = reports
+              }
+            } catch {
+              // Ignorar errores al cargar reportes
+            }
+          })
+        )
+        setReportsByCommentId(reportsMap)
       } catch (e) {
         // eslint-disable-next-line no-console
         console.error("No se pudieron cargar las reseñas", e)
@@ -99,6 +127,25 @@ export function ReviewsSection({ placeId, averageRating, totalReviews, ratingsBy
     }
     void load()
   }, [placeId])
+
+  // Cargar reportes del usuario si está autenticado
+  useEffect(() => {
+    if (!isAuthenticated || !user?.id) {
+      setUserReports([])
+      return
+    }
+
+    const loadUserReports = async () => {
+      try {
+        const reports = await getReportsByReporter(user.id)
+        setUserReports(reports)
+      } catch (e) {
+        // eslint-disable-next-line no-console
+        console.error("No se pudieron cargar los reportes del usuario", e)
+      }
+    }
+    void loadUserReports()
+  }, [isAuthenticated, user?.id])
 
   // Cargar sugerencias del usuario y del owner
   useEffect(() => {
@@ -691,6 +738,8 @@ export function ReviewsSection({ placeId, averageRating, totalReviews, ratingsBy
                     return generalScore || 0
                   })()
 
+                  const canReport = isAuthenticated && user?.id && user.id !== review.ownerId
+
                   return (
                     <Card key={review.id}>
                       <CardContent className="p-6">
@@ -714,7 +763,14 @@ export function ReviewsSection({ placeId, averageRating, totalReviews, ratingsBy
                           <div className="flex-1">
                             <div className="flex items-start justify-between mb-2">
                               <div>
-                                <h4 className="font-semibold text-foreground">{authorById[review.ownerId] || "Usuario"}</h4>
+                                <div className="flex items-center gap-2">
+                                  <h4 className="font-semibold text-foreground">{authorById[review.ownerId] || "Usuario"}</h4>
+                                  {reportsByCommentId[review.id] && reportsByCommentId[review.id].length > 0 && (
+                                    <div title="Este comentario ha sido reportado">
+                                      <AlertTriangle className="h-4 w-4 text-yellow-500" />
+                                    </div>
+                                  )}
+                                </div>
                                 <p className="text-sm text-muted-foreground">{new Date(review.timestamp).toLocaleString()}</p>
                               </div>
                               <div className="flex items-center gap-1">
@@ -761,9 +817,10 @@ export function ReviewsSection({ placeId, averageRating, totalReviews, ratingsBy
                             )}
 
                             <div className="mt-2">
-                              <div className="flex items-center gap-4">
+                              <div className="flex items-center gap-4 flex-wrap">
                                 {user?.id === review.ownerId && (
                                   <button
+                                    type="button"
                                     className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors"
                                     onClick={() => handleEditReview(review)}
                                   >
@@ -772,6 +829,7 @@ export function ReviewsSection({ placeId, averageRating, totalReviews, ratingsBy
                                   </button>
                                 )}
                                 <button
+                                  type="button"
                                   className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors"
                                   onClick={async () => {
                                     try {
@@ -786,6 +844,23 @@ export function ReviewsSection({ placeId, averageRating, totalReviews, ratingsBy
                                   <ThumbsUp className="h-4 w-4" />
                                   <span>Útil ({review.likes})</span>
                                 </button>
+                                {canReport && (
+                                  <button
+                                    type="button"
+                                    className="flex items-center gap-2 text-sm text-muted-foreground hover:text-destructive transition-colors disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
+                                    onClick={(e) => {
+                                      e.preventDefault()
+                                      e.stopPropagation()
+                                      setReportingCommentId(review.id)
+                                      setReportDialogOpen(true)
+                                    }}
+                                    disabled={userReports.some((r) => r.commentId === review.id)}
+                                    title={userReports.some((r) => r.commentId === review.id) ? "Ya reportaste este comentario" : "Reportar comentario"}
+                                  >
+                                    <Flag className="h-4 w-4 shrink-0" />
+                                    <span className="whitespace-nowrap">{userReports.some((r) => r.commentId === review.id) ? "Reportado" : "Reportar"}</span>
+                                  </button>
+                                )}
 
                                 {Array.isArray(review.replies) && review.replies.length > 0 && (
                                   <div className="flex items-center">
@@ -886,9 +961,33 @@ export function ReviewsSection({ placeId, averageRating, totalReviews, ratingsBy
                                       <div className="flex-1">
                                         <div className="flex items-center justify-between">
                                           <div>
-                                            <p className="text-sm font-semibold text-foreground">{authorById[reply.ownerId] || reply.ownerId}</p>
+                                            <div className="flex items-center gap-2">
+                                              <p className="text-sm font-semibold text-foreground">{authorById[reply.ownerId] || reply.ownerId}</p>
+                                              {reportsByCommentId[reply.id] && reportsByCommentId[reply.id].length > 0 && (
+                                                <div title="Esta respuesta ha sido reportada">
+                                                  <AlertTriangle className="h-3 w-3 text-yellow-500" />
+                                                </div>
+                                              )}
+                                            </div>
                                             <p className="text-xs text-muted-foreground">{new Date(reply.timestamp).toLocaleString()}</p>
                                           </div>
+                                          {isAuthenticated && user?.id && user.id !== reply.ownerId && (
+                                            <button
+                                              type="button"
+                                              className="flex items-center gap-1 text-xs text-muted-foreground hover:text-destructive transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                              onClick={(e) => {
+                                                e.preventDefault()
+                                                e.stopPropagation()
+                                                setReportingCommentId(reply.id)
+                                                setReportDialogOpen(true)
+                                              }}
+                                              disabled={userReports.some((r) => r.commentId === reply.id)}
+                                              title={userReports.some((r) => r.commentId === reply.id) ? "Ya reportaste esta respuesta" : "Reportar respuesta"}
+                                            >
+                                              <Flag className="h-3 w-3" />
+                                              <span>{userReports.some((r) => r.commentId === reply.id) ? "Reportado" : "Reportar"}</span>
+                                            </button>
+                                          )}
                                         </div>
                                         <p className="text-sm text-foreground mt-1">{reply.comment}</p>
                                       </div>
@@ -1372,6 +1471,33 @@ export function ReviewsSection({ placeId, averageRating, totalReviews, ratingsBy
           </Dialog.Content>
         </Dialog.Portal>
       </Dialog.Root>
+
+      {/* Report Dialog */}
+      {isAuthenticated && user?.id && reportingCommentId && (
+        <ReportDialog
+          open={reportDialogOpen}
+          onOpenChange={setReportDialogOpen}
+          commentId={reportingCommentId}
+          reporterId={user.id}
+          onReportSubmitted={async () => {
+            // Recargar reportes del usuario y del comentario
+            try {
+              const [userReportsData, commentReports] = await Promise.all([
+                getReportsByReporter(user.id),
+                getReportsByComment(reportingCommentId),
+              ])
+              setUserReports(userReportsData)
+              setReportsByCommentId((prev) => ({
+                ...prev,
+                [reportingCommentId]: commentReports,
+              }))
+            } catch (e) {
+              console.error("Error al recargar reportes", e)
+            }
+            setReportingCommentId(null)
+          }}
+        />
+      )}
     </div>
   )
 }
