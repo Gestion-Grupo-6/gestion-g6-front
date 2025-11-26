@@ -17,6 +17,7 @@ export async function POST(req: Request) {
 
         const userId = id?.split(":")[0] || undefined
         const userName = id?.split(":")[1] || undefined
+        const conversationId = id?.split(":")[2] || undefined
 
         // convert UI messages (from useChat) to model messages
         const modelMessages = convertToModelMessages(safeMessages)
@@ -31,7 +32,26 @@ export async function POST(req: Request) {
             // optional providerOptions, tools, or other streamText params can go here
         })
         // Important: return the UI-stream-formatted response so the client (useChat) understands it
-        return result.toUIMessageStreamResponse({originalMessages: safeMessages})
+        return result.toUIMessageStreamResponse({
+            originalMessages: safeMessages,
+            onFinish: ({messages}) => {
+                
+                if (!userId || !conversationId) {
+                    console.error("[AI-SUGGESTIONS] onFinish: userId o conversationId no definidos")
+                    return
+                }
+
+                const payload: MessagesPayload = {
+                    userId,
+                    conversationId,
+                    messages,
+                }
+
+                upsertMessages(payload)
+
+                console.log("[AI-SUGGESTIONS] onFinish: Mensajes guardados exitosamente")
+            }
+        })
     } catch (err) {
         console.error("[AI-SUGGESTIONS] Error:", err)
         return new Response("Internal Server Error", { status: 500 })

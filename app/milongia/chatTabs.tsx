@@ -23,37 +23,49 @@ export default function ChatTabs() {
         chatHistory && chatHistory.length > 0 ? chatHistory[0].id : "1"
     );
 
-    const handleMessageChange = (chatId: string, messages: UIMessage[]) => {
-        const conversation = chatHistory?.find((c) => c.id === chatId);
-        if (!conversation) return;
+    const handleMessageChange = async (chatId: string, messages: UIMessage[]) => {
+        if (!user?.id) {
+            console.error("User not authenticated or missing ID");
+            return;
+        }
 
-        // Prevent infinite loop — update only if changed
-        const areEqual =
-            JSON.stringify(conversation.messages) === JSON.stringify(messages);
+        try {
+            const conversation = chatHistory?.find((c) => c.id === chatId);
+            if (!conversation) {
+                console.error(`Conversation with id ${chatId} not found`);
+                return;
+            }
 
-        if (areEqual) return;
+            // Only update if messages have actually changed
+            const messagesChanged = 
+                JSON.stringify(conversation.messages) !== JSON.stringify(messages);
+            
+            if (!messagesChanged) return;
 
-        conversation.messages = messages;
+            // Update local state first for immediate UI update
+            const updatedConversation = { ...conversation, messages };
+            const newChatHistory = chatHistory?.map((c) =>
+                c.id === chatId ? updatedConversation : c
+            ) || [];
 
-        const newChatHistory = chatHistory?.map((c) =>
-            c.id === chatId ? conversation : c
-        );
+            setChatHistory(newChatHistory);
 
-        // Update in backend
-        const messagesPayload: MessagesPayload = {
-            userId: user!.id,
-            conversationId: chatId,
-            messages: messages
-        };
-        upsertMessages(messagesPayload).then(() => {
-            console.log("Mensajes actualizados en el backend para el usuario:", user!.id);
-        }).catch((error) => {
-            console.error("Error al actualizar los mensajes en el backend:", error);
-        });
+            // Then update in the backend
+            const messagesPayload: MessagesPayload = {
+                userId: user.id,
+                conversationId: chatId,
+                messages: messages
+            };
 
-        setChatHistory(newChatHistory);
-        if(user){
-            user.chatHistory = newChatHistory;
+            await upsertMessages(messagesPayload);
+            console.log("Messages updated in the backend for user:", user.id);
+
+            // Update user context if needed
+            if (user) {
+                user.chatHistory = newChatHistory;
+            }
+        } catch (error) {
+            console.error("Error updating messages:", error);
         }
     };
 

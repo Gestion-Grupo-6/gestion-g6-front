@@ -27,18 +27,42 @@ export async function fetchMessages(userId: string | undefined): Promise<Array<M
 export async function upsertMessages(
   payload: MessagesPayload,
 ): Promise<MessagesPayload> {
-  const response = await fetch(`${sanitizedBaseUrl}/messages/${payload.userId}/${payload.conversationId}`, {
-    method: "PUT",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(payload),
-  })
+  console.log("Upserting messages:", {
+    userId: payload.userId,
+    conversationId: payload.conversationId,
+    messageCount: payload.messages.length
+  });
 
-  if (!response.ok) {
-    const fallback = await response.text()
-    throw new Error(`No se pudo actualizar el registro: ${response.status} ${response.statusText}. ${fallback}`)
+  try {
+    const response = await fetch(`${sanitizedBaseUrl}/messages/${payload.userId}/${payload.conversationId}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error("Failed to upsert messages:", {
+        status: response.status,
+        statusText: response.statusText,
+        error: errorText,
+        userId: payload.userId,
+        conversationId: payload.conversationId
+      });
+      throw new Error(`Failed to update messages: ${response.status} ${response.statusText}`);
+    }
+
+    const result = await response.json();
+    console.log("Messages upserted successfully:", {
+      userId: payload.userId,
+      conversationId: payload.conversationId,
+      result
+    });
+    return result;
+  } catch (error) {
+    console.error("Error in upsertMessages:", error);
+    throw error;
   }
-
-  return (await response.json()) as MessagesPayload
 }
