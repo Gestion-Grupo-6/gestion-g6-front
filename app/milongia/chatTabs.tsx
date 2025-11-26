@@ -6,7 +6,7 @@ import {useEffect, useState} from "react"
 import {Conversation, MessagesPayload} from "@/types/messages";
 import {useAuth} from "@/contexts/AuthContext";
 import {UIMessage} from "ai";
-import {upsertMessages} from "@/api/messages";
+import {deleteMessages, upsertMessages} from "@/api/messages";
 import {Chatbot} from "@/app/milongia/chatbot";
 import { Button } from "@/components/ui/button"
 import {
@@ -144,13 +144,8 @@ export default function ChatTabs() {
         }
 
         try {
-            const emptyMessagesPayload: MessagesPayload = {
-                userId: user.id,
-                conversationId: chatToClose,
-                messages: new Array<UIMessage>()
-            };
-            
-            await upsertMessages(emptyMessagesPayload);
+
+            await deleteMessages(user.id, chatToClose);
             
             // Update local state
             setChatHistory(prev => {

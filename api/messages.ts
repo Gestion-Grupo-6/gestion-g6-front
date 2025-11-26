@@ -66,3 +66,15 @@ export async function upsertMessages(
     throw error;
   }
 }
+
+// Messages - DELETE (by userId and conversationId)
+export async function deleteMessages(userId: string, conversationId: string): Promise<void> {
+  const response = await fetch(`${sanitizedBaseUrl}/messages/${userId}/${conversationId}`, {
+    method: "DELETE",
+  })
+
+  if (!response.ok) {
+    const fallback = await response.text()
+    throw new Error(`No se pudo eliminar los mensajes: ${response.status} ${response.statusText}. ${fallback}`)
+  }
+}
