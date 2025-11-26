@@ -12,6 +12,7 @@ import QuestionsSection from "@/components/questions-section"
 import type { Place } from "@/types/place"
 import { getImage } from "@/contexts/SupabaseContext"
 import { useAuth } from "@/contexts/AuthContext"
+import { recordVisit } from "@/api/metrics"
 import { checkFavorite, toggleFavorite } from "@/api/user"
 import { toast } from "sonner"
 import { PlaceLocationMap } from "@/components/place-location-map"
@@ -87,6 +88,24 @@ export function PlaceDetail({ place }: PlaceDetailProps) {
 
     checkIsFavorite()
   }, [place.id, place.category, user?.id, isAuthenticated])
+
+
+  // Record a visit for metrics when the detail is viewed (client-side)
+  useEffect(() => {
+    if (!place?.id) return
+
+    const onView = async () => {
+      try {
+        await recordVisit({ postId: String(place.id), userId: user?.id })
+      } catch (err) {
+        console.error("Error recording visit:", err)
+      }
+    }
+
+    onView()
+    // Intentionally only depend on place.id so the visit is recorded once per page view
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [place.id])
 
 
   const handleToggleFavorite = async () => {
