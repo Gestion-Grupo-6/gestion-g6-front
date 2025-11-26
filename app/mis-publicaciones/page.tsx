@@ -12,12 +12,16 @@ import { Textarea } from "@/components/ui/textarea"
 import { Separator } from "@/components/ui/separator"
 import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
-import { MapPin, Phone, Mail, Globe, Loader2, Plus, Building2, MoreVertical, Star, Edit, Trash2, X, Upload, Lightbulb } from "lucide-react"
+import { MapPin, Phone, Mail, Globe, Loader2, Plus, Building2, MoreVertical, Star, Edit, Trash2, X, Upload, Lightbulb, BarChart2 } from "lucide-react"
 import { useAuth } from "@/contexts/AuthContext"
 import type { Place } from "@/types/place"
 import { ACTIVIDADES, createPlace, fetchPlace, fetchPlacesByOwner, HOTELES, RESTAURANTES, updatePlace, uploadPlaceImage } from "@/api/place"
 import { ReviewsPanel } from "@/components/reviews-panel"
 import { LocationSelector, type LocationValue } from "@/components/location-selector"
+import { fetchVisits } from "@/api/metrics"
+import StatsChart from "@/components/stats-chart"
+import StatsPie from "@/components/stats-pie"
+import { parseTimestamp } from "@/lib/parse-timestamp"
 
 const CATEGORY_OPTIONS = [
   { value: HOTELES, label: "Hoteles" },
@@ -129,6 +133,10 @@ export default function MisPublicacionesPage() {
   
   const [openMenuId, setOpenMenuId] = useState<string | null>(null)
   const [showReviewsForId, setShowReviewsForId] = useState<string | null>(null)
+  const [openStatsFor, setOpenStatsFor] = useState<string | null>(null)
+  const [statsByPlace, setStatsByPlace] = useState<Record<string, any>>({})
+  const [statsLoading, setStatsLoading] = useState<Record<string, boolean>>({})
+  const [statsRangeByPlace, setStatsRangeByPlace] = useState<Record<string, string>>({})
   const [attributesDropdownOpen, setAttributesDropdownOpen] = useState(false)
 
   const categoryLabel = useMemo(() => {
@@ -512,6 +520,7 @@ export default function MisPublicacionesPage() {
                 </Button>
               </div>
             </CardContent>
+                      
           </Card>
         </main>
       </div>
@@ -1101,7 +1110,7 @@ export default function MisPublicacionesPage() {
                             <Button
                               variant="outline"
                               className="w-full"
-                              onClick={() => setShowReviewsForId(place.id)}
+                                onClick={() => setShowReviewsForId(place.id)}
                             >
                               <Star className="h-4 w-4 mr-2 fill-yellow-400 text-yellow-400" />
                               Consultar Reseñas y Rating
@@ -1114,8 +1123,113 @@ export default function MisPublicacionesPage() {
                               <Lightbulb className="h-4 w-4 mr-2" />
                               Ver Sugerencias
                             </Button>
+                              <Button
+                                type="button"
+                                variant="outline"
+                                className="w-full"
+                                onClick={async () => {
+                                  // Toggle: close if open
+                                  if (openStatsFor === place.id) {
+                                    setOpenStatsFor(null)
+                                    return
+                                  }
+                                  // Open panel immediately so user sees loading state
+                                  setOpenStatsFor(place.id)
+                                  setStatsLoading((s) => ({ ...s, [place.id]: true }))
+                                  try {
+                                    const data = await fetchVisits({ postId: place.id })
+                                    setStatsByPlace((s) => ({ ...s, [place.id]: data }))
+                                  } catch (err: any) {
+                                    console.error("Failed to load stats", err)
+                                    toast.error(err?.message || "No se pudieron cargar las métricas")
+                                  } finally {
+                                    setStatsLoading((s) => ({ ...s, [place.id]: false }))
+                                  }
+                                }
+                              }
+                              >
+                                <BarChart2 className="h-4 w-4 mr-2" />
+                                Estadísticas
+                              </Button>
                           </div>
                         </CardContent>
+                      {openStatsFor === place.id && (
+                        <div className="px-6 pb-6">
+                          <div className="rounded-md border border-gray-200 bg-white p-5 shadow-sm">
+                            {statsLoading[place.id] ? (
+                              <div className="flex items-center gap-3">
+                                <Loader2 className="h-5 w-5 animate-spin" />
+                                <span className="text-sm">Cargando métricas...</span>
+                              </div>
+                            ) : (
+                              <div className="space-y-4">
+                                <h4 className="text-sm font-semibold">Estadísticas de visitas</h4>
+                                <div className="mt-2">
+                                  <label className="text-sm text-muted-foreground mr-2">Ver:</label>
+                                  <select
+                                    value={statsRangeByPlace[place.id] ?? "all"}
+                                    onChange={(e) => setStatsRangeByPlace((s) => ({ ...s, [place.id]: e.target.value }))}
+                                    className="border border-input bg-background px-2 py-1 rounded text-sm"
+                                  >
+                                    <option value="7">Última semana</option>
+                                    <option value="30">Último mes</option>
+                                    <option value="90">Últimos 3 meses</option>
+                                    <option value="all">Visitas totales</option>
+                                  </select>
+                                </div>
+
+                                {statsByPlace[place.id] ? (
+                                  (() => {
+                                    const rawVisits = statsByPlace[place.id].visits || []
+                                    const range = statsRangeByPlace[place.id] ?? "all"
+                                    let filteredVisits = rawVisits
+                                    if (range !== "all") {
+                                      const days = Number(range)
+                                      const since = Date.now() - days * 24 * 60 * 60 * 1000
+                                      filteredVisits = rawVisits.filter((v: any) => {
+                                        const t = parseTimestamp(v.timeStamp)
+                                        return !Number.isNaN(t) && t >= since
+                                      })
+                                    }
+
+                                    if (filteredVisits.length === 0) {
+                                      return <div className="text-sm text-muted-foreground italic">No hay visitas todavía.</div>
+                                    }
+
+                                    // If viewing 'all' show a comparison: today vs total
+                                    if (range === "all") {
+                                      const total = rawVisits.length
+                                      const now = new Date()
+                                      const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime()
+                                      const startOfTomorrow = startOfToday + 24 * 60 * 60 * 1000
+                                      const todayCount = rawVisits.reduce((acc: number, v: any) => {
+                                        const t = parseTimestamp(v.timeStamp)
+                                        if (Number.isNaN(t)) return acc
+                                        return acc + (t >= startOfToday && t < startOfTomorrow ? 1 : 0)
+                                      }, 0)
+
+                                      return (
+                                        <>
+                                          <StatsPie today={todayCount} total={total} />
+                                        </>
+                                      )
+                                    }
+
+                                    return (
+                                      <>
+                                        <div className="text-sm text-muted-foreground mb-2">Cantidad de visitas: <span className="font-medium text-foreground">{filteredVisits.length}</span></div>
+                                        <StatsChart visits={filteredVisits} range={range} />
+                                      </>
+                                    )
+                                  })()
+                                ) : (
+                                  <div className="text-sm text-muted-foreground">Sin datos</div>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
                       </Card>
                     ))}
                 </div>
