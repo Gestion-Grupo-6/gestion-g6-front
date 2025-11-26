@@ -13,11 +13,15 @@ interface FilterSidebarProps {
   category: string
   onApply?: (body: Record<string, any>) => Promise<void> | void
   onClear?: () => void
-  onShowMap?: () => void
-  isMapActive?: boolean
 }
 
-export function FilterSidebar({ category, onApply, onClear, onShowMap, isMapActive }: FilterSidebarProps) {
+export function FilterSidebar({ category, onApply, onClear }: FilterSidebarProps) {
+  function formatNumberWithComma(value: number | string | undefined) {
+    if (value === undefined || value === null || value === "") return "0"
+    const n = Number(value)
+    if (Number.isNaN(n)) return String(value)
+    return n.toLocaleString("en-US")
+  }
   const [priceRange, setPriceRange] = useState([0, 200000])
   // priceCategoryRange: [min, max] where values are 1..4 corresponding to $, $$, $$$, $$$$
   const [priceCategoryRange, setPriceCategoryRange] = useState<number[]>([1, 4])
@@ -155,8 +159,8 @@ export function FilterSidebar({ category, onApply, onClear, onShowMap, isMapActi
                   aria-label="Price range"
                 />
                 <div className="flex items-center justify-between text-sm text-muted-foreground">
-                  <span>${priceRange[0]}</span>
-                  <span>${priceRange[1]}</span>
+                  <span>${formatNumberWithComma(priceRange[0])}</span>
+                  <span>${formatNumberWithComma(priceRange[1])}</span>
                 </div>
               </>
             )}

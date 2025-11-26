@@ -33,7 +33,7 @@ export function PlaceLocationMap({ lat, lng, mapId }: PlaceLocationMapProps) {
         <Map
           key={mapKey}
           mapId={mapId || process.env.NEXT_PUBLIC_MAP_ID}
-          defaultZoom={15}
+          defaultZoom={16}
           defaultCenter={center}
           gestureHandling="greedy"
           colorScheme={mapColorScheme}

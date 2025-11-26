@@ -12,6 +12,7 @@ import QuestionsSection from "@/components/questions-section"
 import type { Place } from "@/types/place"
 import { getImage } from "@/contexts/SupabaseContext"
 import { useAuth } from "@/contexts/AuthContext"
+import { recordVisit } from "@/api/metrics"
 import { checkFavorite, toggleFavorite } from "@/api/user"
 import { toast } from "sonner"
 import { PlaceLocationMap } from "@/components/place-location-map"
@@ -23,6 +24,13 @@ interface PlaceDetailProps {
 function formatHour(hour: number | undefined): string {
   if (hour === undefined || hour === null) return ""
   return `${hour}hs`
+}
+
+function formatNumberWithComma(value: number | string | undefined) {
+  if (value === undefined || value === null || value === "") return ""
+  const n = Number(value)
+  if (Number.isNaN(n)) return String(value)
+  return n.toLocaleString("en-US")
 }
 
 export function PlaceDetail({ place }: PlaceDetailProps) {
@@ -37,7 +45,13 @@ export function PlaceDetail({ place }: PlaceDetailProps) {
   const amenities = (place as any).attributes && (place as any).attributes.length > 0 ? (place as any).attributes : []
   const rating = (place as any).ratingAverage ?? (place as any).rating ?? (place as any).ratings?.average ?? 0
   const reviewCount = (place as any).reviews ?? (place as any).numberOfReviews ?? 0
-  const priceLabel = (place as any).priceCategory ?? (place.price != null ? `$${place.price}` : "Consultar")
+  const priceLabel = place.category === "hotel"
+    ? (place.price != null ? `$${formatNumberWithComma(place.price)} por noche` : ((place as any).priceCategory ?? "Consultar"))
+    : place.category === "activity"
+    ? (place.price != null ? `$${formatNumberWithComma(place.price)} por persona` : ((place as any).priceCategory ?? "Consultar"))
+    : place.category === "restaurant"
+    ? ((place as any).priceCategory ?? "Consultar")
+    : (place.price != null ? `$${formatNumberWithComma(place.price)}` : ((place as any).priceCategory ?? "Consultar"))
   const categoryRoutes: Record<string, string> = {
     hotel: "hotels",
     restaurant: "restaurants",
@@ -74,6 +88,24 @@ export function PlaceDetail({ place }: PlaceDetailProps) {
 
     checkIsFavorite()
   }, [place.id, place.category, user?.id, isAuthenticated])
+
+
+  // Record a visit for metrics when the detail is viewed (client-side)
+  useEffect(() => {
+    if (!place?.id) return
+
+    const onView = async () => {
+      try {
+        await recordVisit({ postId: String(place.id), userId: user?.id })
+      } catch (err) {
+        console.error("Error recording visit:", err)
+      }
+    }
+
+    onView()
+    // Intentionally only depend on place.id so the visit is recorded once per page view
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [place.id])
 
 
   const handleToggleFavorite = async () => {

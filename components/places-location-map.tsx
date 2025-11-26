@@ -43,9 +43,9 @@ function MapPlaceCard({ place }: { place: Place }) {
           </div>
           <div className="flex items-center gap-1 mb-2">
             <div className="flex items-center gap-1">
-              <Star className="h-4 w-4 fill-primary text-primary" />
+              <Star className="h-4 w-4 mr-2 fill-yellow-400 text-yellow-400" />
               <span className="font-semibold text-foreground">
-                {place.rating?.toFixed(1)}
+                {place.ratingAverage?.toPrecision(2) || "N/A"}
               </span>
             </div>
             <span className="text-sm text-muted-foreground">
@@ -53,7 +53,7 @@ function MapPlaceCard({ place }: { place: Place }) {
             </span>
           </div>
           <p className="text-sm capitalize text-muted-foreground">
-            {place.category}
+            {place.address}
           </p>
         </div>
       </div>
@@ -109,7 +109,7 @@ export function PlacesLocationMap({
         <Map
           key={mapKey}
           mapId={mapId || process.env.NEXT_PUBLIC_MAP_ID}
-          defaultZoom={18}
+          defaultZoom={16}
           center={mapCenter}
           onCameraChanged={handleCameraChange}
           gestureHandling="greedy"
