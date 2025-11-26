@@ -10,6 +10,7 @@ import { useAuth } from "@/contexts/AuthContext"
 import {FavoritesPanel} from "@/components/favorites-panel";
 import {HeaderIcon} from "@/components/header-icon";
 import { HeaderLocationWidget } from "@/components/header-location-widget";
+import { NotificationBadge } from "@/components/notification-badge";
 
 export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
@@ -47,6 +48,7 @@ export function Header() {
             <ThemeToggle />
             {isAuthenticated ? (
               <>
+                <NotificationBadge mobile={false} />
                 <HeaderIcon
                   icon={Heart}
                   mobile={false}
@@ -118,6 +120,7 @@ export function Header() {
                 </div>
                 {isAuthenticated ? (
                   <>
+                      <NotificationBadge mobile={true} />
                       <HeaderIcon
                           icon={Heart}
                           mobile={true}
