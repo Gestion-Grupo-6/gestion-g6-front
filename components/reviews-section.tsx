@@ -940,8 +940,6 @@ export function ReviewsSection({ placeId, averageRating, totalReviews, ratingsBy
                                       ? review.replies.length === 1
                                         ? "Ocultar"
                                         : `Ocultar (${review.replies.length})`
-                                      : review.replies.length === 1
-                                      ? "Ver respuesta"
                                       : `Ver respuestas (${review.replies.length})`}
                                   </span>
                                 </button>
