@@ -42,7 +42,13 @@ export type ReplyPayload = {
   postId: string
 }
 
-export type NotificationPayload = SuggestionCreatedPayload | SuggestionStatusPayload | ReviewPayload | QuestionPayload | ReplyPayload | Record<string, unknown>
+export type LikeCommentPayload = {
+  commentId: string
+  comment: string
+  postId: string
+}
+
+export type NotificationPayload = SuggestionCreatedPayload | SuggestionStatusPayload | ReviewPayload | QuestionPayload | ReplyPayload | LikeCommentPayload | Record<string, unknown>
 
 export type Notification = {
   id: string
