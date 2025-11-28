@@ -71,11 +71,19 @@ function PostLink({ postId, children }: { postId: string; children: React.ReactN
 }
 
 export function NotificationsPanel({ open, onOpenChange }: NotificationsPanelProps) {
-  const { notifications, unreadCount, isLoading, error, readIds, markAsRead, clearAll, refreshNotifications } = useNotifications()
+  const { notifications, unreadCount, isLoading, error, readIds, markAsRead, hideNotification, clearAll, refreshNotifications } = useNotifications()
 
   const handleNotificationClick = (notification: any) => {
     if (!readIds.has(notification.id)) {
       markAsRead(notification.id)
+    }
+  }
+
+  const handleClearAll = async () => {
+    try {
+      await clearAll()
+    } catch (error) {
+      console.error("Error al limpiar todas las notificaciones:", error)
     }
   }
 
@@ -140,7 +148,7 @@ export function NotificationsPanel({ open, onOpenChange }: NotificationsPanelPro
               </button>
               {notifications.length > 0 && (
                 <button
-                  onClick={clearAll}
+                  onClick={handleClearAll}
                   className="text-sm text-muted-foreground hover:text-foreground px-2 py-1 rounded hover:bg-muted"
                 >
                   Limpiar todo
