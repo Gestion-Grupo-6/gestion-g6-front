@@ -24,7 +24,13 @@ export type SuggestionStatusPayload = {
   suggestionStatus: "ACCEPTED" | "REJECTED"
 }
 
-export type NotificationPayload = SuggestionCreatedPayload | SuggestionStatusPayload | Record<string, unknown>
+export type ReviewPayload = {
+  commentId: string
+  comment: string
+  postId: string
+}
+
+export type NotificationPayload = SuggestionCreatedPayload | SuggestionStatusPayload | ReviewPayload | Record<string, unknown>
 
 export type Notification = {
   id: string

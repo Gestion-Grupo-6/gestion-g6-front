@@ -1,7 +1,7 @@
 "use client"
 
 import * as Dialog from "@radix-ui/react-dialog"
-import { X, Bell, CheckCircle2, XCircle, ExternalLink, Circle, RefreshCw, Lightbulb } from "lucide-react"
+import { X, Bell, CheckCircle2, XCircle, ExternalLink, Circle, RefreshCw, Lightbulb, Star, MessageSquare } from "lucide-react"
 import { useNotifications } from "@/contexts/NotificationContext"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -93,6 +93,8 @@ export function NotificationsPanel({ open, onOpenChange }: NotificationsPanelPro
           )
         }
         return <Bell className="h-5 w-5" />
+      case "REVIEW":
+        return <Star className="h-5 w-5 text-yellow-500" />
       default:
         return <Bell className="h-5 w-5" />
     }
@@ -168,6 +170,7 @@ export function NotificationsPanel({ open, onOpenChange }: NotificationsPanelPro
                   const isRead = readIds.has(notification.id)
                   const isSuggestionCreated = notification.type === "SUGGESTION_CREATED"
                   const isSuggestionStatus = notification.type === "SUGGESTION_STATUS_CHANGED"
+                  const isReview = notification.type === "REVIEW"
                   
                   // Para SUGGESTION_CREATED, mostrar enlace a página de sugerencias
                   const suggestionCreatedPayload = isSuggestionCreated && "postId" in notification.payload
@@ -177,6 +180,11 @@ export function NotificationsPanel({ open, onOpenChange }: NotificationsPanelPro
                   // Para SUGGESTION_STATUS_CHANGED, mostrar enlace al lugar
                   const suggestionStatusPayload = isSuggestionStatus && "postId" in notification.payload 
                     ? notification.payload as { suggestionId: string; postId: string; content: string; suggestionStatus: string }
+                    : null
+                  
+                  // Para REVIEW, mostrar enlace al lugar
+                  const reviewPayload = isReview && "postId" in notification.payload
+                    ? notification.payload as { commentId: string; comment: string; postId: string }
                     : null
 
                   return (
@@ -227,6 +235,13 @@ export function NotificationsPanel({ open, onOpenChange }: NotificationsPanelPro
                             {suggestionStatusPayload && (
                               <div className="mt-3 flex items-center gap-2">
                                 <PostLink postId={suggestionStatusPayload.postId}>
+                                  Ver lugar
+                                </PostLink>
+                              </div>
+                            )}
+                            {reviewPayload && (
+                              <div className="mt-3 flex items-center gap-2">
+                                <PostLink postId={reviewPayload.postId}>
                                   Ver lugar
                                 </PostLink>
                               </div>
