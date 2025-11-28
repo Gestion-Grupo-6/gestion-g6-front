@@ -271,7 +271,7 @@ export function ReviewsPanel({ open, onOpenChange, placeId }: ReviewsPanelProps)
                               className="text-sm text-primary hover:underline"
                               onClick={() => setShowReplies((s) => ({ ...s, [review.id]: !s[review.id] }))}
                             >
-                              {showReplies[review.id] ? "Ocultar respuesta" : `Ver mi respuesta (${review.replies.length})`}
+                              {showReplies[review.id] ? "Ocultar respuestas" : `Ver respuestas (${review.replies.length})`}
                             </button>
 
                             {showReplies[review.id] && (
@@ -286,21 +286,20 @@ export function ReviewsPanel({ open, onOpenChange, placeId }: ReviewsPanelProps)
                           </div>
                         )}
 
-                        {(!Array.isArray(review.replies) || review.replies.length === 0) && (
-                          <div className="mt-3">
-                            <Textarea
-                              value={replyText[review.id] || ""}
-                              onChange={(e) => setReplyText((s) => ({ ...s, [review.id]: e.target.value }))}
-                              placeholder="Responder"
-                              rows={2}
-                            />
-                            <div className="flex justify-end mt-1">
-                              <Button size="sm" onClick={() => handleReply(review.id)} disabled={!isAuthenticated || !(replyText[review.id] || "").trim()}>
-                                Responder
-                              </Button>
-                            </div>
+                        {/* Formulario de respuesta - siempre visible para el owner */}
+                        <div className="mt-3 border-t pt-3">
+                          <Textarea
+                            value={replyText[review.id] || ""}
+                            onChange={(e) => setReplyText((s) => ({ ...s, [review.id]: e.target.value }))}
+                            placeholder="Responder a esta reseña..."
+                            rows={2}
+                          />
+                          <div className="flex justify-end mt-1">
+                            <Button size="sm" onClick={() => handleReply(review.id)} disabled={!isAuthenticated || !(replyText[review.id] || "").trim()}>
+                              Responder
+                            </Button>
                           </div>
-                        )}
+                        </div>
                       </CardContent>
                     </Card>
                   )
