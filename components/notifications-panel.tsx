@@ -1,7 +1,7 @@
 "use client"
 
 import * as Dialog from "@radix-ui/react-dialog"
-import { X, Bell, CheckCircle2, XCircle, ExternalLink, Circle, RefreshCw, Lightbulb, Star, MessageSquare, HelpCircle, ThumbsUp, ThumbsDown } from "lucide-react"
+import { X, Bell, CheckCircle2, XCircle, ExternalLink, Circle, RefreshCw, Lightbulb, Star, MessageSquare, HelpCircle } from "lucide-react"
 import { useNotifications } from "@/contexts/NotificationContext"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -100,10 +100,6 @@ export function NotificationsPanel({ open, onOpenChange }: NotificationsPanelPro
       case "REPLIED_REVIEW":
       case "REPLIED_QUESTION":
         return <MessageSquare className="h-5 w-5 text-blue-500" />
-      case "LIKE_COMMENT":
-        return <ThumbsUp className="h-5 w-5 text-green-500" />
-      case "DISLIKE_COMMENT":
-        return <ThumbsDown className="h-5 w-5 text-red-500" />
       default:
         return <Bell className="h-5 w-5" />
     }
@@ -183,8 +179,6 @@ export function NotificationsPanel({ open, onOpenChange }: NotificationsPanelPro
                   const isQuestion = notification.type === "QUESTION"
                   const isRepliedReview = notification.type === "REPLIED_REVIEW"
                   const isRepliedQuestion = notification.type === "REPLIED_QUESTION"
-                  const isLikeComment = notification.type === "LIKE_COMMENT"
-                  const isDislikeComment = notification.type === "DISLIKE_COMMENT"
                   
                   // Para SUGGESTION_CREATED, mostrar enlace a página de sugerencias
                   const suggestionCreatedPayload = isSuggestionCreated && "postId" in notification.payload
@@ -208,11 +202,6 @@ export function NotificationsPanel({ open, onOpenChange }: NotificationsPanelPro
                   
                   // Para REPLIED_REVIEW y REPLIED_QUESTION, mostrar enlace al lugar
                   const replyPayload = (isRepliedReview || isRepliedQuestion) && "postId" in notification.payload
-                    ? notification.payload as { commentId: string; comment: string; postId: string }
-                    : null
-                  
-                  // Para LIKE_COMMENT y DISLIKE_COMMENT, mostrar enlace al lugar
-                  const likeCommentPayload = (isLikeComment || isDislikeComment) && "postId" in notification.payload
                     ? notification.payload as { commentId: string; comment: string; postId: string }
                     : null
 
@@ -285,13 +274,6 @@ export function NotificationsPanel({ open, onOpenChange }: NotificationsPanelPro
                             {replyPayload && (
                               <div className="mt-3 flex items-center gap-2">
                                 <PostLink postId={replyPayload.postId}>
-                                  Ver lugar
-                                </PostLink>
-                              </div>
-                            )}
-                            {likeCommentPayload && (
-                              <div className="mt-3 flex items-center gap-2">
-                                <PostLink postId={likeCommentPayload.postId}>
                                   Ver lugar
                                 </PostLink>
                               </div>

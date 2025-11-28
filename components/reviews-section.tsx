@@ -787,7 +787,16 @@ export function ReviewsSection({ placeId, averageRating, totalReviews, ratingsBy
                                     </div>
                                   )}
                                 </div>
-                                <p className="text-sm text-muted-foreground">{new Date(review.timestamp).toLocaleString()}</p>
+                                <p className="text-sm text-muted-foreground">
+                                  {new Date(review.timestamp).toLocaleDateString("es-AR", {
+                                    year: "numeric",
+                                    month: "short",
+                                    day: "numeric",
+                                  })} {new Date(review.timestamp).toLocaleTimeString("es-AR", {
+                                    hour: "2-digit",
+                                    minute: "2-digit",
+                                  })}
+                                </p>
                               </div>
                               <div className="flex items-center gap-1">
                                 {[1, 2, 3, 4, 5].map((star) => (
@@ -832,142 +841,143 @@ export function ReviewsSection({ placeId, averageRating, totalReviews, ratingsBy
                               </div>
                             )}
 
-                            <div className="mt-2">
-                              <div className="flex items-center gap-4 flex-wrap">
-                                {user?.id === review.ownerId && (
-                                  <button
-                                    type="button"
-                                    className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors"
-                                    onClick={() => handleEditReview(review)}
-                                  >
-                                    <Edit className="h-4 w-4" />
-                                    <span>Editar</span>
-                                  </button>
-                                )}
+                            {/* Acciones principales: Like/Dislike/Ver respuestas */}
+                            <div className="flex items-center gap-3 mb-2 pb-2 border-b border-border">
+                              <button
+                                type="button"
+                                className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-primary transition-colors"
+                                onClick={async () => {
+                                  try {
+                                    const updated = await likeComment(review.id, user?.id || "")
+                                    setReviews((prev) => prev.map((r) => (r.id === updated.id ? updated : r)))
+                                  } catch (e) {
+                                    // eslint-disable-next-line no-console
+                                    console.error("No se pudo marcar útil", e)
+                                  }
+                                }}
+                              >
+                                <ThumbsUp className="h-4 w-4" />
+                                <span>{review.likes}</span>
+                              </button>
+                              <button
+                                type="button"
+                                className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-destructive transition-colors"
+                                onClick={async () => {
+                                  try {
+                                    const updated = await dislikeComment(review.id, user?.id || "")
+                                    setReviews((prev) => prev.map((r) => (r.id === updated.id ? updated : r)))
+                                  } catch (e) {
+                                    // eslint-disable-next-line no-console
+                                    console.error("No se pudo marcar no útil", e)
+                                  }
+                                }}
+                              >
+                                <ThumbsDown className="h-4 w-4" />
+                                <span>{review.dislikes || 0}</span>
+                              </button>
+                              {Array.isArray(review.replies) && review.replies.length > 0 && (
                                 <button
                                   type="button"
-                                  className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors"
-                                  onClick={async () => {
-                                    try {
-                                      const updated = await likeComment(review.id, user?.id || "")
-                                      setReviews((prev) => prev.map((r) => (r.id === updated.id ? updated : r)))
-                                    } catch (e) {
-                                      // eslint-disable-next-line no-console
-                                      console.error("No se pudo marcar útil", e)
-                                    }
-                                  }}
-                                >
-                                  <ThumbsUp className="h-4 w-4" />
-                                  <span>Útil ({review.likes})</span>
-                                </button>
-                                <button
-                                  type="button"
-                                  className="flex items-center gap-2 text-sm text-muted-foreground hover:text-destructive transition-colors"
-                                  onClick={async () => {
-                                    try {
-                                      const updated = await dislikeComment(review.id, user?.id || "")
-                                      setReviews((prev) => prev.map((r) => (r.id === updated.id ? updated : r)))
-                                    } catch (e) {
-                                      // eslint-disable-next-line no-console
-                                      console.error("No se pudo marcar no útil", e)
-                                    }
-                                  }}
-                                >
-                                  <ThumbsDown className="h-4 w-4" />
-                                  <span>No útil ({review.dislikes || 0})</span>
-                                </button>
-                                {canReport && (
-                                  <button
-                                    type="button"
-                                    className="flex items-center gap-2 text-sm text-muted-foreground hover:text-destructive transition-colors disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
-                                    onClick={(e) => {
-                                      e.preventDefault()
-                                      e.stopPropagation()
-                                      setReportingCommentId(review.id)
-                                      setReportDialogOpen(true)
-                                    }}
-                                    disabled={userReports.some((r) => r.commentId === review.id)}
-                                    title={userReports.some((r) => r.commentId === review.id) ? "Ya reportaste este comentario" : "Reportar comentario"}
-                                  >
-                                    <Flag className="h-4 w-4 shrink-0" />
-                                    <span className="whitespace-nowrap">{userReports.some((r) => r.commentId === review.id) ? "Reportado" : "Reportar"}</span>
-                                  </button>
-                                )}
+                                  className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-primary transition-colors"
+                                  onClick={async (e) => {
+                                    e.preventDefault()
+                                    e.stopPropagation()
+                                    const isOpen = !!openReplies[review.id]
 
-                                {Array.isArray(review.replies) && review.replies.length > 0 && (
-                                  <div className="flex items-center">
-                                    <button
-                                      type="button"
-                                      className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors"
-                                      onClick={async (e) => {
-                                        e.preventDefault()
-                                        e.stopPropagation()
-                                        const isOpen = !!openReplies[review.id]
+                                    // If opening, ensure we have author names/photos for reply owners
+                                    if (!isOpen) {
+                                      try {
+                                        const replyOwnerIds = Array.from(
+                                          new Set(
+                                            (review.replies || [])
+                                              .map((rp: any) => rp.ownerId)
+                                              .filter(Boolean)
+                                          )
+                                        )
 
-                                        // If opening, ensure we have author names/photos for reply owners
-                                        if (!isOpen) {
-                                          try {
-                                            const replyOwnerIds = Array.from(
-                                              new Set(
-                                                (review.replies || [])
-                                                  .map((rp: any) => rp.ownerId)
-                                                  .filter(Boolean)
-                                              )
-                                            )
+                                        const missing = replyOwnerIds.filter((id) => !authorById[id])
+                                        if (missing.length > 0) {
+                                          const authorEntries = await Promise.all(
+                                            missing.map(async (id) => {
+                                              try {
+                                                const u = await fetchUser(id)
+                                                const full = u ? `${u.name ?? ""} ${u.lastname ?? ""}`.trim() : ""
+                                                return [id, full || id] as const
+                                              } catch {
+                                                return [id, id] as const
+                                              }
+                                            })
+                                          )
 
-                                            const missing = replyOwnerIds.filter((id) => !authorById[id])
-                                            if (missing.length > 0) {
-                                              const authorEntries = await Promise.all(
-                                                missing.map(async (id) => {
-                                                  try {
-                                                    const u = await fetchUser(id)
-                                                    const full = u ? `${u.name ?? ""} ${u.lastname ?? ""}`.trim() : ""
-                                                    return [id, full || id] as const
-                                                  } catch {
-                                                    return [id, id] as const
-                                                  }
-                                                })
-                                              )
+                                          const photoEntries = await Promise.all(
+                                            missing.map(async (id) => {
+                                              try {
+                                                const u = await fetchUser(id)
+                                                const photo = u?.profilePhoto
+                                                return photo ? [id, photo] as const : null
+                                              } catch {
+                                                return null
+                                              }
+                                            })
+                                          )
 
-                                              const photoEntries = await Promise.all(
-                                                missing.map(async (id) => {
-                                                  try {
-                                                    const u = await fetchUser(id)
-                                                    const photo = u?.profilePhoto
-                                                    return photo ? [id, photo] as const : null
-                                                  } catch {
-                                                    return null
-                                                  }
-                                                })
-                                              )
-
-                                              setAuthorById((prev) => ({ ...prev, ...Object.fromEntries(authorEntries) }))
-                                              const validPhotos = photoEntries.filter((entry): entry is [string, string] => entry !== null)
-                                              setProfilePhotoById((prev) => ({ ...prev, ...Object.fromEntries(validPhotos) }))
-                                            }
-                                          } catch (err) {
-                                            // eslint-disable-next-line no-console
-                                            console.error("Error cargando autores de respuestas", err)
-                                          }
+                                          setAuthorById((prev) => ({ ...prev, ...Object.fromEntries(authorEntries) }))
+                                          const validPhotos = photoEntries.filter((entry): entry is [string, string] => entry !== null)
+                                          setProfilePhotoById((prev) => ({ ...prev, ...Object.fromEntries(validPhotos) }))
                                         }
+                                      } catch (err) {
+                                        // eslint-disable-next-line no-console
+                                        console.error("Error cargando autores de respuestas", err)
+                                      }
+                                    }
 
-                                        setOpenReplies((prev) => ({ ...prev, [review.id]: !isOpen }))
-                                      }}
-                                    >
-                                      <MessageSquare className="h-4 w-4" />
-                                      <span>
-                                        {openReplies[review.id]
-                                          ? review.replies.length === 1
-                                            ? "Ocultar respuesta"
-                                            : `Ocultar respuestas (${review.replies.length})`
-                                          : review.replies.length === 1
-                                          ? "Ver respuesta (1)"
-                                          : `Ver respuestas (${review.replies.length})`}
-                                      </span>
-                                    </button>
-                                  </div>
-                                )}
-                              </div>
+                                    setOpenReplies((prev) => ({ ...prev, [review.id]: !isOpen }))
+                                  }}
+                                >
+                                  <MessageSquare className="h-4 w-4" />
+                                  <span>
+                                    {openReplies[review.id]
+                                      ? review.replies.length === 1
+                                        ? "Ocultar"
+                                        : `Ocultar (${review.replies.length})`
+                                      : review.replies.length === 1
+                                      ? "Ver respuesta"
+                                      : `Ver respuestas (${review.replies.length})`}
+                                  </span>
+                                </button>
+                              )}
+                            </div>
+
+                            {/* Acciones secundarias: Editar, Reportar */}
+                            <div className="flex items-center gap-3 text-xs">
+                              {user?.id === review.ownerId && (
+                                <button
+                                  type="button"
+                                  className="text-muted-foreground hover:text-primary transition-colors"
+                                  onClick={() => handleEditReview(review)}
+                                >
+                                  <Edit className="h-3.5 w-3.5 inline mr-1" />
+                                  Editar
+                                </button>
+                              )}
+                              {canReport && (
+                                <button
+                                  type="button"
+                                  className="text-muted-foreground hover:text-destructive transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                  onClick={(e) => {
+                                    e.preventDefault()
+                                    e.stopPropagation()
+                                    setReportingCommentId(review.id)
+                                    setReportDialogOpen(true)
+                                  }}
+                                  disabled={userReports.some((r) => r.commentId === review.id)}
+                                  title={userReports.some((r) => r.commentId === review.id) ? "Ya reportaste este comentario" : "Reportar comentario"}
+                                >
+                                  <Flag className="h-3.5 w-3.5 inline mr-1" />
+                                  {userReports.some((r) => r.commentId === review.id) ? "Reportado" : "Reportar"}
+                                </button>
+                              )}
+                            </div>
 
                               {/* Inline replies when expanded */}
                               {openReplies[review.id] && Array.isArray(review.replies) && review.replies.length > 0 && (
@@ -1001,7 +1011,16 @@ export function ReviewsSection({ placeId, averageRating, totalReviews, ratingsBy
                                                 </div>
                                               )}
                                             </div>
-                                            <p className="text-xs text-muted-foreground">{new Date(reply.timestamp).toLocaleString()}</p>
+                                            <p className="text-xs text-muted-foreground">
+                                              {new Date(reply.timestamp).toLocaleDateString("es-AR", {
+                                                year: "numeric",
+                                                month: "short",
+                                                day: "numeric",
+                                              })} {new Date(reply.timestamp).toLocaleTimeString("es-AR", {
+                                                hour: "2-digit",
+                                                minute: "2-digit",
+                                              })}
+                                            </p>
                                           </div>
                                           {isAuthenticated && user?.id && user.id !== reply.ownerId && (
                                             <button
@@ -1072,7 +1091,6 @@ export function ReviewsSection({ placeId, averageRating, totalReviews, ratingsBy
                                   </div>
                                 </div>
                               )}
-                            </div>
                           </div>
                         </div>
                       </CardContent>
