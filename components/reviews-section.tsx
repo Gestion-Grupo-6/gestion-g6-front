@@ -7,9 +7,9 @@ import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Star, ThumbsUp, X, Upload, Loader2, Edit, ChevronLeft, ChevronRight, Lightbulb, MessageSquare, Flag, AlertTriangle } from "lucide-react"
+import { Star, ThumbsUp, ThumbsDown, X, Upload, Loader2, Edit, ChevronLeft, ChevronRight, Lightbulb, MessageSquare, Flag, AlertTriangle } from "lucide-react"
 import { Progress } from "@/components/ui/progress"
-import { fetchReviewsByPost, createReview, updateReview, likeComment, uploadReviewImage, addReply } from "@/api/review"
+import { fetchReviewsByPost, createReview, updateReview, likeComment, dislikeComment, uploadReviewImage, addReply } from "@/api/review"
 import { fetchUser } from "@/api/user"
 import type { CommentResponse } from "@/types/review"
 import { useAuth } from "@/contexts/AuthContext"
@@ -859,6 +859,22 @@ export function ReviewsSection({ placeId, averageRating, totalReviews, ratingsBy
                                 >
                                   <ThumbsUp className="h-4 w-4" />
                                   <span>Útil ({review.likes})</span>
+                                </button>
+                                <button
+                                  type="button"
+                                  className="flex items-center gap-2 text-sm text-muted-foreground hover:text-destructive transition-colors"
+                                  onClick={async () => {
+                                    try {
+                                      const updated = await dislikeComment(review.id, user?.id || "")
+                                      setReviews((prev) => prev.map((r) => (r.id === updated.id ? updated : r)))
+                                    } catch (e) {
+                                      // eslint-disable-next-line no-console
+                                      console.error("No se pudo marcar no útil", e)
+                                    }
+                                  }}
+                                >
+                                  <ThumbsDown className="h-4 w-4" />
+                                  <span>No útil ({review.dislikes || 0})</span>
                                 </button>
                                 {canReport && (
                                   <button
