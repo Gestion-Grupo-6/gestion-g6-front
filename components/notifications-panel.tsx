@@ -95,6 +95,9 @@ export function NotificationsPanel({ open, onOpenChange }: NotificationsPanelPro
         return <Bell className="h-5 w-5" />
       case "REVIEW":
         return <Star className="h-5 w-5 text-yellow-500" />
+      case "REPLIED_REVIEW":
+      case "REPLIED_QUESTION":
+        return <MessageSquare className="h-5 w-5 text-blue-500" />
       default:
         return <Bell className="h-5 w-5" />
     }
@@ -171,6 +174,8 @@ export function NotificationsPanel({ open, onOpenChange }: NotificationsPanelPro
                   const isSuggestionCreated = notification.type === "SUGGESTION_CREATED"
                   const isSuggestionStatus = notification.type === "SUGGESTION_STATUS_CHANGED"
                   const isReview = notification.type === "REVIEW"
+                  const isRepliedReview = notification.type === "REPLIED_REVIEW"
+                  const isRepliedQuestion = notification.type === "REPLIED_QUESTION"
                   
                   // Para SUGGESTION_CREATED, mostrar enlace a página de sugerencias
                   const suggestionCreatedPayload = isSuggestionCreated && "postId" in notification.payload
@@ -184,6 +189,11 @@ export function NotificationsPanel({ open, onOpenChange }: NotificationsPanelPro
                   
                   // Para REVIEW, mostrar enlace al lugar
                   const reviewPayload = isReview && "postId" in notification.payload
+                    ? notification.payload as { commentId: string; comment: string; postId: string }
+                    : null
+                  
+                  // Para REPLIED_REVIEW y REPLIED_QUESTION, mostrar enlace al lugar
+                  const replyPayload = (isRepliedReview || isRepliedQuestion) && "postId" in notification.payload
                     ? notification.payload as { commentId: string; comment: string; postId: string }
                     : null
 
@@ -242,6 +252,13 @@ export function NotificationsPanel({ open, onOpenChange }: NotificationsPanelPro
                             {reviewPayload && (
                               <div className="mt-3 flex items-center gap-2">
                                 <PostLink postId={reviewPayload.postId}>
+                                  Ver lugar
+                                </PostLink>
+                              </div>
+                            )}
+                            {replyPayload && (
+                              <div className="mt-3 flex items-center gap-2">
+                                <PostLink postId={replyPayload.postId}>
                                   Ver lugar
                                 </PostLink>
                               </div>
