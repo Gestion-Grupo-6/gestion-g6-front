@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Star, ThumbsUp, X, Upload, Loader2, Edit, ChevronLeft, ChevronRight, Lightbulb, MessageSquare, Flag, AlertTriangle } from "lucide-react"
 import { Progress } from "@/components/ui/progress"
-import { fetchReviewsByPost, createReview, updateReview, likeComment, uploadReviewImage } from "@/api/review"
+import { fetchReviewsByPost, createReview, updateReview, likeComment, uploadReviewImage, addReply } from "@/api/review"
 import { fetchUser } from "@/api/user"
 import type { CommentResponse } from "@/types/review"
 import { useAuth } from "@/contexts/AuthContext"
@@ -66,11 +66,27 @@ export function ReviewsSection({ placeId, averageRating, totalReviews, ratingsBy
   const [reportingCommentId, setReportingCommentId] = useState<string | null>(null)
   const [reportsByCommentId, setReportsByCommentId] = useState<Record<string, ReportResponse[]>>({})
   const [userReports, setUserReports] = useState<ReportResponse[]>([])
+  const [replyText, setReplyText] = useState<Record<string, string>>({})
 
 
   useEffect(() => {
     const load = async () => {
       try {
+        // Cargar el ownerId del post
+        const collections = ["hotel", "restaurant", "activity"]
+        for (const collection of collections) {
+          try {
+            const place = await fetchPlace(collection, placeId)
+            if (place) {
+              const ownerId = (place as any).ownerId || null
+              setPlaceOwnerId(ownerId)
+              break
+            }
+          } catch {
+            continue
+          }
+        }
+
         const data = await fetchReviewsByPost(placeId)
         const uniqueIds = Array.from(new Set(data.map((r) => r.ownerId).filter(Boolean)))
         const authorEntries = await Promise.all(
@@ -993,6 +1009,51 @@ export function ReviewsSection({ placeId, averageRating, totalReviews, ratingsBy
                                       </div>
                                     </div>
                                   ))}
+                                </div>
+                              )}
+                              
+                              {/* Formulario para responder (solo si es el owner del post) - siempre visible si es owner */}
+                              {isAuthenticated && user?.id && placeOwnerId && String(user.id) === String(placeOwnerId) && (
+                                <div className="mt-3 border-t border-border pt-4">
+                                  <Textarea
+                                    value={replyText[review.id] || ""}
+                                    onChange={(e) => setReplyText((s) => ({ ...s, [review.id]: e.target.value }))}
+                                    placeholder="Responder a esta reseña..."
+                                    rows={2}
+                                    className="mb-2"
+                                  />
+                                  <div className="flex justify-end">
+                                    <Button
+                                      size="sm"
+                                      onClick={async () => {
+                                        const text = (replyText[review.id] || "").trim()
+                                        if (!text) {
+                                          toast.error("Escribe una respuesta antes de enviar")
+                                          return
+                                        }
+                                        if (!user?.id) {
+                                          toast.error("Debes iniciar sesión para responder")
+                                          return
+                                        }
+                                        try {
+                                          await addReply(review.id, { ownerId: user.id, comment: text })
+                                          setReplyText((s) => ({ ...s, [review.id]: "" }))
+                                          // Recargar reviews
+                                          const data = await fetchReviewsByPost(placeId)
+                                          setReviews(data)
+                                          // Asegurar que las respuestas estén abiertas para ver la nueva respuesta
+                                          setOpenReplies((prev) => ({ ...prev, [review.id]: true }))
+                                          toast.success("Respuesta publicada")
+                                        } catch (err: any) {
+                                          console.error("Error al responder:", err)
+                                          toast.error(err?.message || "No se pudo publicar la respuesta")
+                                        }
+                                      }}
+                                      disabled={!user?.id || !(replyText[review.id] || "").trim()}
+                                    >
+                                      Responder
+                                    </Button>
+                                  </div>
                                 </div>
                               )}
                             </div>
