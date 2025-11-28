@@ -1,7 +1,7 @@
 "use client"
 
 import * as Dialog from "@radix-ui/react-dialog"
-import { X, Bell, CheckCircle2, XCircle, ExternalLink, Circle, RefreshCw } from "lucide-react"
+import { X, Bell, CheckCircle2, XCircle, ExternalLink, Circle, RefreshCw, Lightbulb } from "lucide-react"
 import { useNotifications } from "@/contexts/NotificationContext"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -77,21 +77,16 @@ export function NotificationsPanel({ open, onOpenChange }: NotificationsPanelPro
     if (!readIds.has(notification.id)) {
       markAsRead(notification.id)
     }
-    
-    // Si es una notificación de sugerencia, navegar al post
-    if (notification.type === "SUGGESTION_STATUS_CHANGED" && "postId" in notification.payload) {
-      // El payload tiene postId pero no el tipo, así que usamos la página de sugerencias
-      const payload = notification.payload as { suggestionId: string; postId: string; status: string }
-      // Podríamos navegar a /sugerencias/${payload.postId} o intentar encontrar el tipo del post
-    }
   }
 
   const getNotificationIcon = (notification: any) => {
     switch (notification.type) {
+      case "SUGGESTION_CREATED":
+        return <Lightbulb className="h-5 w-5 text-yellow-500" />
       case "SUGGESTION_STATUS_CHANGED":
-        if ("status" in notification.payload) {
-          const payload = notification.payload as { status: string }
-          return payload.status === "ACCEPTED" ? (
+        if ("suggestionStatus" in notification.payload) {
+          const payload = notification.payload as { suggestionStatus: string }
+          return payload.suggestionStatus === "ACCEPTED" ? (
             <CheckCircle2 className="h-5 w-5 text-green-500" />
           ) : (
             <XCircle className="h-5 w-5 text-red-500" />
@@ -171,9 +166,17 @@ export function NotificationsPanel({ open, onOpenChange }: NotificationsPanelPro
               <div className="flex flex-col gap-3">
                 {notifications.map((notification) => {
                   const isRead = readIds.has(notification.id)
+                  const isSuggestionCreated = notification.type === "SUGGESTION_CREATED"
                   const isSuggestionStatus = notification.type === "SUGGESTION_STATUS_CHANGED"
-                  const payload = isSuggestionStatus && "postId" in notification.payload 
-                    ? notification.payload as { suggestionId: string; postId: string; status: string }
+                  
+                  // Para SUGGESTION_CREATED, mostrar enlace a página de sugerencias
+                  const suggestionCreatedPayload = isSuggestionCreated && "postId" in notification.payload
+                    ? notification.payload as { suggestionId: string; postId: string; content: string; suggestionStatus: string }
+                    : null
+                  
+                  // Para SUGGESTION_STATUS_CHANGED, mostrar enlace al lugar
+                  const suggestionStatusPayload = isSuggestionStatus && "postId" in notification.payload 
+                    ? notification.payload as { suggestionId: string; postId: string; content: string; suggestionStatus: string }
                     : null
 
                   return (
@@ -209,9 +212,21 @@ export function NotificationsPanel({ open, onOpenChange }: NotificationsPanelPro
                                 locale: es,
                               })}
                             </p>
-                            {payload && (
+                            {suggestionCreatedPayload && (
                               <div className="mt-3 flex items-center gap-2">
-                                <PostLink postId={payload.postId}>
+                                <Link
+                                  href={`/sugerencias/${suggestionCreatedPayload.postId}`}
+                                  onClick={(e) => e.stopPropagation()}
+                                  className="text-xs text-primary hover:underline flex items-center gap-1"
+                                >
+                                  Ver sugerencias
+                                  <ExternalLink className="h-3 w-3" />
+                                </Link>
+                              </div>
+                            )}
+                            {suggestionStatusPayload && (
+                              <div className="mt-3 flex items-center gap-2">
+                                <PostLink postId={suggestionStatusPayload.postId}>
                                   Ver lugar
                                 </PostLink>
                               </div>
