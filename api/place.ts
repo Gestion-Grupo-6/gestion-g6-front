@@ -1,6 +1,6 @@
-import type {Place, PlaceCreatePayload} from "@/types/place"
-import {sanitizedBaseUrl} from "./config"
-import {uploadImage} from "@/contexts/SupabaseContext"
+import type { Place, PlaceCreatePayload } from "@/types/place"
+import { sanitizedBaseUrl } from "./config"
+import { uploadImage, getImage } from "@/contexts/SupabaseContext"
 
 export const ACTIVIDADES = "activities"
 export const ACTIVIDAD = "activity"
@@ -100,6 +100,27 @@ export async function fetchAllPlaces(): Promise<Place[]> {
         ...(await restaurantResponse.json()) as Place[],
         ...(await activityResponse.json()) as Place[],
     ]
+}
+
+// Place - DELETE (id)
+export async function deletePlace(collection: string, id: string, ownerId: string): Promise<void> {
+  const pathMap: Record<string, string> = {
+    [HOTELES]: "hotel",
+    [RESTAURANTES]: "restaurant",
+    [ACTIVIDADES]: "activity",
+  }
+  const path = pathMap[collection] ?? collection
+
+  const url = new URL(`${sanitizedBaseUrl}/${path}/${id}`)
+  url.searchParams.set("ownerId", ownerId)
+
+  const response = await fetch(url.toString(), {
+    method: "DELETE",
+  })
+
+  if (!response.ok) {
+    throw new Error(`Error al eliminar ${path}/${id}: ${response.status} ${response.statusText}`)
+  }
 }
 
 // Place - SEARCH (MVP: by name). Send null for unused fields

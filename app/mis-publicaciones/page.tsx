@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import { Header } from "@/components/header"
+import * as AlertDialog from "@radix-ui/react-alert-dialog"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -15,10 +16,10 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { MapPin, Phone, Mail, Globe, Loader2, Plus, Building2, MoreVertical, Star, Edit, Trash2, X, Upload, Lightbulb, BarChart2 } from "lucide-react"
 import { useAuth } from "@/contexts/AuthContext"
 import type { Place } from "@/types/place"
-import { ACTIVIDADES, createPlace, fetchPlace, fetchPlacesByOwner, HOTELES, RESTAURANTES, updatePlace, uploadPlaceImage } from "@/api/place"
+import { ACTIVIDADES, createPlace, fetchPlace, fetchPlacesByOwner, updatePlace, deletePlace, HOTELES, RESTAURANTES, uploadPlaceImage } from "@/api/place"
+import { fetchVisits } from "@/api/metrics"
 import { ReviewsPanel } from "@/components/reviews-panel"
 import { LocationSelector, type LocationValue } from "@/components/location-selector"
-import { fetchVisits } from "@/api/metrics"
 import StatsChart from "@/components/stats-chart"
 import StatsPie from "@/components/stats-pie"
 import { parseTimestamp } from "@/lib/parse-timestamp"
@@ -132,6 +133,11 @@ export default function MisPublicacionesPage() {
   const [locationConfirmed, setLocationConfirmed] = useState(false)
   
   const [openMenuId, setOpenMenuId] = useState<string | null>(null)
+  const [deleteCandidate, setDeleteCandidate] = useState<{
+    id: string
+    collection: CategoryValue
+    name?: string
+  } | null>(null)
   const [showReviewsForId, setShowReviewsForId] = useState<string | null>(null)
   const [openStatsFor, setOpenStatsFor] = useState<string | null>(null)
   const [statsByPlace, setStatsByPlace] = useState<Record<string, any>>({})
@@ -1088,10 +1094,17 @@ export default function MisPublicacionesPage() {
                                     </Button>
                                     <Button
                                       variant="ghost"
-                                      className="w-full justify-start px-4 py-2 text-sm text-destructive hover:text-destructive hover:bg-destructive/10"
+                                      className="w-full justify-start px-4 py-2 text-sm text-[#7b1128] hover:text-[#5f0b21] hover:bg-[#7b11282a]"
                                       onClick={() => {
-                                        // TODO: Implementar eliminación
                                         setOpenMenuId(null)
+                                        try {
+                                          const rawType = ((place as any).type as string | undefined) ?? ((place as any).category as string | undefined)
+                                          const t = String(rawType || '').toUpperCase()
+                                          const collection: CategoryValue = t === 'HOTEL' ? HOTELES : t === 'RESTAURANT' ? RESTAURANTES : ACTIVIDADES
+                                          setDeleteCandidate({ id: place.id, collection, name: place.name })
+                                        } catch (e) {
+                                          setDeleteCandidate({ id: place.id, collection: HOTELES, name: place.name })
+                                        }
                                       }}
                                     >
                                       <Trash2 className="h-4 w-4 mr-2" />
@@ -1245,6 +1258,45 @@ export default function MisPublicacionesPage() {
           placeId={showReviewsForId}
         />
       )}
+
+      {/* Delete confirmation dialog */}
+      <AlertDialog.Root open={Boolean(deleteCandidate)} onOpenChange={(open) => { if (!open) setDeleteCandidate(null) }}>
+        <AlertDialog.Portal>
+          <AlertDialog.Overlay className="fixed inset-0 bg-black/40 z-50" />
+          <AlertDialog.Content className="fixed left-1/2 -translate-x-1/2 top-1/3 z-50 w-[90%] max-w-md bg-background rounded-lg p-6 shadow-lg">
+            <AlertDialog.Title className="text-lg font-semibold">Eliminar publicación</AlertDialog.Title>
+            <AlertDialog.Description className="mt-2 text-sm text-muted-foreground">
+              Esta acción no se puede deshacer. Si eliminas la publicación, no podrá recuperarse. ¿Estás seguro?
+            </AlertDialog.Description>
+
+            <div className="mt-6 flex justify-end gap-3">
+              <AlertDialog.Cancel asChild>
+                <Button variant="outline" onClick={() => setDeleteCandidate(null)}>Volver</Button>
+              </AlertDialog.Cancel>
+              <AlertDialog.Action asChild>
+                <Button variant="destructive" className="bg-[#990000] hover:bg-[#5f0b21] text-white" onClick={async () => {
+                  if (!deleteCandidate || !user?.id) return
+                  try {
+                    await deletePlace(deleteCandidate.collection, deleteCandidate.id, user.id)
+                    toast.success("Se eliminó tu publicación exitosamente.")
+                    setDeleteCandidate(null)
+                    // Re-fetch places
+                    if (user?.id) {
+                      const updatedPlaces = await fetchPlacesByOwner(user.id)
+                      setAllPlaces(updatedPlaces)
+                    }
+                  } catch (error) {
+                    console.error("Error deleting place:", error)
+                    toast.error("No se pudo eliminar la publicación. Intenta nuevamente.")
+                  }
+                }}>
+                  Eliminar
+                </Button>
+              </AlertDialog.Action>
+            </div>
+          </AlertDialog.Content>
+        </AlertDialog.Portal>
+      </AlertDialog.Root>
     </div>
   )
 }
