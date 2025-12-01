@@ -53,9 +53,10 @@ export async function POST(req: Request) {
                     messages,
                 }
 
+                // Save to database
                 upsertMessages(payload)
 
-                console.log("[AI-SUGGESTIONS] onFinish: Messages saved successfully")
+                console.log("[AI-SUGGESTIONS] onFinish: Messages saved to database")
             }
         })
     } catch (err) {

@@ -13,12 +13,12 @@ import BouncingDotsLoader from "@/components/ui/BouncingDotsLoader"
 import "../../styles/BouncingDotsStyle.css"
 import { useLocationContext } from "@/contexts/LocationContext"
 import { useAuth } from "@/contexts/AuthContext";
+import { ChatHistory } from "@/types/chatHistory"
 
 export function Chatbot({
   chatId,
   initialMessages,
-  onChangeMessagesAction,
-}: { chatId?: string, initialMessages?: UIMessage[], onChangeMessagesAction?: (chatId: string, messages: UIMessage[]) => void } = {}) {
+}: { chatId?: string, initialMessages?: UIMessage[] } = {}) {
   const { user } = useAuth()
   const [inputValue, setInputValue] = useState("")
   const { location: storedLocation } = useLocationContext()
@@ -33,12 +33,17 @@ export function Chatbot({
     }),
   })
 
+  // Save to localStorage whenever messages change
+  // ChatHistory.serialize() filters out incomplete/streaming messages automatically
   useEffect(() => {
-    if (chatId && messages.length > 0 && onChangeMessagesAction) {
-      console.log("[CHATBOT] Updating messages for chatId:", chatId, messages);
-      onChangeMessagesAction(chatId, messages);
+    if (chatId && messages.length > 0) {
+      const currentHistory = ChatHistory.load()
+      const updatedHistory = currentHistory.map((conv: any) =>
+        conv.id === chatId ? { ...conv, messages } : conv
+      )
+      ChatHistory.save(updatedHistory)
     }
-  }, [messages, chatId, onChangeMessagesAction])
+  }, [messages, chatId])
 
   const isThinking = status === "submitted"
 
