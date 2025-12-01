@@ -20,16 +20,21 @@ export function FeaturedPlaces({ places }: FeaturedPlacesProps) {
   const [favoriteIds, setFavoriteIds] = useState<Set<string>>(new Set())
   const [loadingFavorites, setLoadingFavorites] = useState<Set<string>>(new Set())
   const [isLoadingInitialFavorites, setIsLoadingInitialFavorites] = useState(true)
+  const [favoritesError, setFavoritesError] = useState<string | null>(null)
 
   useEffect(() => {
-    if (!isAuthenticated || !user?.id) {
-      setFavoriteIds(new Set())
-      setIsLoadingInitialFavorites(false)
-      return
-    }
-
     const loadFavorites = async () => {
+      // Skip if not authenticated or missing user ID
+      if (!isAuthenticated || !user?.id) {
+        setFavoriteIds(new Set())
+        setFavoritesError(null)
+        setIsLoadingInitialFavorites(false)
+        return
+      }
+
       setIsLoadingInitialFavorites(true)
+      setFavoritesError(null)
+
       try {
         const likedPosts = await fetchLikedPosts(user.id)
         const ids = new Set(likedPosts.map((post) => post.id))
@@ -37,6 +42,17 @@ export function FeaturedPlaces({ places }: FeaturedPlacesProps) {
       } catch (error) {
         console.error("Error al cargar favoritos:", error)
         setFavoriteIds(new Set())
+        
+        // Handle specific error cases
+        if (error instanceof Error) {
+          if (error.message.includes('404') || error.message.includes('No se encontró un usuario')) {
+            setFavoritesError("No se pudo cargar la información de favoritos. Por favor, intenta recargar la página.")
+          } else if (error.message.includes('401')) {
+            setFavoritesError("Debes iniciar sesión para ver tus favoritos")
+          } else {
+            setFavoritesError("Ocurrió un error al cargar tus favoritos")
+          }
+        }
       } finally {
         setIsLoadingInitialFavorites(false)
       }

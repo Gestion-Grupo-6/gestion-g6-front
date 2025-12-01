@@ -2,7 +2,7 @@ import { google } from '@ai-sdk/google';
 import { streamText, convertToModelMessages } from "ai";
 import { upsertMessages } from "@/api/messages";
 import { MessagesPayload } from "@/types/messages";
-import {getLocationContext, getSystemPrompt} from "@/app/api/ai-suggestions/prompt";
+import { getLocationContext, getSystemPrompt } from "@/app/api/ai-suggestions/prompt";
 
 
 export const runtime = "nodejs";
@@ -34,10 +34,16 @@ export async function POST(req: Request) {
         // Important: return the UI-stream-formatted response so the client (useChat) understands it
         return result.toUIMessageStreamResponse({
             originalMessages: safeMessages,
-            onFinish: ({messages}) => {
-                
+            onFinish: ({ messages }) => {
+
                 if (!userId || !conversationId) {
-                    console.error("[AI-SUGGESTIONS] onFinish: userId o conversationId no definidos")
+                    console.log("[AI-SUGGESTIONS] onFinish: Skipping save - no userId or conversationId")
+                    return
+                }
+
+                // Only save if conversation has messages
+                if (!messages || messages.length === 0) {
+                    console.log("[AI-SUGGESTIONS] onFinish: Skipping save - no messages in conversation")
                     return
                 }
 
@@ -47,9 +53,10 @@ export async function POST(req: Request) {
                     messages,
                 }
 
+                // Save to database
                 upsertMessages(payload)
 
-                console.log("[AI-SUGGESTIONS] onFinish: Mensajes guardados exitosamente")
+                console.log("[AI-SUGGESTIONS] onFinish: Messages saved to database")
             }
         })
     } catch (err) {

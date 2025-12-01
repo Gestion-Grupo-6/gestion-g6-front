@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import {Star, MapPin, Phone, Mail, Globe, ChevronLeft, ChevronRight, Heart, Building2, ChevronDown, Clock} from "lucide-react"
+import { Star, MapPin, Phone, Mail, Globe, ChevronLeft, ChevronRight, Heart, Building2, ChevronDown, Clock } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -38,7 +38,7 @@ export function PlaceDetail({ place }: PlaceDetailProps) {
   const [isFavorite, setIsFavorite] = useState(false)
   const [isLoadingFavorite, setIsLoadingFavorite] = useState(false)
   const [isHoursOpen, setIsHoursOpen] = useState(false)
-  
+
   const images = Array.isArray(place.images) && place.images.length > 0
     ? place.images.map((p) => getImage(p) || "/placeholder.svg")
     : ["/placeholder.svg"]
@@ -48,10 +48,10 @@ export function PlaceDetail({ place }: PlaceDetailProps) {
   const priceLabel = place.category === "hotel"
     ? (place.price != null ? `$${formatNumberWithComma(place.price)} por noche` : ((place as any).priceCategory ?? "Consultar"))
     : place.category === "activity"
-    ? (place.price != null ? `$${formatNumberWithComma(place.price)} por persona` : ((place as any).priceCategory ?? "Consultar"))
-    : place.category === "restaurant"
-    ? ((place as any).priceCategory ?? "Consultar")
-    : (place.price != null ? `$${formatNumberWithComma(place.price)}` : ((place as any).priceCategory ?? "Consultar"))
+      ? (place.price != null ? `$${formatNumberWithComma(place.price)} por persona` : ((place as any).priceCategory ?? "Consultar"))
+      : place.category === "restaurant"
+        ? ((place as any).priceCategory ?? "Consultar")
+        : (place.price != null ? `$${formatNumberWithComma(place.price)}` : ((place as any).priceCategory ?? "Consultar"))
   const categoryRoutes: Record<string, string> = {
     hotel: "hotels",
     restaurant: "restaurants",
@@ -60,7 +60,7 @@ export function PlaceDetail({ place }: PlaceDetailProps) {
   const categoryPath = categoryRoutes[place.category] ?? `${place.category}s`
   const categoryLabel = place.category
   const address = place.address ?? "Información no disponible"
-  const location = [ (place as any).city, (place as any).country ].filter(Boolean).join(", ")
+  const location = [(place as any).city, (place as any).country].filter(Boolean).join(", ")
   const coordinates = place.location
   const hasCoordinates = typeof coordinates?.lat === "number" && typeof coordinates?.lng === "number"
   const phone = place.phone ?? ""
@@ -183,9 +183,8 @@ export function PlaceDetail({ place }: PlaceDetailProps) {
                   <button
                     key={index}
                     onClick={() => setCurrentImageIndex(index)}
-                    className={`h-2 rounded-full transition-all ${
-                      index === currentImageIndex ? "w-8 bg-primary" : "w-2 bg-background/60"
-                    }`}
+                    className={`h-2 rounded-full transition-all ${index === currentImageIndex ? "w-8 bg-primary" : "w-2 bg-background/60"
+                      }`}
                     aria-label={`Go to image ${index + 1}`}
                   />
                 ))}
@@ -276,9 +275,9 @@ export function PlaceDetail({ place }: PlaceDetailProps) {
 
             {/* Se eliminan campos no soportados por el backend (checkIn, checkOut, hours, duration, includes, bestTime, howToGet) */}
 
-            <ReviewsSection 
-              placeId={String(place.id)} 
-              averageRating={rating} 
+            <ReviewsSection
+              placeId={String(place.id)}
+              averageRating={rating}
               totalReviews={reviewCount}
               ratingsByCategory={(place as any).ratings}
             />
@@ -289,8 +288,20 @@ export function PlaceDetail({ place }: PlaceDetailProps) {
           </div>
 
           {/* Sidebar */}
-          <div className="space-y-6">
-            <Card className="sticky top-20">
+          <div className="sticky top-20 self-start space-y-4">
+            {hasCoordinates && coordinates && (
+              <Card>
+                <CardContent className="p-0">
+                  <div className="p-4">
+                    <h2 className="text-xl font-bold text-foreground">Ubicación en el mapa</h2>
+                  </div>
+                  <div className="h-56 w-full border-t">
+                    <PlaceLocationMap lat={coordinates.lat} lng={coordinates.lng} />
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+            <Card>
               <CardContent className="p-6 space-y-4">
                 <h2 className="text-xl font-bold text-foreground">Información de contacto</h2>
 
@@ -348,7 +359,7 @@ export function PlaceDetail({ place }: PlaceDetailProps) {
                           <Clock className="h-5 w-5 text-muted-foreground flex-shrink-0" />
                           <p className="text-sm font-medium text-foreground">Horarios</p>
                         </div>
-                        <ChevronDown 
+                        <ChevronDown
                           className={`h-4 w-4 text-muted-foreground transition-transform ${isHoursOpen ? 'rotate-180' : ''}`}
                         />
                       </button>
@@ -396,8 +407,8 @@ export function PlaceDetail({ place }: PlaceDetailProps) {
                       Visitar página
                     </Button>
 
-                    <Button 
-                      variant={isFavorite ? "default" : "outline"} 
+                    <Button
+                      variant={isFavorite ? "default" : "outline"}
                       className={`w-full flex items-center gap-2 ${isFavorite ? "" : "bg-transparent"}`}
                       size="lg"
                       onClick={handleToggleFavorite}
@@ -410,6 +421,8 @@ export function PlaceDetail({ place }: PlaceDetailProps) {
                 </div>
               </CardContent>
             </Card>
+
+
           </div>
         </div>
       </div>

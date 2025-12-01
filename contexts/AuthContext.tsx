@@ -4,9 +4,10 @@ import { fetchUserByEmail } from "@/api/user"
 import { Usuario } from "@/types/user"
 import { createContext, useContext, useState, useEffect, ReactNode } from "react"
 import { useRouter } from "next/navigation"
-import {fetchMessages} from "@/api/messages";
-import {UIMessage} from "ai";
-import {Conversation} from "@/types/messages";
+import { fetchMessages } from "@/api/messages";
+import { UIMessage } from "ai";
+import { Conversation } from "@/types/messages";
+import { ChatHistory } from "@/types/chatHistory";
 
 interface AuthContextType {
   user: Usuario | null
@@ -35,25 +36,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = async (email: string, password: string): Promise<boolean> => {
     setIsLoading(true)
-    
+
     try {
       if (email && password) {
         var user = await fetchUserByEmail(email)
-        
+
         if (!user) {
           setIsLoading(false)
           return false
         }
-        
+
         if (user.password !== password) {
           setIsLoading(false)
           return false
         }
 
+        // Fetch chat history from database and save directly to localStorage
         const conversations = await fetchMessages(user.id)
-        user.chatHistory = conversations ? conversations.map(
-            (conv) => ({id: conv.conversationId, messages: conv.messages}) as Conversation
-        ) : new Array<Conversation>()
+        const chatHistory = conversations ? conversations.map(
+          (conv) => ({ id: conv.conversationId, messages: conv.messages }) as Conversation
+        ) : []
+
+        // Save chat history to localStorage using ChatHistory utility
+        if (chatHistory.length > 0) {
+          ChatHistory.save(chatHistory)
+          console.log("[AUTH] Saved chat history to localStorage")
+        }
 
         setUser(user)
         localStorage.setItem('user', JSON.stringify(user))
@@ -61,7 +69,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setIsLoading(false)
         return true
       }
-      
+
       setIsLoading(false)
       return false
     } catch (error) {
@@ -74,6 +82,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = () => {
     setUser(null)
     localStorage.removeItem('user')
+    ChatHistory.clear()
     router.push('/')
   }
 

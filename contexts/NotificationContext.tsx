@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useState, useEffect, ReactNode, useCallback } from "react"
 import { useAuth } from "./AuthContext"
-import { fetchNotifications } from "@/api/notification"
+import { fetchNotifications, markAllAsRead } from "@/api/notification"
 import type { Notification } from "@/types/notification"
 
 interface NotificationContextType {
@@ -11,9 +11,11 @@ interface NotificationContextType {
   isLoading: boolean
   error: string | null
   readIds: Set<string>
+  hiddenIds: Set<string>
   refreshNotifications: () => Promise<void>
   markAsRead: (notificationId: string) => void
-  clearAll: () => void
+  hideNotification: (notificationId: string) => void
+  clearAll: () => Promise<void>
 }
 
 const NotificationContext = createContext<NotificationContextType | undefined>(undefined)
@@ -24,6 +26,7 @@ const POLLING_INTERVAL = 30000
 // Claves para localStorage
 const getNotificationsKey = (userId: string) => `notifications_${userId}`
 const getReadIdsKey = (userId: string) => `notifications_read_${userId}`
+const getHiddenIdsKey = (userId: string) => `notifications_hidden_${userId}`
 
 // Helpers para localStorage
 const saveNotificationsToStorage = (userId: string, notifications: Notification[]) => {
@@ -70,11 +73,34 @@ const loadReadIdsFromStorage = (userId: string): Set<string> => {
   return new Set()
 }
 
+const saveHiddenIdsToStorage = (userId: string, hiddenIds: Set<string>) => {
+  if (typeof window === "undefined") return
+  try {
+    localStorage.setItem(getHiddenIdsKey(userId), JSON.stringify(Array.from(hiddenIds)))
+  } catch (error) {
+    console.error("Error guardando hiddenIds en localStorage:", error)
+  }
+}
+
+const loadHiddenIdsFromStorage = (userId: string): Set<string> => {
+  if (typeof window === "undefined") return new Set()
+  try {
+    const stored = localStorage.getItem(getHiddenIdsKey(userId))
+    if (stored) {
+      return new Set(JSON.parse(stored) as string[])
+    }
+  } catch (error) {
+    console.error("Error cargando hiddenIds de localStorage:", error)
+  }
+  return new Set()
+}
+
 const clearNotificationsFromStorage = (userId: string) => {
   if (typeof window === "undefined") return
   try {
     localStorage.removeItem(getNotificationsKey(userId))
     localStorage.removeItem(getReadIdsKey(userId))
+    localStorage.removeItem(getHiddenIdsKey(userId))
   } catch (error) {
     console.error("Error limpiando notificaciones de localStorage:", error)
   }
@@ -86,6 +112,7 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [readIds, setReadIds] = useState<Set<string>>(new Set())
+  const [hiddenIds, setHiddenIds] = useState<Set<string>>(new Set())
   const [lastUserId, setLastUserId] = useState<string | null>(null)
 
   const loadNotifications = useCallback(async () => {
@@ -99,17 +126,23 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
       setError(null)
       const newNotifications = await fetchNotifications(user.id)
       
-      // Agregar nuevas notificaciones a las existentes (no reemplazar)
+      // Actualizar notificaciones existentes y agregar nuevas
       setNotifications((prev) => {
-        const existingIds = new Set(prev.map((n) => n.id))
-        const uniqueNew = newNotifications.filter((n) => !existingIds.has(n.id))
-        const updated = [...prev, ...uniqueNew].sort(
-          (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-        )
-        // Persistir en localStorage
-        if (user?.id) {
-          saveNotificationsToStorage(user.id, updated)
-        }
+        const existingMap = new Map(prev.map((n) => [n.id, n]))
+        
+        // Actualizar notificaciones existentes con datos del backend
+        newNotifications.forEach((newNotif) => {
+          existingMap.set(newNotif.id, newNotif)
+        })
+        
+        // Filtrar notificaciones ocultas (showed: true) y ordenar
+        // Nota: hiddenIds se filtra en hideNotificationById
+        const updated = Array.from(existingMap.values())
+          .filter((n) => !n.showed)
+          .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+        
+        // Filtrar también por hiddenIds usando el estado actual
+        // Necesitamos hacer esto de manera síncrona, así que usamos una función de actualización
         return updated
       })
     } catch (e: any) {
@@ -126,6 +159,22 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
       setIsLoading(false)
     }
   }, [isAuthenticated, user?.id])
+  
+  // Filtrar notificaciones cuando cambia hiddenIds
+  useEffect(() => {
+    if (!user?.id) return
+    
+    setNotifications((prev) => {
+      const filtered = prev
+        .filter((n) => !hiddenIds.has(n.id))
+        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+      
+      if (user?.id) {
+        saveNotificationsToStorage(user.id, filtered)
+      }
+      return filtered
+    })
+  }, [hiddenIds, user?.id])
 
   const refreshNotifications = useCallback(async () => {
     await loadNotifications()
@@ -141,11 +190,32 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
     })
   }, [user?.id])
 
-  const clearAll = useCallback(() => {
-    setNotifications([])
-    setReadIds(new Set())
-    if (user?.id) {
+  const hideNotificationById = useCallback((notificationId: string) => {
+    if (!user?.id) return
+    
+    // Agregar a hiddenIds - el useEffect se encargará de filtrar las notificaciones
+    setHiddenIds((prev) => {
+      const newHiddenIds = new Set([...prev, notificationId])
+      saveHiddenIdsToStorage(user.id, newHiddenIds)
+      return newHiddenIds
+    })
+  }, [user?.id])
+
+  const clearAll = useCallback(async () => {
+    if (!user?.id) return
+    
+    try {
+      // Marcar todas las notificaciones no leídas como leídas en el backend
+      await markAllAsRead(user.id)
+      
+      // Limpiar estado local
+      setNotifications([])
+      setReadIds(new Set())
+      setHiddenIds(new Set())
       clearNotificationsFromStorage(user.id)
+    } catch (error) {
+      console.error("Error al limpiar todas las notificaciones:", error)
+      throw error
     }
   }, [user?.id])
 
@@ -159,6 +229,7 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
       }
       setNotifications([])
       setReadIds(new Set())
+      setHiddenIds(new Set())
       setLastUserId(null)
       return
     }
@@ -167,8 +238,10 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
     if (lastUserId !== user.id) {
       const storedNotifications = loadNotificationsFromStorage(user.id)
       const storedReadIds = loadReadIdsFromStorage(user.id)
-      setNotifications(storedNotifications)
+      const storedHiddenIds = loadHiddenIdsFromStorage(user.id)
+      setNotifications(storedNotifications.filter((n) => !storedHiddenIds.has(n.id) && !n.showed))
       setReadIds(storedReadIds)
+      setHiddenIds(storedHiddenIds)
       setLastUserId(user.id)
     }
   }, [isAuthenticated, user?.id, lastUserId])
@@ -207,8 +280,10 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
     isLoading,
     error,
     readIds,
+    hiddenIds,
     refreshNotifications,
     markAsRead,
+    hideNotification: hideNotificationById,
     clearAll,
   }
 

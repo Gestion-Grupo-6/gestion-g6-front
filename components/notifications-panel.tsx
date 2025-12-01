@@ -1,7 +1,7 @@
 "use client"
 
 import * as Dialog from "@radix-ui/react-dialog"
-import { X, Bell, CheckCircle2, XCircle, ExternalLink, Circle, RefreshCw } from "lucide-react"
+import { X, Bell, CheckCircle2, XCircle, ExternalLink, Circle, RefreshCw, Lightbulb, Star, MessageSquare, HelpCircle, ThumbsUp, ThumbsDown, Heart } from "lucide-react"
 import { useNotifications } from "@/contexts/NotificationContext"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -71,33 +71,49 @@ function PostLink({ postId, children }: { postId: string; children: React.ReactN
 }
 
 export function NotificationsPanel({ open, onOpenChange }: NotificationsPanelProps) {
-  const { notifications, unreadCount, isLoading, error, readIds, markAsRead, clearAll, refreshNotifications } = useNotifications()
+  const { notifications, unreadCount, isLoading, error, readIds, markAsRead, hideNotification, clearAll, refreshNotifications } = useNotifications()
 
   const handleNotificationClick = (notification: any) => {
     if (!readIds.has(notification.id)) {
       markAsRead(notification.id)
     }
-    
-    // Si es una notificación de sugerencia, navegar al post
-    if (notification.type === "SUGGESTION_STATUS_CHANGED" && "postId" in notification.payload) {
-      // El payload tiene postId pero no el tipo, así que usamos la página de sugerencias
-      const payload = notification.payload as { suggestionId: string; postId: string; status: string }
-      // Podríamos navegar a /sugerencias/${payload.postId} o intentar encontrar el tipo del post
+  }
+
+  const handleClearAll = async () => {
+    try {
+      await clearAll()
+    } catch (error) {
+      console.error("Error al limpiar todas las notificaciones:", error)
     }
   }
 
   const getNotificationIcon = (notification: any) => {
     switch (notification.type) {
+      case "SUGGESTION_CREATED":
+        return <Lightbulb className="h-5 w-5 text-yellow-500" />
       case "SUGGESTION_STATUS_CHANGED":
-        if ("status" in notification.payload) {
-          const payload = notification.payload as { status: string }
-          return payload.status === "ACCEPTED" ? (
+        if ("suggestionStatus" in notification.payload) {
+          const payload = notification.payload as { suggestionStatus: string }
+          return payload.suggestionStatus === "ACCEPTED" ? (
             <CheckCircle2 className="h-5 w-5 text-green-500" />
           ) : (
             <XCircle className="h-5 w-5 text-red-500" />
           )
         }
         return <Bell className="h-5 w-5" />
+      case "REVIEW":
+        return <Star className="h-5 w-5 text-yellow-500" />
+      case "QUESTION":
+        return <HelpCircle className="h-5 w-5 text-blue-500" />
+      case "REPLIED_REVIEW":
+      case "REPLIED_QUESTION":
+        return <MessageSquare className="h-5 w-5 text-blue-500" />
+      case "LIKE_COMMENT":
+        return <ThumbsUp className="h-5 w-5 text-green-500" />
+      case "DISLIKE_COMMENT":
+        return <ThumbsDown className="h-5 w-5 text-red-500" />
+      case "FAVORITE_POST_UPDATED":
+        return <Heart className="h-5 w-5 text-pink-500" />
       default:
         return <Bell className="h-5 w-5" />
     }
@@ -132,7 +148,7 @@ export function NotificationsPanel({ open, onOpenChange }: NotificationsPanelPro
               </button>
               {notifications.length > 0 && (
                 <button
-                  onClick={clearAll}
+                  onClick={handleClearAll}
                   className="text-sm text-muted-foreground hover:text-foreground px-2 py-1 rounded hover:bg-muted"
                 >
                   Limpiar todo
@@ -171,9 +187,49 @@ export function NotificationsPanel({ open, onOpenChange }: NotificationsPanelPro
               <div className="flex flex-col gap-3">
                 {notifications.map((notification) => {
                   const isRead = readIds.has(notification.id)
+                  const isSuggestionCreated = notification.type === "SUGGESTION_CREATED"
                   const isSuggestionStatus = notification.type === "SUGGESTION_STATUS_CHANGED"
-                  const payload = isSuggestionStatus && "postId" in notification.payload 
-                    ? notification.payload as { suggestionId: string; postId: string; status: string }
+                  const isReview = notification.type === "REVIEW"
+                  const isQuestion = notification.type === "QUESTION"
+                  const isRepliedReview = notification.type === "REPLIED_REVIEW"
+                  const isRepliedQuestion = notification.type === "REPLIED_QUESTION"
+                  const isLikeComment = notification.type === "LIKE_COMMENT"
+                  const isDislikeComment = notification.type === "DISLIKE_COMMENT"
+                  const isFavoritePostUpdated = notification.type === "FAVORITE_POST_UPDATED"
+                  
+                  // Para SUGGESTION_CREATED, mostrar enlace a página de sugerencias
+                  const suggestionCreatedPayload = isSuggestionCreated && "postId" in notification.payload
+                    ? notification.payload as { suggestionId: string; postId: string; content: string; suggestionStatus: string }
+                    : null
+                  
+                  // Para SUGGESTION_STATUS_CHANGED, mostrar enlace al lugar
+                  const suggestionStatusPayload = isSuggestionStatus && "postId" in notification.payload 
+                    ? notification.payload as { suggestionId: string; postId: string; content: string; suggestionStatus: string }
+                    : null
+                  
+                  // Para REVIEW, mostrar enlace al lugar
+                  const reviewPayload = isReview && "postId" in notification.payload
+                    ? notification.payload as { commentId: string; comment: string; postId: string }
+                    : null
+                  
+                  // Para QUESTION, mostrar enlace al lugar
+                  const questionPayload = isQuestion && "postId" in notification.payload
+                    ? notification.payload as { commentId: string; comment: string; postId: string }
+                    : null
+                  
+                  // Para REPLIED_REVIEW y REPLIED_QUESTION, mostrar enlace al lugar
+                  const replyPayload = (isRepliedReview || isRepliedQuestion) && "postId" in notification.payload
+                    ? notification.payload as { commentId: string; comment: string; postId: string }
+                    : null
+                  
+                  // Para LIKE_COMMENT y DISLIKE_COMMENT, mostrar enlace al lugar
+                  const likeCommentPayload = (isLikeComment || isDislikeComment) && "postId" in notification.payload
+                    ? notification.payload as { commentId: string; comment: string; postId: string }
+                    : null
+                  
+                  // Para FAVORITE_POST_UPDATED, mostrar enlace al lugar
+                  const favoritePostUpdatedPayload = isFavoritePostUpdated && "postId" in notification.payload
+                    ? notification.payload as { postId: string; postType: string; postName: string; changes: Record<string, { old: unknown; new: unknown }> }
                     : null
 
                   return (
@@ -209,9 +265,56 @@ export function NotificationsPanel({ open, onOpenChange }: NotificationsPanelPro
                                 locale: es,
                               })}
                             </p>
-                            {payload && (
+                            {suggestionCreatedPayload && (
                               <div className="mt-3 flex items-center gap-2">
-                                <PostLink postId={payload.postId}>
+                                <Link
+                                  href={`/sugerencias/${suggestionCreatedPayload.postId}`}
+                                  onClick={(e) => e.stopPropagation()}
+                                  className="text-xs text-primary hover:underline flex items-center gap-1"
+                                >
+                                  Ver sugerencias
+                                  <ExternalLink className="h-3 w-3" />
+                                </Link>
+                              </div>
+                            )}
+                            {suggestionStatusPayload && (
+                              <div className="mt-3 flex items-center gap-2">
+                                <PostLink postId={suggestionStatusPayload.postId}>
+                                  Ver lugar
+                                </PostLink>
+                              </div>
+                            )}
+                            {reviewPayload && (
+                              <div className="mt-3 flex items-center gap-2">
+                                <PostLink postId={reviewPayload.postId}>
+                                  Ver lugar
+                                </PostLink>
+                              </div>
+                            )}
+                            {questionPayload && (
+                              <div className="mt-3 flex items-center gap-2">
+                                <PostLink postId={questionPayload.postId}>
+                                  Ver lugar
+                                </PostLink>
+                              </div>
+                            )}
+                            {replyPayload && (
+                              <div className="mt-3 flex items-center gap-2">
+                                <PostLink postId={replyPayload.postId}>
+                                  Ver lugar
+                                </PostLink>
+                              </div>
+                            )}
+                            {likeCommentPayload && (
+                              <div className="mt-3 flex items-center gap-2">
+                                <PostLink postId={likeCommentPayload.postId}>
+                                  Ver lugar
+                                </PostLink>
+                              </div>
+                            )}
+                            {favoritePostUpdatedPayload && (
+                              <div className="mt-3 flex items-center gap-2">
+                                <PostLink postId={favoritePostUpdatedPayload.postId}>
                                   Ver lugar
                                 </PostLink>
                               </div>
