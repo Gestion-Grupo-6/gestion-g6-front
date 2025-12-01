@@ -16,10 +16,10 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { MapPin, Phone, Mail, Globe, Loader2, Plus, Building2, MoreVertical, Star, Edit, Trash2, X, Upload, Lightbulb, BarChart2 } from "lucide-react"
 import { useAuth } from "@/contexts/AuthContext"
 import type { Place } from "@/types/place"
-import { ACTIVIDADES, createPlace, fetchPlace, fetchPlacesByOwner, HOTELES, RESTAURANTES, updatePlace, uploadPlaceImage } from "@/api/place"
+import { ACTIVIDADES, createPlace, fetchPlace, fetchPlacesByOwner, updatePlace, deletePlace, HOTELES, RESTAURANTES, uploadPlaceImage } from "@/api/place"
+import { fetchVisits } from "@/api/metrics"
 import { ReviewsPanel } from "@/components/reviews-panel"
 import { LocationSelector, type LocationValue } from "@/components/location-selector"
-import { fetchVisits } from "@/api/metrics"
 import StatsChart from "@/components/stats-chart"
 import StatsPie from "@/components/stats-pie"
 import { parseTimestamp } from "@/lib/parse-timestamp"
@@ -1274,10 +1274,21 @@ export default function MisPublicacionesPage() {
                 <Button variant="outline" onClick={() => setDeleteCandidate(null)}>Volver</Button>
               </AlertDialog.Cancel>
               <AlertDialog.Action asChild>
-                <Button variant="destructive" className="bg-[#990000] hover:bg-[#5f0b21] text-white" onClick={() => {
-          
-                  setDeleteCandidate(null)
-                  toast.success("Se eliminó tu publicación exitosamente.")
+                <Button variant="destructive" className="bg-[#990000] hover:bg-[#5f0b21] text-white" onClick={async () => {
+                  if (!deleteCandidate) return
+                  try {
+                    await deletePlace(deleteCandidate.collection, deleteCandidate.id)
+                    toast.success("Se eliminó tu publicación exitosamente.")
+                    setDeleteCandidate(null)
+                    // Re-fetch places
+                    if (user?.id) {
+                      const updatedPlaces = await fetchPlacesByOwner(user.id)
+                      setAllPlaces(updatedPlaces)
+                    }
+                  } catch (error) {
+                    console.error("Error deleting place:", error)
+                    toast.error("No se pudo eliminar la publicación. Intenta nuevamente.")
+                  }
                 }}>
                   Eliminar
                 </Button>
