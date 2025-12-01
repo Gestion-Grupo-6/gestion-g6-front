@@ -103,14 +103,23 @@ export async function fetchAllPlaces(): Promise<Place[]> {
 }
 
 // Place - DELETE (id)
-export async function deletePlace(collection: string, id: string): Promise<void> {
-  const path = detailPathFor(collection)
-  const response = await fetch(`${sanitizedBaseUrl}/${path}/${id}`, {
+export async function deletePlace(collection: string, id: string, ownerId: string): Promise<void> {
+  const pathMap: Record<string, string> = {
+    [HOTELES]: "hotel",
+    [RESTAURANTES]: "restaurant",
+    [ACTIVIDADES]: "activity",
+  }
+  const path = pathMap[collection] ?? collection
+
+  const url = new URL(`${sanitizedBaseUrl}/${path}/${id}`)
+  url.searchParams.set("ownerId", ownerId)
+
+  const response = await fetch(url.toString(), {
     method: "DELETE",
   })
 
   if (!response.ok) {
-    throw new Error(`Error al eliminar ${collection}/${id}: ${response.status} ${response.statusText}`)
+    throw new Error(`Error al eliminar ${path}/${id}: ${response.status} ${response.statusText}`)
   }
 }
 

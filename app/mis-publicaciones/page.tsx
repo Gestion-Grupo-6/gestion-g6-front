@@ -1275,9 +1275,9 @@ export default function MisPublicacionesPage() {
               </AlertDialog.Cancel>
               <AlertDialog.Action asChild>
                 <Button variant="destructive" className="bg-[#990000] hover:bg-[#5f0b21] text-white" onClick={async () => {
-                  if (!deleteCandidate) return
+                  if (!deleteCandidate || !user?.id) return
                   try {
-                    await deletePlace(deleteCandidate.collection, deleteCandidate.id)
+                    await deletePlace(deleteCandidate.collection, deleteCandidate.id, user.id)
                     toast.success("Se eliminó tu publicación exitosamente.")
                     setDeleteCandidate(null)
                     // Re-fetch places
