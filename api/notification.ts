@@ -2,8 +2,7 @@ import { sanitizedBaseUrl } from "./config"
 import type { Notification } from "@/types/notification"
 
 /**
- * Obtiene y consume las notificaciones de un usuario
- * Nota: Este endpoint elimina las notificaciones después de obtenerlas
+ * Obtiene todas las notificaciones de un usuario (incluyendo las ocultas)
  */
 export async function fetchNotifications(userId: string): Promise<Notification[]> {
   try {
@@ -21,5 +20,20 @@ export async function fetchNotifications(userId: string): Promise<Notification[]
     }
     throw error
   }
+}
+
+/**
+ * Marca todas las notificaciones no leídas como leídas (showed: true)
+ * Este endpoint consume las notificaciones (las marca como showed: true)
+ */
+export async function markAllAsRead(userId: string): Promise<Notification[]> {
+  const res = await fetch(`${sanitizedBaseUrl}/api/notifications/user/${userId}/read`, {
+    method: "PUT",
+    cache: "no-store",
+  })
+  if (!res.ok) {
+    throw new Error(`Error al marcar notificaciones como leídas: ${res.status} ${res.statusText}`)
+  }
+  return (await res.json()) as Notification[]
 }
 
