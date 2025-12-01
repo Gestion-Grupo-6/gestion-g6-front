@@ -1,6 +1,6 @@
 "use client"
 
-import React, {useEffect} from "react"
+import React, { useEffect } from "react"
 import { useState } from "react"
 import { useChat } from "@ai-sdk/react"
 import { DefaultChatTransport, type UIMessage } from "ai"
@@ -12,17 +12,18 @@ import Markdown from "react-markdown"
 import BouncingDotsLoader from "@/components/ui/BouncingDotsLoader"
 import "../../styles/BouncingDotsStyle.css"
 import { useLocationContext } from "@/contexts/LocationContext"
-import {useAuth} from "@/contexts/AuthContext";
+import { useAuth } from "@/contexts/AuthContext";
+import { ChatHistory } from "@/types/chatHistory"
 
 export function Chatbot({
   chatId,
   initialMessages,
-  onChangeMessagesAction,
-}: { chatId?: string, initialMessages?: UIMessage[], onChangeMessagesAction?: (chatId: string, messages: UIMessage[]) => void } = {}) {
+}: { chatId?: string, initialMessages?: UIMessage[] } = {}) {
   const { user } = useAuth()
   const [inputValue, setInputValue] = useState("")
   const { location: storedLocation } = useLocationContext()
-  const id = user?.id + ":" + user?.name + ":" + chatId
+
+  const id = `${user?.id}:${user?.name}:${chatId}`
 
   const { messages, sendMessage, status } = useChat({
     id,
@@ -32,12 +33,17 @@ export function Chatbot({
     }),
   })
 
+  // Save to localStorage whenever messages change
+  // ChatHistory.serialize() filters out incomplete/streaming messages automatically
   useEffect(() => {
-    if (user && chatId && messages.length > 0 && onChangeMessagesAction) {
-      console.log("[CHATBOT] Updating messages for chatId:", chatId, messages);
-      onChangeMessagesAction(chatId, messages);
+    if (chatId && messages.length > 0) {
+      const currentHistory = ChatHistory.load()
+      const updatedHistory = currentHistory.map((conv: any) =>
+        conv.id === chatId ? { ...conv, messages } : conv
+      )
+      ChatHistory.save(updatedHistory)
     }
-  }, [messages, user, chatId, onChangeMessagesAction])
+  }, [messages, chatId])
 
   const isThinking = status === "submitted"
 
@@ -84,17 +90,17 @@ export function Chatbot({
 
   const suggestedQuestions = hasLocation
     ? [
-        `¿Qué restaurantes de comida típica de ${countrySuggestion} me recomiendas?`,
-        `Estoy buscando un hotel en ${citySuggestion}`,
-        `¿Qué actividades puedo hacer cerca de ${citySuggestion}?`,
-        "Recomiéndame lugares con buenas calificaciones y cercanos",
-      ]
+      `¿Qué restaurantes de comida típica de ${countrySuggestion} me recomiendas?`,
+      `Estoy buscando un hotel en ${citySuggestion}`,
+      `¿Qué actividades puedo hacer cerca de ${citySuggestion}?`,
+      "Recomiéndame lugares con buenas calificaciones y cercanos",
+    ]
     : [
-        "¿Qué restaurantes de comida me recomiendas?",
-        "Estoy buscando un hotel para descansar",
-        "¿Qué actividades puedo hacer durante el día?",
-        "Recomiéndame lugares con buenas calificaciones",
-      ]
+      "¿Qué restaurantes de comida me recomiendas?",
+      "Estoy buscando un hotel para descansar",
+      "¿Qué actividades puedo hacer durante el día?",
+      "Recomiéndame lugares con buenas calificaciones",
+    ]
 
   return (
     <div className="w-full">
@@ -161,9 +167,8 @@ export function Chatbot({
                   </div>
                 )}
                 <div
-                  className={`max-w-[80%] rounded-lg px-4 py-3 ${
-                    message.role === "user" ? "bg-primary text-primary-foreground" : "bg-muted text-foreground"
-                  }`}
+                  className={`max-w-[80%] rounded-lg px-4 py-3 ${message.role === "user" ? "bg-primary text-primary-foreground" : "bg-muted text-foreground"
+                    }`}
                 >
                   {message.parts.map((part, index) => {
                     if (part.type === "text") {
