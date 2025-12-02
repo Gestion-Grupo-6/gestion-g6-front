@@ -12,6 +12,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Header } from "@/components/header"
 import { Eye, EyeOff, Mail, Lock, User, Check, X } from "lucide-react"
 import { createUser } from "@/api/user"
+import { Footer } from "@/components/footer"
 
 export default function RegisterPage() {
   const [formData, setFormData] = useState({
@@ -181,39 +182,7 @@ export default function RegisterPage() {
                   />
                 </div>
               </div>
-              {/* 
-              <div className="space-y-2">
-                <Label htmlFor="phone">Teléfono (opcional)</Label>
-                <div className="relative">
-                  <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    id="phone"
-                    name="phone"
-                    type="tel"
-                    placeholder="+54 9 11 1234-5678"
-                    value={formData.phone}
-                    onChange={handleChange}
-                    className="pl-10"
-                  />
-                </div>
-              </div>
               
-              <div className="space-y-2">
-                <Label htmlFor="address">Dirección (opcional)</Label>
-                <div className="relative">
-                  <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    id="address"
-                    name="address"
-                    type="text"
-                    placeholder="Tu dirección completa"
-                    value={formData.address}
-                    onChange={handleChange}
-                    className="pl-10"
-                  />
-                </div>
-              </div>
-              */}
               <div className="space-y-2">
                 <Label htmlFor="password">Contraseña</Label>
                 <div className="relative">
@@ -327,6 +296,7 @@ export default function RegisterPage() {
           </CardContent>
         </Card>
       </main>
+      <Footer/>
     </div>
   )
 }

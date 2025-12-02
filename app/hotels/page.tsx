@@ -1,4 +1,5 @@
 import { Header } from "@/components/header"
+import { Footer } from "@/components/footer"
 import { PlacesList } from "@/components/places-list"
 import { FilterSidebar } from "@/components/filter-sidebar"
 import { fetchPlaces, HOTELES, searchPlaces } from "@/api/place"
@@ -29,6 +30,7 @@ export default async function HotelesPage({ searchParams }: { searchParams: Prom
           </div>
         </div>
       </main>
+      <Footer />
     </div>
   )
 }

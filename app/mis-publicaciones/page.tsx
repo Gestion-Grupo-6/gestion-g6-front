@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import { Header } from "@/components/header"
+import { Footer } from "@/components/footer"
 import * as AlertDialog from "@radix-ui/react-alert-dialog"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -529,6 +530,7 @@ export default function MisPublicacionesPage() {
                       
           </Card>
         </main>
+        <Footer />
       </div>
     )
   }
