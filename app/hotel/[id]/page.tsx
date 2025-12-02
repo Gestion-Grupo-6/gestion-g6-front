@@ -1,6 +1,7 @@
 import { fetchPlace, HOTEL } from "@/api/place"
 import { Header } from "@/components/header"
 import { PlaceDetail } from "@/components/place-detail"
+import { Footer } from "@/components/footer"
 import { notFound } from "next/navigation"
 
 type PageProps = {
@@ -21,6 +22,7 @@ export default async function HotelDetailPage({ params }: PageProps) {
       <main className="flex-1 w-full">
         <PlaceDetail place={place} />
       </main>
+      <Footer />
     </div>
   )
 }

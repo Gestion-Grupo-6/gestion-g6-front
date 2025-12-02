@@ -427,7 +427,7 @@ export function PlaceDetail({ place }: PlaceDetailProps) {
         </div>
       </div>
 
-      {hasCoordinates && coordinates && (
+      {/* {hasCoordinates && coordinates && (
         <div className="container mx-auto px-4 pb-12">
           <Card>
             <CardContent className="p-0">
@@ -440,7 +440,7 @@ export function PlaceDetail({ place }: PlaceDetailProps) {
             </CardContent>
           </Card>
         </div>
-      )}
+      )} */}
     </div>
   )
 }

@@ -15,6 +15,7 @@ import { useAuth } from "@/contexts/AuthContext"
 import { updateUser, uploadProfilePhoto } from "@/api/user"
 import type { Usuario } from "@/types/user"
 import { FavoritesPanel } from "@/components/favorites-panel"
+import { Footer } from "@/components/footer"
 
 export default function ProfilePage() {
   const { user, logout, updateUser: updateAuthUser } = useAuth()
@@ -119,6 +120,7 @@ export default function ProfilePage() {
             </CardContent>
           </Card>
         </main>
+        <Footer />
       </div>
     )
   }
