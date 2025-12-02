@@ -335,7 +335,7 @@ export function PlaceDetail({ place }: PlaceDetailProps) {
                   <div className="flex items-center gap-3">
                     <Mail className="h-5 w-5 text-muted-foreground flex-shrink-0" />
                     <div>
-                      <p className="text-sm font-medium text-foreground">Email*</p>
+                      <p className="text-sm font-medium text-foreground">Email</p>
                       {email ? (
                         <a href={`mailto:${email}`} className="text-sm text-primary hover:underline">
                           {email}
@@ -427,7 +427,7 @@ export function PlaceDetail({ place }: PlaceDetailProps) {
         </div>
       </div>
 
-      {hasCoordinates && coordinates && (
+      {/* {hasCoordinates && coordinates && (
         <div className="container mx-auto px-4 pb-12">
           <Card>
             <CardContent className="p-0">
@@ -440,7 +440,7 @@ export function PlaceDetail({ place }: PlaceDetailProps) {
             </CardContent>
           </Card>
         </div>
-      )}
+      )} */}
     </div>
   )
 }
