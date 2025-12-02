@@ -43,7 +43,7 @@ const HOTEL_ATTRIBUTES = [
   "Desayuno incluido",
   "Estacionamiento",
   "Sala de juegos",
-  "Espacio de Co-Working",
+  "Espacio Co-Working",
 ]
 
 const RESTAURANT_ATTRIBUTES = [
