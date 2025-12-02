@@ -12,6 +12,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Header } from "@/components/header"
 import { Eye, EyeOff, Mail, Lock } from "lucide-react"
 import { useAuth } from "@/contexts/AuthContext"
+import { Footer } from "@/components/footer"
 
 export default function LoginPage() {
   const [email, setEmail] = useState("")
@@ -114,6 +115,7 @@ export default function LoginPage() {
           </CardContent>
         </Card>
       </main>
+      <Footer/>
     </div>
   )
 }
