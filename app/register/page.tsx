@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Header } from "@/components/header"
-import { Eye, EyeOff, Mail, Lock, User } from "lucide-react"
+import { Eye, EyeOff, Mail, Lock, User, Check, X } from "lucide-react"
 import { createUser } from "@/api/user"
 
 export default function RegisterPage() {
@@ -36,6 +36,43 @@ export default function RegisterPage() {
     })
   }
 
+  const checkPasswordRequirements = (password: string) => {
+    return {
+      minLength: password.length >= 8,
+      hasUpperCase: /[A-Z]/.test(password),
+      hasNumber: /[0-9]/.test(password),
+      hasSpecialChar: /[*$!?&@#%^+=._-]/.test(password),
+    }
+  }
+
+  const validatePassword = (password: string): string | null => {
+    const requirements = checkPasswordRequirements(password)
+
+    // Mínimo 8 caracteres
+    if (!requirements.minLength) {
+      return "La contraseña debe tener al menos 8 caracteres"
+    }
+
+    // Al menos una letra mayúscula
+    if (!requirements.hasUpperCase) {
+      return "La contraseña debe contener al menos una letra mayúscula"
+    }
+
+    // Al menos un número
+    if (!requirements.hasNumber) {
+      return "La contraseña debe contener al menos un número"
+    }
+
+    // Al menos un símbolo especial
+    if (!requirements.hasSpecialChar) {
+      return "La contraseña debe contener al menos un símbolo especial (*$!?&@#%^+=._-)"
+    }
+
+    return null
+  }
+
+  const passwordRequirements = checkPasswordRequirements(formData.password)
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
@@ -48,8 +85,9 @@ export default function RegisterPage() {
       return
     }
 
-    if (formData.password.length < 6) {
-      setError("La contraseña debe tener al menos 6 caracteres")
+    const passwordError = validatePassword(formData.password)
+    if (passwordError) {
+      setError(passwordError)
       setIsLoading(false)
       return
     }
@@ -184,7 +222,7 @@ export default function RegisterPage() {
                     id="password"
                     name="password"
                     type={showPassword ? "text" : "password"}
-                    placeholder="Mínimo 6 caracteres"
+                    placeholder="Mínimo 8 caracteres, 1 mayúscula, 1 número y 1 símbolo"
                     value={formData.password}
                     onChange={handleChange}
                     className="pl-10 pr-10"
@@ -199,6 +237,40 @@ export default function RegisterPage() {
                   >
                     {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </Button>
+                </div>
+                <div className="space-y-1.5 mt-2 text-xs">
+                  <div className={`flex items-center gap-2 ${passwordRequirements.minLength ? "text-green-600 dark:text-green-400" : "text-muted-foreground"}`}>
+                    {passwordRequirements.minLength ? (
+                      <Check className="h-3.5 w-3.5" />
+                    ) : (
+                      <X className="h-3.5 w-3.5" />
+                    )}
+                    <span>Mínimo 8 caracteres</span>
+                  </div>
+                  <div className={`flex items-center gap-2 ${passwordRequirements.hasUpperCase ? "text-green-600 dark:text-green-400" : "text-muted-foreground"}`}>
+                    {passwordRequirements.hasUpperCase ? (
+                      <Check className="h-3.5 w-3.5" />
+                    ) : (
+                      <X className="h-3.5 w-3.5" />
+                    )}
+                    <span>Al menos una letra mayúscula</span>
+                  </div>
+                  <div className={`flex items-center gap-2 ${passwordRequirements.hasNumber ? "text-green-600 dark:text-green-400" : "text-muted-foreground"}`}>
+                    {passwordRequirements.hasNumber ? (
+                      <Check className="h-3.5 w-3.5" />
+                    ) : (
+                      <X className="h-3.5 w-3.5" />
+                    )}
+                    <span>Al menos un número</span>
+                  </div>
+                  <div className={`flex items-center gap-2 ${passwordRequirements.hasSpecialChar ? "text-green-600 dark:text-green-400" : "text-muted-foreground"}`}>
+                    {passwordRequirements.hasSpecialChar ? (
+                      <Check className="h-3.5 w-3.5" />
+                    ) : (
+                      <X className="h-3.5 w-3.5" />
+                    )}
+                    <span>Al menos un símbolo especial (*$!?&@#%^+=._-)</span>
+                  </div>
                 </div>
               </div>
 

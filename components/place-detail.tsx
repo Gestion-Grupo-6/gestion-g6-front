@@ -335,7 +335,7 @@ export function PlaceDetail({ place }: PlaceDetailProps) {
                   <div className="flex items-center gap-3">
                     <Mail className="h-5 w-5 text-muted-foreground flex-shrink-0" />
                     <div>
-                      <p className="text-sm font-medium text-foreground">Email</p>
+                      <p className="text-sm font-medium text-foreground">Email*</p>
                       {email ? (
                         <a href={`mailto:${email}`} className="text-sm text-primary hover:underline">
                           {email}
