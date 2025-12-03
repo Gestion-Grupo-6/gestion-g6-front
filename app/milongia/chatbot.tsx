@@ -93,13 +93,13 @@ export function Chatbot({
       `¿Qué restaurantes de comida típica de ${countrySuggestion} me recomiendas?`,
       `Estoy buscando un hotel en ${citySuggestion}`,
       `¿Qué actividades puedo hacer cerca de ${citySuggestion}?`,
-      "Recomiéndame lugares con buenas calificaciones y cercanos",
+      "Recomiéndame todos los lugares con buenas calificaciones y cercanos",
     ]
     : [
       "¿Qué restaurantes de comida me recomiendas?",
       "Estoy buscando un hotel para descansar",
       "¿Qué actividades puedo hacer durante el día?",
-      "Recomiéndame lugares con buenas calificaciones",
+      "Recomiéndame todos los lugares con buenas calificaciones",
     ]
 
   return (
