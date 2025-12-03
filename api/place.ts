@@ -102,6 +102,19 @@ export async function fetchAllPlaces(): Promise<Place[]> {
     ]
 }
 
+// Fetch full posts data (used by AI only) - returns complete PostResponseDTO list from backend
+export async function fetchAllPostsFull(): Promise<Place[]> {
+  const response = await fetch(`${sanitizedBaseUrl}/posts/full`, {
+    cache: "no-store",
+  })
+
+  if (!response.ok) {
+    throw new Error(`Error al consultar posts completos: ${response.status} ${response.statusText}`)
+  }
+
+  return (await response.json()) as Place[]
+}
+
 // Place - DELETE (id)
 export async function deletePlace(collection: string, id: string, ownerId: string): Promise<void> {
   const pathMap: Record<string, string> = {
