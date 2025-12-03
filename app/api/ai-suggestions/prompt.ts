@@ -20,6 +20,22 @@ Regla sobre atributos y búsquedas por tipo (por ejemplo: "quiero tomar un café
 - Devuelve los lugares que coincidan con el atributo solicitado (máximo 20), ordenados por relevancia (abiertos primero, luego por 'ratingAverage' descendente). Si hay muchas coincidencias, limita a 10 y ofrece "ver más".
 - Si no hay coincidencias exactas sobre 'attributes', propone alternativas (p. ej. lugares con atributos similares o abiertos 24h) y explícales por qué no hay una coincidencia directa.
 
+Regla sobre el campo 'type' (por ejemplo: "restaurante", "hotel", "actividad"):
+- Cuando el usuario solicite un tipo específico de lugar (por ejemplo "restaurante", "restaurantes", "hotel", "actividad"), FILTRA los resultados usando el campo 'type' de los datos. La comparación debe ser insensible a mayúsculas/minúsculas. Por ejemplo, si el usuario pide "restaurantes", devuelve principalmente lugares donde "type" es "restaurant" o variantes equivalentes.
+- Si el usuario pide términos genéricos relacionados con comida ("restaurante", "comida", "para comer"), interpreta esto como una intención de filtrar por "type" === 'restaurant' y por atributos relacionados (por ejemplo 'Cafetería', 'Comida rápida') cuando existan.
+- Si hay ambigüedad (por ejemplo un lugar es un hotel que también ofrece restaurante), incluye una nota aclaratoria y prioriza lugares cuyo "type" sea exactamente el solicitado cuando el usuario lo pregunte explícitamente.
+
+Regla sobre calificaciones (cuando el usuario pida "mejor calificados" o "lugares con buena calificación"):
+- Cuando el usuario solicite lugares por calificación, usa el campo 'ratingAverage' como principal indicador y 'numberOfReviews' como respaldo para evitar recomendar lugares con pocas reseñas.
+- Ordena por 'ratingAverage' descendente y en caso de empate por 'numberOfReviews' descendente.
+- Si 'ratingAverage' está ausente o es nulo para un lugar, considera ese lugar como 'Sin calificación' y colócalo al final de la lista. No inventes calificaciones.
+- Muestra explícitamente la calificación y la cantidad de reseñas al usuario (por ejemplo: "4.5 (120 reseñas)").
+
+Regla sobre mostrar lugares "cercanos a mi":
+- Sabes la ubicación (ciudad) del usuario a través del contexto proporcionado, entonces cuando un usuario pida ver por ejemplo "Que lugares con buenas calificaciones tengo cerca", debes:
+    a) Filtrar los lugares que estén en la misma ciudad que el usuario.
+
+
 Regla importante sobre horarios de apertura ("abierto ahora"):
 - Si el usuario pregunta si un lugar está "abierto ahora" o solicita disponibilidad inmediata, compara la hora actual proporcionada en el prompt (fecha/hora del sistema y zona horaria) con el campo 'openingHours' presente en los datos del lugar.
 - Los 'openingHours' vienen como objetos por día con campos 'start' y 'end' representando horas en formato 0-23 (enteros). Interpreta 'start' y 'end' como horas locales.
@@ -90,7 +106,7 @@ const buildLocationPrompt = (location: LocationContext) => {
      no debes dar información de las coordenadas numéricas de los lugares o del usuario, únicamente si estan cerca o cuál es su dirección.\n`;
 };
 
-const buildInformationPrompt = async () => {
+const buildInformationPrompt = async (locationContext?: LocationContext) => {
 
     const places = await fetchAllPostsFull()
 
@@ -99,6 +115,7 @@ const buildInformationPrompt = async () => {
     const currentMinutes = now.getHours() * 60 + now.getMinutes();
     const dayNames = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
     const todayKey = dayNames[now.getDay()];
+
 
     const informationStrings: string[] = places.map((p) => {
         // helper to compute open status
@@ -178,6 +195,9 @@ const buildInformationPrompt = async () => {
             Horarios: ${p.openingHours ? JSON.stringify(p.openingHours) : "No disponible"}.
             AbiertoAhora: ${openInfo.state}.
             CierraEn: ${openInfo.state === "SI" ? cierraStr : "No aplica"}.
+            EsRestaurante: ${p.type && String(p.type).toLowerCase().includes("rest") ? "SI" : "NO"}.
+            EsHotel: ${p.type && String(p.type).toLowerCase().includes("hotel") ? "SI" : "NO"}.
+            MismaCiudad: ${locationContext?.city && p.city && locationContext.city.toLowerCase() === p.city.toLowerCase() ? "SI" : "NO"}
             `
             ;
     });
@@ -218,7 +238,7 @@ async function buildUserPrompt(userId: string, userName: string) {
 export async function getSystemPrompt (userId?: string, userName?: string, locationContext?: LocationContext){
     const userPrompt = userId && userName ? await buildUserPrompt(userId, userName) : ""
     const locationSystemPrompt = locationContext ? buildLocationPrompt(locationContext) : ""
-    const appInformationPrompt = await buildInformationPrompt()
+    const appInformationPrompt = await buildInformationPrompt(locationContext)
 
     return IDENTITY_PROMPT + userPrompt + locationSystemPrompt + appInformationPrompt + BEHAVIOR_PROMPT
 }

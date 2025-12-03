@@ -22,7 +22,9 @@ export async function POST(req: Request) {
         // convert UI messages (from useChat) to model messages
         const modelMessages = convertToModelMessages(safeMessages)
 
-        const systemPrompt = await getSystemPrompt(userId, userName, getLocationContext(safeMessages));
+        const locationCtx = getLocationContext(safeMessages)
+        console.log("[AI-SUGGESTIONS] locationContext extracted from messages:", JSON.stringify(locationCtx))
+        const systemPrompt = await getSystemPrompt(userId, userName, locationCtx);
 
         // call streamText with system + messages (docs recommend system/messages)
         const result = streamText({
