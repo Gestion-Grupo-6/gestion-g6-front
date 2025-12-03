@@ -69,6 +69,8 @@ const buildInformationPrompt = async () => {
             return `${key}: No disponible`;
         }).join("; ") : "No disponible";
 
+        const attributesStr = p.attributes && p.attributes.length > 0 ? p.attributes.join(", ") : "No disponible";
+
         return `Id: ${p.id},
             Lugar: ${p.name},  
             Tipo: ${p.type}, 
@@ -77,7 +79,7 @@ const buildInformationPrompt = async () => {
             Calificación: ${p.ratingAverage} estrellas con ${p.numberOfReviews} reviews.
             Ratings detallados: ${ratingsStr}.
             Cantidades: ${p.quantities ? JSON.stringify(p.quantities) : "No disponible"}.
-            Atributos: ${p.attributes.join(", ")}.
+            Atributos: ${attributesStr}.
             Contacto: Teléfono: ${p.phone ? p.phone : "No disponible"}, Email: ${p.email ? p.email : "No disponible"}, Sitio web: ${p.website ? p.website : "No disponible"}.
             Precio promedio: ${p.priceCategory}.
             Horarios: ${p.openingHours ? JSON.stringify(p.openingHours) : "No disponible"}.`
