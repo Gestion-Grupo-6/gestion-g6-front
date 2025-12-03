@@ -10,6 +10,7 @@ Responde con recomendaciones útiles, concisas y amigables.
 Cuando el usuario pida sugerencias, da primero una respuesta concisa y luego pregunta por sus preferencias (presupuesto, barrio, tipo de comida, fecha/horario).
 Prioriza seguridad y claridad: no inventes datos sensibles (como horarios exactos si no estás seguro).
 Si el usuario pides enlaces o reservas, explica cómo hacerlo paso a paso, pero nunca inventes información.
+En caso de que intente preguntar por información sensible, privada o inapropiada, rechaza amablemente la solicitud.
 `
 type LocationContext = {
     lat: number;
@@ -47,7 +48,8 @@ const describeLocation = (location: LocationContext) => {
 const buildLocationPrompt = (location: LocationContext) => {
     const description = describeLocation(location);
     const coordinates = `${location.lat.toFixed(4)}, ${location.lng.toFixed(4)}`;
-    return `El usuario está en ${description} (lat, lng: ${coordinates}). Usa esta ubicación para enfocar las recomendaciones locales y cercanas a su posición.\n`;
+    return `El usuario está en ${description} (lat, lng: ${coordinates}). Usa esta ubicación para enfocar las recomendaciones locales y cercanas a su posición,
+     no debes dar información de las coordenadas numéricas de los lugares o del usuario, únicamente si estan cerca o cuál es su dirección.\n`;
 };
 
 const buildInformationPrompt = async () => {
@@ -56,25 +58,43 @@ const buildInformationPrompt = async () => {
 
     // Convert each place object to a JSON string
     const informationStrings: string[] = places.map((p) => {
+        const ratingsStr = p.ratings ? Object.entries(p.ratings).map(([key, value]: [string, any]) => {
+            if (!value) return `${key}: No disponible`;
+            if ('average' in value && 'numberOfRatings' in value) {
+                return `${key}: ${value.average} (${value.numberOfRatings} ratings)`;
+            }
+            if ('score' in value) {
+                return `${key}: ${value.score} (type: ${value.type ?? 'unknown'})`;
+            }
+            return `${key}: No disponible`;
+        }).join("; ") : "No disponible";
+
         return `Id: ${p.id},
             Lugar: ${p.name},  
             Tipo: ${p.type}, 
             Ubicación: ${p.address}, ${p.city}, ${p.country} en coordenadas (lat: ${p.location?.lat}, long: ${p.location?.lng}), 
             Descripción: ${p.description}, 
-            Calificación: ${p.ratingAverage} estrellas.
-            Precio promedio: ${p.priceCategory}.`;
+            Calificación: ${p.ratingAverage} estrellas con ${p.numberOfReviews} reviews.
+            Ratings detallados: ${ratingsStr}.
+            Cantidades: ${p.quantities ? JSON.stringify(p.quantities) : "No disponible"}.
+            Atributos: ${p.attributes.join(", ")}.
+            Contacto: Teléfono: ${p.phone ? p.phone : "No disponible"}, Email: ${p.email ? p.email : "No disponible"}, Sitio web: ${p.website ? p.website : "No disponible"}.
+            Precio promedio: ${p.priceCategory}.
+            Horarios: ${p.openingHours ? JSON.stringify(p.openingHours) : "No disponible"}.`
+            ;
     });
 
     const contextPrompt = `Solo cuentas con la siguiente información de lugares, 
     no puedes brindar otra información, si te piden algo por fuera de esto, 
-    constestá amablemente que no tienes información para responder: `;
+    contestar amablemente que no tienes información para responder: `;
 
     // Return the base instruction plus the array of JSON strings
     return ( contextPrompt + informationStrings.join("\n") + "\n" );
 }
 
 async function buildUserPrompt(userId: string, userName: string) {
-    const namePrompt = `El nombre del usuario es ${userName}.`
+    const currentDate = new Date();
+    const namePrompt = `El nombre del usuario es ${userName}. Hoy es ${currentDate.toDateString()} lo puedes utilizar para indicarle locales abiertos ahora.`;
     const reviews = await fetchReviewsByUser(userId)
 
     const contextPrompt = `Aquí hay una lista de reseñas que el usuario ha hecho previamente para poder saber sus gustos y preferencias: `;
