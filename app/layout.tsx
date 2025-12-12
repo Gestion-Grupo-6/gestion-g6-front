@@ -18,6 +18,10 @@ export const metadata: Metadata = {
   title: "TanGo - Descubre tu próximo destino",
   description: "Encuentra los mejores hoteles, restaurantes y actividades para tu viaje",
   generator: "v0.app",
+  icons: {
+    icon: "/tango-logo.png",
+    apple: "/tango-logo.png",
+  },
 }
 
 export default function RootLayout({
