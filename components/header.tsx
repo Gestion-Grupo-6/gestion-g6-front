@@ -20,13 +20,15 @@ export function Header() {
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container mx-auto px-4">
-        <div className="flex h-16 items-center justify-between">
-          <Link href="/" className="flex items-center">
-            <Image src="/tango-logo.png" alt="TanGo" width={120} height={40} className="h-10 w-auto"priority />
-          </Link>
+        <div className="flex h-16 items-center">
+          <div className="flex-1">
+            <Link href="/" className="flex items-center">
+              <Image src="/tango-logo.png" alt="TanGo" width={120} height={40} className="h-10 w-auto"priority />
+            </Link>
+          </div>
 
           {/* Desktop Navigation */}
-          <nav className="hidden md:flex items-center gap-6">
+          <nav className="hidden md:flex items-center gap-6 flex-1 justify-center">
             <Link href="/hotels" className="text-sm font-medium text-foreground hover:text-primary transition-colors">
               Hoteles
             </Link>
@@ -44,7 +46,7 @@ export function Header() {
             </Link>
           </nav>
 
-          <div className="hidden md:flex items-center gap-3">
+          <div className="hidden md:flex items-center gap-3 flex-1 justify-end">
             <ThemeToggle />
             {isAuthenticated ? (
               <>
