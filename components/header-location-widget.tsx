@@ -125,14 +125,15 @@ export function HeaderLocationWidget() {
   }, [storedLocation]);
 
   return (
-    <div className="border-t border-border px-4 py-3">
-      <div className="flex flex-col gap-4 md:flex-row md:items-center">
-        <div className="flex flex-1 flex-col gap-3 md:flex-row md:items-center">
-          <div className="flex flex-1 flex-col gap-1">
-            <div className="flex items-center gap-1 text-xs uppercase tracking-wide text-muted-foreground">
-              <MapPin className="h-4 w-4" />
-              <span>Ubicación</span>
-            </div>
+    <div className="border-t border-border">
+      <div className="container mx-auto px-4 py-3">
+        <div className="flex flex-col gap-4 md:flex-row md:items-center">
+          <div className="flex flex-1 flex-col gap-3 md:flex-row md:items-center">
+            <div className="flex flex-1 flex-col gap-1">
+              <div className="flex items-center gap-1 text-xs uppercase tracking-wide text-muted-foreground">
+                <MapPin className="h-4 w-4" />
+                <span>Ubicación</span>
+              </div>
             {storedLocation ? (
               <>
                 <p className="text-sm font-medium text-foreground">
@@ -165,57 +166,58 @@ export function HeaderLocationWidget() {
                 )}
               </>
             )}
+            </div>
           </div>
-        </div>
 
-        <div className="flex flex-wrap items-center gap-2">
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={requestLocation}
-            disabled={requesting}
-            className="inline-flex items-center gap-1"
-          >
-            {requesting ? (
-              <>
-                <Loader2 className="h-4 w-4 animate-spin" />
-                Solicitando...
-              </>
-            ) : (
-              <>
-                <RefreshCw className="h-4 w-4" />
-                {storedLocation ? "Actualizar ubicación" : "Solicitar ubicación"}
-              </>
-            )}
-          </Button>
-
-          {storedLocation && (
-            <Button size="sm" variant="ghost" onClick={disableLocation} className="inline-flex items-center gap-1">
-              <XCircle className="h-4 w-4" />
-              Desactivar
-            </Button>
-          )}
-
-          <div className="relative">
+          <div className="flex flex-wrap items-center gap-2">
             <Button
               size="sm"
-              variant="ghost"
-              onClick={() => setManualOpen((prev) => !prev)}
+              variant="outline"
+              onClick={requestLocation}
+              disabled={requesting}
               className="inline-flex items-center gap-1"
             >
-              <MapPin className="h-4 w-4" />
-              Definir manualmente
+              {requesting ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Solicitando...
+                </>
+              ) : (
+                <>
+                  <RefreshCw className="h-4 w-4" />
+                  {storedLocation ? "Actualizar ubicación" : "Solicitar ubicación"}
+                </>
+              )}
             </Button>
 
-            {manualOpen && (
-              <div className="absolute right-0 top-full z-40 mt-2 w-[min(90vw,18rem)] rounded-lg border bg-background p-4 shadow-lg">
-                <ManualLocationForm
-                  origin={storedLocation ?? undefined}
-                  onSelect={handleManualSelect}
-                  onCancel={() => setManualOpen(false)}
-                />
-              </div>
+            {storedLocation && (
+              <Button size="sm" variant="ghost" onClick={disableLocation} className="inline-flex items-center gap-1">
+                <XCircle className="h-4 w-4" />
+                Desactivar
+              </Button>
             )}
+
+            <div className="relative">
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => setManualOpen((prev) => !prev)}
+                className="inline-flex items-center gap-1"
+              >
+                <MapPin className="h-4 w-4" />
+                Definir manualmente
+              </Button>
+
+              {manualOpen && (
+                <div className="absolute right-0 top-full z-40 mt-2 w-[min(90vw,18rem)] rounded-lg border bg-background p-4 shadow-lg">
+                  <ManualLocationForm
+                    origin={storedLocation ?? undefined}
+                    onSelect={handleManualSelect}
+                    onCancel={() => setManualOpen(false)}
+                  />
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>
